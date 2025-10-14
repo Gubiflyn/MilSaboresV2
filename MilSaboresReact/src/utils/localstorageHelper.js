@@ -24,6 +24,23 @@ export const deleteFromLocalstorage = (key) => {
 }
 
 //métodos para el carrito (guiño guiño)
+export const saveCarrito = (carrito) => {
+    try {
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+    } catch (ex) {
+        console.error("Error al guardar carrito: ", ex);
+    }
+};
+
+export const loadCarrito = () => {
+    try {
+        const data = localStorage.getItem('carrito');
+        return data ? JSON.parse(data) : [];
+    } catch (ex) {
+        console.error("Error al cargar carrito: ", ex);
+        return [];
+    }
+};
 
 
 //métodos para el login
