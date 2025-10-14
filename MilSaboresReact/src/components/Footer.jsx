@@ -6,7 +6,7 @@ function Footer() {
           <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
             <div className="footerbrand mb-2">
               <img
-                src="../../Assets/img/icono.png"
+                src="/Assets/img/icono.png"
                 alt="Mil Sabores"
                 className="headericon me-2"
                 style={{ height: "32px" }}

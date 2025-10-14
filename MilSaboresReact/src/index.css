@@ -134,3 +134,30 @@
 .footer__newsletter-title {
     text-align: right;
 }
+
+/* Mantener el footer pegado abajo */
+body, #root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+.footer {
+  flex-shrink: 0;
+}
+
+.btn--accent {
+  background-color: var(--color-accent);
+  color: var(--color-text-main);
+  font-weight: bold;
+  border: none;
+}
+
+.btn--accent:hover {
+  background-color: #ffb6c1;
+  color: var(--color-primary);
+}

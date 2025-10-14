@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"     
+
+import { Link } from "react-router-dom";
 
 function Navbar() {
   return (
@@ -7,7 +8,7 @@ function Navbar() {
         <div className="container-fluid d-flex justify-content-between align-items-center">
           <a className="navbar-brand headerbrand" href="/">
             <img
-              src="../../Assets/img/icono.png"
+              src="public/img/icono.png"
               alt="Mil Sabores"
               className="headericon me-2"
               style={{ height: "32px" }}
