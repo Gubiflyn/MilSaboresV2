@@ -8,7 +8,11 @@ import Configuración from './pages/Configuración';
 import Contacto from './pages/Contacto';
 import Noticias from './pages/Noticias';
 import Pago from './pages/Pago';
-import CarritoPage from './pages/Carrito'; // página adaptadora
+import CarritoPage from './pages/Carrito';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ProtectedRoute from './routes/ProtectedRoute';
+import Admin from './pages/admin/Admin';
 
 const App = () => {
   const navigate = useNavigate();
@@ -19,22 +23,25 @@ const App = () => {
       <Navbar />
       <main style={{ minHeight: '70vh' }}>
         <Routes>
-          {/* "/" muestra Home */}
           <Route path="/" element={<Home />} />
-
-          {/* Productos */}
           <Route path="/productos" element={<Productos />} />
           <Route path="/detalle/:codigo" element={<Detalle />} />
-
-          {/* Carrito */}
           <Route path="/carrito" element={<CarritoPage irAlPago={irAlPago} />} />
-
-          {/* Otras páginas */}
           <Route path="/configuracion" element={<Configuración />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/noticias" element={<Noticias />} />
-          <Route path="/blogs" element={<Noticias />} /> {/* alias para “Blogs” */}
+          <Route path="/blogs" element={<Noticias />} />
           <Route path="/pago" element={<Pago />} />
+
+          {/* Auth */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Admin-only */}
+          <Route element={<ProtectedRoute adminOnly />}>
+            <Route path="/admin" element={<Admin />} />
+            {/* Ejemplo: <Route path="/admin/productos" element={<AdminProductos />} /> */}
+          </Route>
         </Routes>
       </main>
       <Footer />

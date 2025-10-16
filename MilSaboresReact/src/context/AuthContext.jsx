@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import seedUsers from "../data/users.json";
+import seedUsers from "../data/usuarios.json";
 
 // helpers localStorage
 const LS_TOKEN   = "token";
