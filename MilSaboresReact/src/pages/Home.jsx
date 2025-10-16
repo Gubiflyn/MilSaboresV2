@@ -23,6 +23,7 @@ export default function Home() {
         </div>
       </section>
 
+
       {/* DESTACADOS (primeros 3 del JSON) */}
       <section className="products-section py-5" id="productos">
         <div className="container">
@@ -31,12 +32,11 @@ export default function Home() {
             {Array.isArray(tortas) && tortas.slice(0, 3).map((t) => {
               const resolveImg = (imagen) => {
                 if (!imagen) return '/img/placeholder.png';
-                if (imagen.startsWith('/')) {
-                  // normaliza rutas que vengan como /Assets/img/xxx o /public/img/xxx => /img/xxx
-                  return imagen.replace(/^\/(?:public\/)?(?:Assets\/img|img)/, '/img');
-                }
-                return `/img/${imagen}`;
+                // obtener solo el nombre de archivo y servir desde /img/
+                const nombreArchivo = imagen.split('/').pop();
+                return `/img/${nombreArchivo}`;
               };
+
               const imgSrc = resolveImg(t.imagen);
               return (
                 <div className="col" key={t.codigo ?? t.nombre}>
@@ -44,6 +44,7 @@ export default function Home() {
                     <div className="card product-card h-100">
                       <img
                         src={imgSrc}
+                        onError={(e) => { e.currentTarget.src = '/img/placeholder.png'; }}
                         className="card-img-top product-card__image"
                         alt={t.nombre || "Producto"}
                         style={{ objectFit: "cover", height: 220 }}
@@ -60,6 +61,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ABOUT */}
       <section className="about-section py-5" id="nosotros">

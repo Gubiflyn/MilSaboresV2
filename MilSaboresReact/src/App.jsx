@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './pages/Navbar';
+import Home from './pages/Home';               
 import Footer from './components/Footer';
 import Productos from './pages/Productos';
 import Detalle from './pages/Detalle';
@@ -44,6 +45,9 @@ const App = () => {
       <Navbar carrito={carrito} />
       <main style={{ minHeight: '70vh' }}>
         <Routes>
+
+          <Route path="/" element={<Home />} />
+          
           {/* Redirige "/" automáticamente a "/productos" */}
           <Route path="/" element={<Navigate to="/productos" replace />} />
 
