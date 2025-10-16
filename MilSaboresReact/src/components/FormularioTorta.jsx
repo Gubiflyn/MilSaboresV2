@@ -1,39 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const categorias = [
-  'Tortas Cuadradas',
-  'Tortas Circulares',
-  'Postres Individuales',
-  'Productos Sin Azúcar',
-  'Pastelería Tradicional',
-  'Productos Sin Gluten',
-  'Productos Veganos',
-  'Tortas Especiales',
+  "Tortas Cuadradas",
+  "Tortas Circulares",
+  "Postres Individuales",
+  "Productos Sin Azúcar",
+  "Pastelería Tradicional",
+  "Productos Sin Gluten",
+  "Productos Veganos",
+  "Tortas Especiales",
 ];
 
 const FormularioTorta = ({ agregarTorta }) => {
   const [form, setForm] = useState({
-    nombre: '',
+    nombre: "",
     categoria: categorias[0],
-    precio: '',
-    imagen: '',
+    precio: "",
+    imagen: "",
   });
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (form.nombre && form.precio && form.imagen) {
-      agregarTorta({ ...form, precio: Number(form.precio) });
-      setForm({
-        nombre: '',
-        categoria: categorias[0],
-        precio: '',
-        imagen: '',
-      });
+
+    // Validación básica
+    if (!form.nombre || !form.precio || !form.imagen) return alert("Complete todos los campos");
+
+    if (Number(form.precio) <= 0) return alert("El precio debe ser mayor a 0");
+
+    try {
+      new URL(form.imagen);
+    } catch {
+      return alert("Ingrese una URL de imagen válida");
     }
+
+    agregarTorta({ ...form, precio: Number(form.precio), cantidad: 1 });
+
+    setForm({
+      nombre: "",
+      categoria: categorias[0],
+      precio: "",
+      imagen: "",
+    });
   };
 
   return (
@@ -53,8 +64,10 @@ const FormularioTorta = ({ agregarTorta }) => {
         value={form.categoria}
         onChange={handleChange}
       >
-        {categorias.map(cat => (
-          <option key={cat} value={cat}>{cat}</option>
+        {categorias.map((cat) => (
+          <option key={cat} value={cat}>
+            {cat}
+          </option>
         ))}
       </select>
       <input
@@ -75,7 +88,9 @@ const FormularioTorta = ({ agregarTorta }) => {
         onChange={handleChange}
         required
       />
-      <button type="submit" className="btn btn-primary">Agregar Torta</button>
+      <button type="submit" className="btn btn-primary">
+        Agregar Torta
+      </button>
     </form>
   );
 };

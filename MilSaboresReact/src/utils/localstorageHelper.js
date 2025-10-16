@@ -1,29 +1,29 @@
-export const saveLocalstorage = (key,data) => {
+export const saveLocalstorage = (key, data) => {
     try {
-        localStorage.setItem(key, JSON.stringify(data))
+        localStorage.setItem(key, JSON.stringify(data));
     } catch (ex) {
-        console.error("Error al guardar: ",ex)
+        console.error("Error al guardar: ", ex);
     }
 }
 
 export const loadFromLocalstorage = (key) => {
     try {
-        const data = localStorage.getItem(key)
-        return data ? JSON.parse(data) : null
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
     } catch (ex) {
-        console.error("Error al guardar: ",ex)
+        console.error("Error al cargar: ", ex);
     }
 }
 
 export const deleteFromLocalstorage = (key) => {
     try {
-        localStorage.removeItem(key)
+        localStorage.removeItem(key);
     } catch (ex) {
-        console.error("Error al guardar: ",ex)
+        console.error("Error al eliminar: ", ex);
     }
 }
 
-//métodos para el carrito (guiño guiño)
+// Métodos para carrito
 export const saveCarrito = (carrito) => {
     try {
         localStorage.setItem('carrito', JSON.stringify(carrito));
@@ -41,9 +41,3 @@ export const loadCarrito = () => {
         return [];
     }
 };
-
-
-//métodos para el login
-
-
-//métodos para los pokemones

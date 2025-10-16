@@ -1,4 +1,12 @@
+import React from "react";
+import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+
 function Footer() {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("¡Gracias por suscribirte!");
+  };
+
   return (
     <footer className="footer py-4">
       <div className="container">
@@ -6,7 +14,7 @@ function Footer() {
           <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
             <div className="footerbrand mb-2">
               <img
-                src="/public/logo.png"
+                src="/img/icono.png"
                 alt="Mil Sabores"
                 className="headericon me-2"
                 style={{ height: "32px" }}
@@ -15,13 +23,13 @@ function Footer() {
             </div>
             <div className="footer__social-links mb-2">
               <a href="#" className="footer__social-link me-3">
-                <i className="fab fa-facebook"></i>
+                <FaFacebook />
               </a>
               <a href="#" className="footer__social-link me-3">
-                <i className="fab fa-instagram"></i>
+                <FaInstagram />
               </a>
               <a href="#" className="footer__social-link">
-                <i className="fab fa-twitter"></i>
+                <FaTwitter />
               </a>
             </div>
             <p className="footer__copyright mb-0">
@@ -32,7 +40,10 @@ function Footer() {
             <h5 className="footer__newsletter-title mb-2">
               Suscríbete a nuestro newsletter
             </h5>
-            <form className="newsletter-form d-flex justify-content-center justify-content-md-end">
+            <form
+              className="newsletter-form d-flex justify-content-center justify-content-md-end"
+              onSubmit={handleSubmit}
+            >
               <div className="input-group newsletter-input-group w-100">
                 <input
                   type="email"

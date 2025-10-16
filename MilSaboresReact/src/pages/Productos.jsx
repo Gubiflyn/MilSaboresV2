@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import FormularioTorta from '../components/FormularioTorta';
-import { saveLocalstorage, loadFromLocalstorage, saveCarrito, loadCarrito } from '../utils/localstorageHelper';
+import { saveLocalstorage, loadFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
 
 const categorias = [
@@ -16,33 +15,22 @@ const categorias = [
   'Tortas Especiales',
 ];
 
-const Productos = () => {
+const Productos = ({ agregarAlCarrito }) => {
   const [tortas, setTortas] = useState([]);
   const [categoria, setCategoria] = useState('Todas');
-  const [carrito, setCarrito] = useState([]);
 
+  // Cargar tortas desde localStorage o JSON al iniciar
   useEffect(() => {
     const guardadas = loadFromLocalstorage('tortas');
-    setTortas(guardadas || tortasJson);
-    setCarrito(loadCarrito());
+    if (!guardadas || guardadas.length === 0) {
+      setTortas(tortasJson);
+      saveLocalstorage('tortas', tortasJson);
+    } else {
+      setTortas(guardadas);
+    }
   }, []);
 
-  useEffect(() => {
-    saveLocalstorage('tortas', tortas);
-  }, [tortas]);
-
-  useEffect(() => {
-    saveCarrito(carrito);
-  }, [carrito]);
-
-  const agregarTorta = (nuevaTorta) => {
-    setTortas([...tortas, { ...nuevaTorta, codigo: Date.now() }]);
-  };
-
-  const agregarAlCarrito = (torta) => {
-    setCarrito([...carrito, torta]);
-  };
-
+  // Filtrar tortas según categoría seleccionada
   const tortasFiltradas = categoria === 'Todas'
     ? tortas
     : tortas.filter(t => t.categoria === categoria);
@@ -50,7 +38,8 @@ const Productos = () => {
   return (
     <div className="container py-5">
       <h2 className="text-center mb-4">Nuestros Pasteles</h2>
-      <FormularioTorta agregarTorta={agregarTorta} />
+
+      {/* Filtro por categoría */}
       <div className="mb-4 text-center">
         <label htmlFor="categoryFilter" className="form-label fw-bold">Filtrar por Categoría:</label>
         <select
@@ -64,10 +53,16 @@ const Productos = () => {
           ))}
         </select>
       </div>
+
+      {/* Catálogo de tortas */}
       <div className="row row-cols-1 row-cols-md-3 g-4">
-        {tortasFiltradas.map(torta => (
-          <Card key={torta.codigo} torta={torta} onAgregarCarrito={agregarAlCarrito} />
-        ))}
+        {tortasFiltradas.length > 0 ? (
+          tortasFiltradas.map(torta => (
+            <Card key={torta.codigo} torta={torta} onAgregarCarrito={agregarAlCarrito} />
+          ))
+        ) : (
+          <p className="text-center">No hay productos disponibles en esta categoría.</p>
+        )}
       </div>
     </div>
   );
