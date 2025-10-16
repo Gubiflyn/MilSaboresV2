@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './pages/Navbar';
-import Home from './pages/Home';               
+import Home from './pages/Home';
 import Footer from './components/Footer';
 import Productos from './pages/Productos';
 import Detalle from './pages/Detalle';
@@ -45,17 +45,14 @@ const App = () => {
       <Navbar carrito={carrito} />
       <main style={{ minHeight: '70vh' }}>
         <Routes>
-
+          {/* "/" muestra Home */}
           <Route path="/" element={<Home />} />
-          
-          {/* Redirige "/" automáticamente a "/productos" */}
-          <Route path="/" element={<Navigate to="/productos" replace />} />
 
-          {/* Ruta para productos */}
+          {/* Productos */}
           <Route path="/productos" element={<Productos agregarAlCarrito={agregarAlCarrito} />} />
-
           <Route path="/detalle/:codigo" element={<Detalle agregarAlCarrito={agregarAlCarrito} />} />
 
+          {/* Carrito */}
           <Route
             path="/carrito"
             element={
@@ -68,9 +65,11 @@ const App = () => {
             }
           />
 
+          {/* Otras páginas */}
           <Route path="/configuracion" element={<Configuración />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/noticias" element={<Noticias />} />
+          <Route path="/blogs" element={<Noticias />} /> {/* alias para “Blogs” */}
           <Route path="/pago" element={<Pago carrito={carrito} vaciarCarrito={vaciarCarrito} />} />
         </Routes>
       </main>
