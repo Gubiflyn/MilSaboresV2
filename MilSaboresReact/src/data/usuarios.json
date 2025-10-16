@@ -1,0 +1,5 @@
+[
+  { "email": "admin@gmail.com", "password": "123456789012", "rol": "admin",  "nombre": "Administrador" },
+  { "email": "alumno@duocuc.cl","password": "duoc123",      "rol": "cliente","nombre": "Cliente Duoc",    "fechaNacimiento": "2002-09-20" },
+  { "email": "usuario50@mail.com","password": "mayor50123", "rol": "cliente","nombre": "Cliente Mayor50", "fechaNacimiento": "1960-05-10", "beneficio": "50%" }
+]
