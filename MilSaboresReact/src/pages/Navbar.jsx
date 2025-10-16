@@ -1,8 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
-function Navbar({ carrito }) {
+function Navbar() {
   const navigate = useNavigate();
-  const cantidadTotal = carrito.reduce((sum, t) => sum + (t.cantidad || 1), 0);
+  const { totals } = useCart();
+  const cantidadTotal = totals.count;
 
   return (
     <header className="header">

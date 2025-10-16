@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { loadFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
+import { useCart } from '../context/CartContext';
 
-const Detalle = ({ agregarAlCarrito }) => {
+const Detalle = () => {
   const { codigo } = useParams();
   const [torta, setTorta] = useState({});
   const [cantidad, setCantidad] = useState(1);
+  const { add } = useCart();
 
   useEffect(() => {
     const tortas = loadFromLocalstorage('tortas') || tortasJson;
@@ -15,8 +17,8 @@ const Detalle = ({ agregarAlCarrito }) => {
   }, [codigo]);
 
   const handleAgregar = () => {
-    if (cantidad > 0) {
-      agregarAlCarrito({ ...torta, cantidad });
+    if (cantidad > 0 && torta?.codigo) {
+      add({ ...torta, cantidad });
     }
   };
 
