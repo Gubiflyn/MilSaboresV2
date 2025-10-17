@@ -1,10 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
   const navigate = useNavigate();
   const { totals } = useCart();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const cantidadTotal = totals.count;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/"); // vuelve al home después de cerrar sesión
+  };
 
   return (
     <header className="header">
@@ -33,19 +40,57 @@ function Navbar() {
           </button>
 
           <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
-            <ul className="navbar-nav header__menu">
-              <li className="nav-item" style={{ display: "none" }} id="perfilMenuItem">
-                <Link className="nav-link header__menu-link d-flex align-items-center" to="/configuracion">
-                  <i className="fas fa-user-circle me-1"></i> Mi Perfil
-                </Link>
-              </li>
+            <ul className="navbar-nav header__menu align-items-lg-center">
               <li className="nav-item"><Link className="nav-link header__menu-link" to="/">Inicio</Link></li>
               <li className="nav-item"><Link className="nav-link header__menu-link" to="/productos">Productos</Link></li>
               <li className="nav-item"><a className="nav-link header__menu-link" href="/#nosotros">Nosotros</a></li>
-              <li className="nav-item"><a className="nav-link header__menu-link" href="/blogs">Blogs</a></li>
+              <li className="nav-item"><Link className="nav-link header__menu-link" to="/blogs">Blogs</Link></li>
               <li className="nav-item"><Link className="nav-link header__menu-link" to="/contacto">Contacto</Link></li>
+
+              {/* Enlace Admin SOLO si es admin */}
+              {isAdmin && (
+                <li className="nav-item">
+                  <Link className="nav-link header__menu-link text-warning fw-semibold" to="/admin">
+                    Admin
+                  </Link>
+                </li>
+              )}
+
+              {/* Auth: si no está logueado, muestra Login / Register */}
+              {!isAuthenticated ? (
+                <>
+                  <li className="nav-item">
+                    <Link className="nav-link header__menu-link" to="/login">Iniciar sesión</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="nav-link header__menu-link" to="/register">Registrarse</Link>
+                  </li>
+                </>
+              ) : (
+                // Si está logueado: saludo + logout
+                <li className="nav-item dropdown">
+                  <button
+                    className="btn nav-link dropdown-toggle header__menu-link"
+                    id="userMenu"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    Hola, {user?.nombre || "Usuario"}
+                  </button>
+                  <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li><span className="dropdown-item-text small text-muted">{user?.email}</span></li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <button className="dropdown-item text-danger" onClick={handleLogout}>
+                        Cerrar sesión
+                      </button>
+                    </li>
+                  </ul>
+                </li>
+              )}
             </ul>
 
+            {/* Carrito */}
             <button
               onClick={() => navigate("/carrito")}
               className="btn position-relative ms-4 header__cart-icon"
