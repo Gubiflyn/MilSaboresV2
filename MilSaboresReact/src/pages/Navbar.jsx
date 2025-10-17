@@ -17,11 +17,11 @@ function Navbar() {
     <header className="header">
       <nav className="navbar navbar-expand-lg header__nav py-3">
         <div className="container-fluid d-flex justify-content-between align-items-center">
-          <Link className="navbar-brand headerbrand" to="/">
+          <Link className="navbar-brand header__brand" to="/">
             <img
               src="/img/icono.png"
               alt="Mil Sabores"
-              className="headericon me-2"
+              className="header__icon me-2"
               style={{ height: "32px" }}
             />
             <span className="header__title">Mil Sabores</span>

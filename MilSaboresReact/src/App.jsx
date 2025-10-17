@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Admin from './pages/admin/Admin';
+import Boleta from './pages/Boleta';
+
 
 const App = () => {
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ const App = () => {
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/blogs" element={<Noticias />} />
           <Route path="/pago" element={<Pago />} />
+          <Route path="/boleta/:orderId" element={<Boleta />} />
 
           {/* Auth */}
           <Route path="/login" element={<Login />} />
