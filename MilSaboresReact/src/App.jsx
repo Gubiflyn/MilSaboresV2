@@ -13,6 +13,7 @@ import Pago from './pages/Pago';
 import Boleta from './pages/Boleta';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PagoError from "./pages/PagoError";
 
 // usamos el carrito desde el contexto
 import { useCart } from './context/CartContext';
@@ -73,6 +74,7 @@ const App = () => {
 
           {/* Pago */}
           <Route path="/pago" element={<Pago />} />
+          <Route path="/pago/error" element={<PagoError />} />
         </Routes>
       </main>
 

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext"; // <-- NUEVO
 
 const formatCLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function Pago() {
   const { carrito, clear } = useCart();
+  const { user, isAuthenticated } = useAuth(); // <-- NUEVO
   const navigate = useNavigate();
 
   // Total SIN IVA ni promociones (igual al HTML antiguo)
@@ -41,7 +43,6 @@ export default function Pago() {
     const e = {};
 
     if (!form.nombre.trim()) e.nombre = "Ingresa el nombre en la tarjeta.";
-
     if (!/^\d{16}$/.test(form.numero)) e.numero = "Número de 16 dígitos.";
 
     // Exp MM/AA y no vencida
@@ -74,6 +75,36 @@ export default function Pago() {
     ev.preventDefault();
     if (!validate()) return;
 
+    // Regla simple para simular pago fallido:
+    //  - Si la tarjeta empieza con "0000" o si pasas ?fail=1 en la URL, falla.
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceFail = urlParams.get("fail") === "1";
+    const startsWithZeros = form.numero.startsWith("0000");
+    const shouldFail = forceFail || startsWithZeros;
+
+    if (shouldFail) {
+      // Pasamos datos a la página de error para que muestre el resumen
+      navigate("/pago/error", {
+        state: {
+          attemptId: `ERR-${Date.now()}`,
+          mensaje: startsWithZeros
+            ? "Tu banco rechazó la transacción. Verifica los datos o intenta con otro medio de pago."
+            : "No pudimos procesar tu pago. Inténtalo nuevamente en unos minutos.",
+          customer: { nombre: form.nombre.trim(), apellido: "", correo: form.correo.trim() },
+          address: { calle: "", depto: "", region: "", comuna: "", instrucciones: "" }, // opcional, si luego agregas campos
+          items: carrito.map(t => ({
+            id: t.id,
+            nombre: t.nombre,
+            precio: t.precio || 0,
+            cantidad: t.cantidad || 1,
+            imagen: t.imagen
+          })),
+          total
+        }
+      });
+      return; // importante: NO limpiar carrito ni generar boleta
+    }
+
     // 1) Generar ID y armar boleta (sin IVA, sin promos)
     const orderId = "ORD-" + new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0,14);
     const receipt = {
@@ -81,7 +112,12 @@ export default function Pago() {
       numeroBoleta: "B-" + orderId.slice(-6),
       fechaEmision: new Date().toISOString(),
       emisor: { razonSocial: "Mil Sabores SPA", rut: "76.123.456-7" },
-      receptor: { nombre: form.nombre.trim(), email: form.correo.trim() },
+      receptor: {
+        nombre: form.nombre.trim(),
+        email: form.correo.trim(),
+        userId: isAuthenticated ? user?.id : null, // <-- invitado vs. usuario
+        guest: !isAuthenticated
+      },
       items: carrito.map(t => ({
         nombre: t.nombre,
         qty: t.cantidad || 1,
@@ -119,7 +155,14 @@ export default function Pago() {
 
   return (
     <div className="container py-5">
-      <h2 className="mb-4 text-center">Pago de tu Compra</h2>
+      <h2 className="mb-3 text-center">Pago de tu Compra</h2>
+
+      {/* Banner invitado */}
+      {!isAuthenticated && (
+        <div className="alert alert-info" role="alert">
+          Estás comprando como <strong>invitado</strong>. Si inicias sesión, podrás guardar tu historial de compras.
+        </div>
+      )}
 
       <p className="mb-4">
         Total a pagar: <strong>{formatCLP(total)}</strong> CLP
@@ -149,6 +192,9 @@ export default function Pago() {
             required
           />
           {errors.numero && <div className="invalid-feedback">{errors.numero}</div>}
+          <div className="form-text">
+            Tip prueba: usa una tarjeta que empiece con <code>0000</code> o agrega <code>?fail=1</code> a la URL para simular error.
+          </div>
         </div>
 
         <div className="mb-3">
