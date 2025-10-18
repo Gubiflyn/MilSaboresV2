@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadCarrito, saveCarrito } from '../utils/localstorageHelper';
 
-// 1️⃣ Creamos el contexto global
+// 1 Creamos el contexto global
 const CartContext = createContext();
 
-// 2️⃣ Hook personalizado para usar el contexto en cualquier componente
+// 2 Hook personalizado para usar el contexto en cualquier componente
 export const useCart = () => useContext(CartContext);
 
-// 3️⃣ Proveedor del carrito (envuelve toda la app)
+// 3️ Proveedor del carrito (envuelve toda la app)
 export const CartProvider = ({ children }) => {
   const [carrito, setCarrito] = useState([]);
 

@@ -266,10 +266,7 @@ export default function Pago() {
           {errors.numero && (
             <div className="invalid-feedback">{errors.numero}</div>
           )}
-          <div className="form-text">
-            Tip prueba: usa una tarjeta que empiece con <code>0000</code> o
-            agrega <code>?fail=1</code> a la URL para simular error.
-          </div>
+          
         </div>
 
         <div className="mb-3">
