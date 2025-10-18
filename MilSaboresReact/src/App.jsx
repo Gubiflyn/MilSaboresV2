@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import PagoError from "./pages/PagoError";
 
+
 // usamos el carrito desde el contexto
 import { useCart } from './context/CartContext';
 import { publicUrl } from './utils/publicUrl';
@@ -47,6 +48,8 @@ const App = () => {
           <Route
             path="/productos"
             element={<Productos agregarAlCarrito={agregarAlCarrito} />}
+            
+            
           />
           <Route
             path="/detalle/:codigo"
