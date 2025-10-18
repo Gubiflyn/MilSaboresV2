@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './pages/Navbar';
 import Home from './pages/Home';
@@ -10,45 +10,35 @@ import Configuración from './pages/Configuración';
 import Contacto from './pages/Contacto';
 import Noticias from './pages/Noticias';
 import Pago from './pages/Pago';
-import { loadCarrito, saveCarrito } from './utils/localstorageHelper';
+import Boleta from './pages/Boleta';
+
+// 🎯 usamos el carrito desde el contexto
+import { useCart } from './context/CartContext';
+import { publicUrl } from './utils/publicUrl';
 
 const App = () => {
-  const [carrito, setCarrito] = useState([]);
   const navigate = useNavigate();
+  const { carrito, add, clear, remove } = useCart();
 
-  useEffect(() => {
-    setCarrito(loadCarrito() || []);
-  }, []);
-
-  useEffect(() => {
-    saveCarrito(carrito);
-  }, [carrito]);
-
-  const agregarAlCarrito = (torta) => {
-    setCarrito((prev) => {
-      const existe = prev.find((item) => item.codigo === torta.codigo);
-      if (existe) {
-        return prev.map((item) =>
-          item.codigo === torta.codigo
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
-        );
-      }
-      return [...prev, { ...torta, cantidad: 1 }];
-    });
-  };
-
-  const vaciarCarrito = () => setCarrito([]);
-  const eliminarProducto = (codigo) =>
-    setCarrito((prev) => prev.filter((t) => t.codigo !== codigo));
+  // Mantengo estas funciones para no tocar otros componentes
+  const agregarAlCarrito = (torta) => add({ ...torta, cantidad: 1 });
+  const vaciarCarrito = () => clear();
+  const eliminarProducto = (codigo) => remove(codigo);
   const irAlPago = () => navigate('/pago');
 
   return (
     <>
+      {/* Puedes seguir pasando "carrito" al Navbar si aún lo usa por props */}
       <Navbar carrito={carrito} />
+
       <main style={{ minHeight: '70vh' }}>
         <Routes>
           <Route path="/" element={<Home />} />
+
+          {/* Boleta: ruta para ver boleta por orderId */}
+          <Route path="/boleta/:orderId" element={<Boleta />} />
+
+          {/* Productos / Detalle: OK si internamente usan useCart o reciben la prop */}
           <Route
             path="/productos"
             element={<Productos agregarAlCarrito={agregarAlCarrito} />}
@@ -57,6 +47,8 @@ const App = () => {
             path="/detalle/:codigo"
             element={<Detalle agregarAlCarrito={agregarAlCarrito} />}
           />
+
+          {/* Carrito: seguimos pasando props para evitar tocar ese componente ahora */}
           <Route
             path="/carrito"
             element={
@@ -68,34 +60,27 @@ const App = () => {
               />
             }
           />
+
+          {/* Otras páginas */}
           <Route path="/configuracion" element={<Configuración />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/blogs" element={<Noticias />} />
-          <Route
-            path="/pago"
-            element={<Pago carrito={carrito} vaciarCarrito={vaciarCarrito} />}
-          />
+
+          {/* Pago: tu Pago.jsx ya usa useCart; no necesita props */}
+          <Route path="/pago" element={<Pago />} />
         </Routes>
       </main>
 
-      {/* === MODAL CARRITO === */}
-      <div
-        className="modal fade"
-        id="carritoModal"
-        tabIndex="-1"
-        aria-hidden="true"
-      >
+      {/* === MODAL CARRITO (global) === */}
+      <div className="modal fade" id="carritoModal" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">🧁 Tu carrito</h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-              ></button>
+              <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
             </div>
+
             <div className="modal-body">
               {carrito.length === 0 ? (
                 <p className="text-center">Tu carrito está vacío.</p>
@@ -108,7 +93,7 @@ const App = () => {
                     >
                       <div className="d-flex align-items-center">
                         <img
-                          src={item.imagen}
+                          src={publicUrl(item.imagen)}
                           alt={item.nombre}
                           width="50"
                           height="50"
@@ -118,25 +103,21 @@ const App = () => {
                         <div>
                           <strong>{item.nombre}</strong>
                           <div className="small text-muted">
-                            x{item.cantidad} — $
-                            {item.precio.toLocaleString('es-CL')}
+                            x{item.cantidad} — ${ (item.precio || 0).toLocaleString('es-CL') }
                           </div>
                         </div>
                       </div>
                       <span className="fw-semibold">
-                        ${(item.precio * item.cantidad).toLocaleString('es-CL')}
+                        ${ ((item.precio || 0) * (item.cantidad || 1)).toLocaleString('es-CL') }
                       </span>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
+
             <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
                 Seguir comprando
               </button>
               <button
@@ -152,7 +133,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* === TOAST CONFIRMACIÓN === */}
+      {/* === TOAST CONFIRMACIÓN (global) === */}
       <div
         className="toast align-items-center text-bg-success border-0 position-fixed bottom-0 end-0 m-4"
         id="toastAgregado"

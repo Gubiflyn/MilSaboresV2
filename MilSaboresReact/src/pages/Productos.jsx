@@ -3,6 +3,7 @@ import Card from '../components/Card';
 import { saveLocalstorage, loadFromLocalstorage, deleteFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
 import { Modal, Toast } from 'bootstrap';
+import { useCart } from '../context/CartContext'; // 👈 nuevo import
 
 const categorias = [
   'Todas',
@@ -18,9 +19,10 @@ const categorias = [
 
 const LS_KEY = 'tortas_v3';
 
-const Productos = ({ agregarAlCarrito }) => {
+const Productos = () => {
   const [tortas, setTortas] = useState([]);
   const [categoria, setCategoria] = useState('Todas');
+  const { add } = useCart(); // 👈 usamos el hook
 
   useEffect(() => {
     deleteFromLocalstorage('tortas');
@@ -34,21 +36,13 @@ const Productos = ({ agregarAlCarrito }) => {
   }, []);
 
   const handleAgregar = (torta) => {
-    agregarAlCarrito({ ...torta, cantidad: 1 });
+    add({ ...torta, cantidad: 1 });
 
-    // Mostrar toast
     const toastEl = document.getElementById('toastAgregado');
-    if (toastEl) {
-      const toast = Toast.getOrCreateInstance(toastEl);
-      toast.show();
-    }
+    if (toastEl) Toast.getOrCreateInstance(toastEl).show();
 
-    // Mostrar modal
     const modalEl = document.getElementById('carritoModal');
-    if (modalEl) {
-      const modal = Modal.getOrCreateInstance(modalEl);
-      modal.show();
-    }
+    if (modalEl) Modal.getOrCreateInstance(modalEl).show();
   };
 
   const tortasFiltradas =
@@ -59,7 +53,6 @@ const Productos = ({ agregarAlCarrito }) => {
   return (
     <div className="container py-5">
       <h2 className="text-center mb-4">Nuestros Pasteles</h2>
-
       <div className="mb-4 text-center">
         <label htmlFor="categoryFilter" className="form-label fw-bold">
           Filtrar por Categoría:

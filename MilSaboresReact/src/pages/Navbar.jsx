@@ -4,9 +4,10 @@ import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
   const navigate = useNavigate();
-  const { totals } = useCart();
+  const { carrito } = useCart(); // ⬅ usamos carrito directamente
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-  const cantidadTotal = totals.count;
+
+  const cantidadTotal = carrito.reduce((sum, t) => sum + (t.cantidad || 1), 0);
 
   const handleLogout = () => {
     logout();
@@ -56,7 +57,7 @@ function Navbar() {
                 </li>
               )}
 
-              {/* Auth: si no está logueado, muestra Login / Register */}
+              {/* Auth */}
               {!isAuthenticated ? (
                 <>
                   <li className="nav-item">
@@ -67,7 +68,6 @@ function Navbar() {
                   </li>
                 </>
               ) : (
-                // Si está logueado: saludo + logout
                 <li className="nav-item dropdown">
                   <button
                     className="btn nav-link dropdown-toggle header__menu-link"

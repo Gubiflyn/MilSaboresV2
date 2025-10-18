@@ -1,59 +1,59 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
-import { loadCarrito, saveCarrito } from "../utils/localstorageHelper";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loadCarrito, saveCarrito } from '../utils/localstorageHelper';
 
-const CartCtx = createContext(null);
+// 1️⃣ Creamos el contexto global
+const CartContext = createContext();
 
-const initial = () => loadCarrito() || [];
+// 2️⃣ Hook personalizado para usar el contexto en cualquier componente
+export const useCart = () => useContext(CartContext);
 
-function reducer(state, action) {
-  switch (action.type) {
-    case "ADD": {
-      const t = action.item; // { codigo, nombre, precio, imagen, cantidad? }
-      const idx = state.findIndex(it => it.codigo === t.codigo);
-      if (idx >= 0) {
-        const next = [...state];
-        next[idx] = { ...next[idx], cantidad: (next[idx].cantidad || 1) + (t.cantidad || 1) };
-        return next;
-      }
-      return [...state, { ...t, cantidad: t.cantidad || 1 }];
-    }
-    case "SET_QTY": {
-      const { codigo, cantidad } = action;
-      if (cantidad <= 0) return state.filter(it => it.codigo !== codigo);
-      return state.map(it => it.codigo === codigo ? { ...it, cantidad } : it);
-    }
-    case "REMOVE":
-      return state.filter(it => it.codigo !== action.codigo);
-    case "CLEAR":
-      return [];
-    default:
-      return state;
-  }
-}
+// 3️⃣ Proveedor del carrito (envuelve toda la app)
+export const CartProvider = ({ children }) => {
+  const [carrito, setCarrito] = useState([]);
 
-export function CartProvider({ children }) {
-  const [carrito, dispatch] = useReducer(reducer, undefined, initial);
+  // Cargar carrito desde localStorage al iniciar
+  useEffect(() => {
+    const data = loadCarrito();
+    if (data) setCarrito(data);
+  }, []);
 
-  useEffect(() => { saveCarrito(carrito); }, [carrito]);
-
-  const totals = useMemo(() => {
-    const count = carrito.reduce((a, t) => a + (t.cantidad || 1), 0);
-    const subtotal = carrito.reduce((a, t) => a + (t.precio || 0) * (t.cantidad || 1), 0);
-    const iva = Math.round(subtotal * 0.19);
-    const total = subtotal + iva;
-    return { count, subtotal, iva, total };
+  // Guardar carrito cada vez que cambia
+  useEffect(() => {
+    saveCarrito(carrito);
   }, [carrito]);
 
-  const api = {
-    carrito,
-    totals,
-    add: (item) => dispatch({ type: "ADD", item }),
-    setQty: (codigo, cantidad) => dispatch({ type: "SET_QTY", codigo, cantidad }),
-    remove: (codigo) => dispatch({ type: "REMOVE", codigo }),
-    clear: () => dispatch({ type: "CLEAR" })
+  // Agregar producto al carrito
+  const add = (producto) => {
+    setCarrito((prev) => {
+      const existe = prev.find((item) => item.codigo === producto.codigo);
+      if (existe) {
+        return prev.map((item) =>
+          item.codigo === producto.codigo
+            ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
+            : item
+        );
+      }
+      return [...prev, { ...producto, cantidad: producto.cantidad || 1 }];
+    });
   };
 
-  return <CartCtx.Provider value={api}>{children}</CartCtx.Provider>;
-}
+  // Eliminar producto
+  const remove = (codigo) =>
+    setCarrito((prev) => prev.filter((item) => item.codigo !== codigo));
 
-export const useCart = () => useContext(CartCtx);
+  // Vaciar carrito
+  const clear = () => setCarrito([]);
+
+  // Total calculado (por conveniencia)
+  const total = carrito.reduce(
+    (sum, item) => sum + item.precio * (item.cantidad || 1),
+    0
+  );
+
+  // Exportamos todo en el Provider
+  return (
+    <CartContext.Provider value={{ carrito, add, remove, clear, total }}>
+      {children}
+    </CartContext.Provider>
+  );
+};
