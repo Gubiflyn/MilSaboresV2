@@ -11,6 +11,8 @@ import Contacto from './pages/Contacto';
 import Noticias from './pages/Noticias';
 import Pago from './pages/Pago';
 import Boleta from './pages/Boleta';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 // 🎯 usamos el carrito desde el contexto
 import { useCart } from './context/CartContext';
@@ -28,17 +30,20 @@ const App = () => {
 
   return (
     <>
-      {/* Puedes seguir pasando "carrito" al Navbar si aún lo usa por props */}
       <Navbar carrito={carrito} />
 
       <main style={{ minHeight: '70vh' }}>
         <Routes>
           <Route path="/" element={<Home />} />
 
+          {/* Autenticación */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
           {/* Boleta: ruta para ver boleta por orderId */}
           <Route path="/boleta/:orderId" element={<Boleta />} />
 
-          {/* Productos / Detalle: OK si internamente usan useCart o reciben la prop */}
+          {/* Productos / Detalle */}
           <Route
             path="/productos"
             element={<Productos agregarAlCarrito={agregarAlCarrito} />}
@@ -48,7 +53,7 @@ const App = () => {
             element={<Detalle agregarAlCarrito={agregarAlCarrito} />}
           />
 
-          {/* Carrito: seguimos pasando props para evitar tocar ese componente ahora */}
+          {/* Carrito */}
           <Route
             path="/carrito"
             element={
@@ -67,7 +72,7 @@ const App = () => {
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/blogs" element={<Noticias />} />
 
-          {/* Pago: tu Pago.jsx ya usa useCart; no necesita props */}
+          {/* Pago */}
           <Route path="/pago" element={<Pago />} />
         </Routes>
       </main>
