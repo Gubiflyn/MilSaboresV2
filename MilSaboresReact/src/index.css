@@ -218,55 +218,69 @@ h1, h2, h3, h4, h5, h6,
 /* ========================================================================== */
 /* SECCIÓN BLOGS / NOTICIAS (noticias.html, index.html) */
 /* ========================================================================== */
-.blogs-section {
-    background-color: rgba(255, 214, 175, 0.2);
+
+/* Colores de la marca Mil Sabores */
+:root {
+  --page-bg: #fff3e0;   /* Fondo crema claro del logo */
+  --title-color: #8b4513; /* Marrón del texto "Mil Sabores" */
 }
 
-.blog-card {
-    border: 1px solid var(--color-text-secondary);
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+/* Fondo general de la página de noticias */
+.noticias-page {
+  background-color: var(--page-bg);
 }
 
-.blog-card:hover {
-    transform: translateY(-5px);
+/* Título principal "Noticias y blogs" */
+.titulo-noticias {
+  color: var(--title-color);
+  font-family: "Pacifico", cursive; /* misma fuente del logo */
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
-.blog-card__image {
-    height: 200px;
-    object-fit: cover;
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
+/* Utilidades para imágenes responsivas sin distorsión */
+.object-fit-cover {
+  object-fit: cover;
 }
 
-.blog-card__title {
-    font-family: var(--font-heading);
-    font-size: 1.5rem;
+/* Ratio helper para md (cuadrada-ish en desktop) */
+@media (min-width: 768px) {
+  .ratio-md-4x3 {
+    aspect-ratio: 4 / 3;
+  }
 }
 
-.blog-card__link {
-    color: var(--color-accent);
-    font-weight: 700;
-    text-decoration: none;
-    transition: color 0.3s ease;
+/* ===== Modal custom (ligero y sin depender del JS de Bootstrap) ===== */
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 18, 21, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 1050;
+  animation: fadeIn 120ms ease-out;
 }
 
-.blog-card__link:hover {
-    color: var(--color-primary);
+.modal-card {
+  width: min(900px, 100%);
+  max-height: 86vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Noticias personalizadas (noticias.html) */
-.noticia-titulo {
-    font-family: var(--font-heading);
-    font-size: 2rem;
-    color: var(--color-primary);
+.modal-body-custom {
+  padding: 16px 20px 24px;
+  overflow: auto;
 }
-.noticia-parrafo {
-    font-family: var(--font-body);
-    font-size: 1.1rem;
-    color: var(--color-text-main);
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
+
 
 /* ========================================================================== */
 /* SECCIÓN CONTACTO (contacto.html) */

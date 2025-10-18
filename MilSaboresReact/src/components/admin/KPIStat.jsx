@@ -1,4 +1,3 @@
-// src/components/admin/KPIStat.jsx
 import React from "react";
 
 /**
