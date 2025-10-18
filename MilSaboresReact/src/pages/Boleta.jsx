@@ -1,117 +1,151 @@
-import React, { useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
-const formatCLP = (n) => (n || 0).toLocaleString("es-CL");
+const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
 
 export default function Boleta() {
   const { orderId } = useParams();
+  const navigate = useNavigate();
+  const [receipt, setReceipt] = useState(null);
 
-  const receipt = useMemo(() => {
+  useEffect(() => {
     try {
       const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
-      return map[orderId] || null;
+      setReceipt(map?.[orderId] || null);
     } catch {
-      return null;
+      setReceipt(null);
     }
   }, [orderId]);
 
-  if (!receipt) {
+  const notFound = !receipt;
+
+  const totales = useMemo(() => {
+    if (!receipt) return { subtotal: 0, descuento: 0, total: 0 };
+    return {
+      subtotal: receipt.subtotal ?? 0,
+      descuento: receipt.descuento ?? 0,
+      total: receipt.total ?? 0,
+    };
+  }, [receipt]);
+
+  const handlePrint = () => window.print();
+  const handleVolver = () => navigate("/");
+
+  if (notFound) {
     return (
-      <div className="container py-5">
-        <h2 className="mb-3">Boleta</h2>
-        <div className="alert alert-warning">
-          No encontré una boleta con el id <strong>{orderId}</strong>.
-        </div>
-        <Link to="/" className="btn btn-primary">Volver al inicio</Link>
-      </div>
+      <section className="container py-5 text-center">
+        <h2>Boleta no encontrada</h2>
+        <p className="text-muted">No se encontró la boleta para el id: <code>{orderId}</code>.</p>
+        <button className="btn btn-primary mt-3" onClick={handleVolver}>Volver al inicio</button>
+      </section>
     );
   }
 
-  const { emisor, receptor, items, subtotal, descuento, total, numeroBoleta, fechaEmision, notasPromo } = receipt;
-
-  const onPrint = () => window.print();
-
   return (
-    <div className="container py-5">
-      <div style={{maxWidth: 860, margin: "0 auto", background: "#fff"}} className="p-4 border rounded">
-        <div className="d-flex justify-content-between align-items-start">
-          <div>
-            <h2 className="mb-1">Boleta #{numeroBoleta}</h2>
-            <div className="text-muted">Orden: {receipt.orderId}</div>
+    <section className="container py-4">
+      <div className="card shadow-sm">
+        <div className="card-body">
+
+          {/* Encabezado */}
+          <div className="d-flex flex-wrap justify-content-between align-items-center">
+            <div className="mb-2">
+              <h4 className="mb-0">Boleta electrónica</h4>
+              <small className="text-muted">
+                N° {receipt.numeroBoleta} · Orden {receipt.orderId}
+              </small>
+            </div>
+            <div className="text-end mb-2">
+              <div className="fw-semibold">{receipt.emisor?.razonSocial || "Mil Sabores SPA"}</div>
+              <div className="text-muted">RUT: {receipt.emisor?.rut || "76.123.456-7"}</div>
+              <div className="text-muted">
+                Fecha: {new Date(receipt.fechaEmision).toLocaleString("es-CL")}
+              </div>
+            </div>
           </div>
-          <div className="text-end">
-            <div><strong>{emisor?.razonSocial || "Mil Sabores SPA"}</strong></div>
-            <div>RUT: {emisor?.rut || "76.123.456-7"}</div>
-            <div>Emitida: {new Date(fechaEmision).toLocaleString("es-CL")}</div>
+
+          <hr />
+
+          {/* Receptor */}
+          <div className="row g-3 mb-3">
+            <div className="col-md-6">
+              <h6 className="mb-2">Datos del cliente</h6>
+              <div className="small">
+                <div><strong>Cliente:</strong> {receipt.receptor?.guest ? "Invitado" : (receipt.receptor?.nombre || "-")}</div>
+                <div><strong>Correo:</strong> {receipt.receptor?.email || "-"}</div>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <h6 className="mb-2">Moneda</h6>
+              <div className="small"> {receipt.moneda || "CLP"} </div>
+            </div>
           </div>
-        </div>
 
-        <hr />
-
-        <div className="mb-3">
-          <strong>Cliente:</strong> {receptor?.nombre || "Cliente"} {receptor?.rut ? `— RUT: ${receptor.rut}` : ""}<br />
-          {receptor?.email ? <><strong>Email:</strong> {receptor.email}</> : null}
-        </div>
-
-        {Array.isArray(items) && items.length > 0 && (
-          <div className="table-responsive">
-            <table className="table align-middle">
+          {/* Detalle */}
+          <div className="table-responsive mb-3">
+            <table className="table table-sm align-middle">
               <thead>
                 <tr>
                   <th>Producto</th>
-                  <th className="text-end">Cant.</th>
-                  <th className="text-end">Precio</th>
-                  <th className="text-end">Total</th>
+                  <th className="text-center" style={{width: 90}}>Cant.</th>
+                  <th className="text-end" style={{width: 140}}>Precio</th>
+                  <th className="text-end" style={{width: 160}}>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((it, idx) => (
-                  <tr key={idx}>
-                    <td>{it.nombre}</td>
-                    <td className="text-end">{it.qty}</td>
-                    <td className="text-end">${formatCLP(it.precioUnit)}</td>
-                    <td className="text-end">${formatCLP(it.total)}</td>
+                {(receipt.items || []).map((it, i) => (
+                  <tr key={i}>
+                    <td>
+                      {it.nombre}
+                      {it.mensaje && (
+                        <div className="small text-muted">“{it.mensaje}”</div>
+                      )}
+                    </td>
+                    <td className="text-center">{it.qty}</td>
+                    <td className="text-end">${CLP(it.precioUnit)}</td>
+                    <td className="text-end">${CLP(it.total)}</td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="text-end">Subtotal</td>
+                  <td className="text-end">${CLP(totales.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={3} className="text-end">Descuento</td>
+                  <td className="text-end">-${CLP(totales.descuento)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={3} className="text-end fw-semibold">Total</td>
+                  <td className="text-end fw-semibold">${CLP(totales.total)}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
-        )}
 
-        <div className="d-flex justify-content-end">
-          <div style={{minWidth: 260}}>
-            <div className="d-flex justify-content-between">
-              <span>Subtotal</span>
-              <span>${formatCLP(subtotal)}</span>
+          {/* Notas de promoción */}
+          {receipt.notasPromo?.detalles?.length > 0 && (
+            <div className="mb-3">
+              <h6>Promociones aplicadas</h6>
+              <ul className="small text-muted mb-0">
+                {receipt.notasPromo.detalles.map((d, idx) => (
+                  <li key={idx}>{d}</li>
+                ))}
+              </ul>
             </div>
-            {descuento > 0 && (
-              <div className="d-flex justify-content-between text-success">
-                <span>Descuento</span>
-                <span>- ${formatCLP(descuento)}</span>
-              </div>
-            )}
-            <hr className="my-2" />
-            <div className="d-flex justify-content-between fw-bold">
-              <span>Total</span>
-              <span>${formatCLP(total)}</span>
-            </div>
+          )}
+
+          {/* Acciones */}
+          <div className="d-flex gap-2 justify-content-end">
+            <button className="btn btn-outline-secondary" onClick={handleVolver}>
+              Volver al inicio
+            </button>
+            <button className="btn btn-primary" onClick={handlePrint}>
+              Imprimir / Guardar PDF
+            </button>
           </div>
         </div>
-
-        {/* Etiquetas de promociones aplicadas (si existen) */}
-        <div className="mt-3">
-          {notasPromo?.ageDiscount && <span className="badge text-bg-success me-2">50% +50 años</span>}
-          {notasPromo?.codeApplied && !notasPromo?.ageDiscount && (
-            <span className="badge text-bg-info me-2">Código: {String(notasPromo.codeApplied).toUpperCase()}</span>
-          )}
-          {notasPromo?.duocBirthday && <span className="badge text-bg-warning">Torta gratis cumpleaños DUOC</span>}
-        </div>
-
-        <div className="d-flex gap-2 mt-4">
-          <button className="btn btn-primary" onClick={onPrint}>Imprimir / Guardar PDF</button>
-          <Link to="/" className="btn btn-outline-secondary">Volver al inicio</Link>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }

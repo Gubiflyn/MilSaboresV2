@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { loadFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
@@ -9,6 +9,7 @@ const Detalle = () => {
   const { codigo } = useParams();
   const [torta, setTorta] = useState({});
   const [cantidad, setCantidad] = useState(1);
+  const [mensaje, setMensaje] = useState('');
   const { add } = useCart();
 
   useEffect(() => {
@@ -18,11 +19,19 @@ const Detalle = () => {
       tortasJson;
     const encontrada = tortasLS.find((t) => String(t.codigo) === String(codigo));
     setTorta(encontrada || {});
+    setCantidad(1);
+    setMensaje('');
   }, [codigo]);
+
+  const esTorta = useMemo(() => {
+    const n = (torta?.nombre || '').toLowerCase();
+    const c = (torta?.categoria || '').toLowerCase();
+    return n.includes('torta') || c.includes('torta');
+  }, [torta]);
 
   const handleAgregar = () => {
     if (cantidad > 0 && torta?.codigo) {
-      add({ ...torta, cantidad });
+      add({ ...torta, cantidad, mensaje: esTorta ? (mensaje || '') : undefined });
     }
   };
 
@@ -59,7 +68,7 @@ const Detalle = () => {
           </p>
 
           <h4 className="fw-semibold mt-3" style={{ color: '#8B4513' }}>
-            ${torta.precio.toLocaleString('es-CL')} CLP
+            ${(torta.precio || 0).toLocaleString('es-CL')} CLP
           </h4>
 
           <div className="d-flex align-items-center mt-3 mb-3">
@@ -68,10 +77,23 @@ const Detalle = () => {
               type="number"
               min="1"
               value={cantidad}
-              onChange={(e) => setCantidad(Number(e.target.value))}
+              onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
               className="form-control w-25"
             />
           </div>
+
+          {esTorta && (
+            <div className="mb-3">
+              <label className="form-label">Mensaje en la torta (opcional)</label>
+              <input
+                className="form-control"
+                value={mensaje}
+                onChange={(e) => setMensaje(e.target.value.slice(0, 50))}
+                placeholder="Ej: ¡Feliz Cumple, Nico!"
+              />
+              <div className="form-text">{mensaje.length}/50</div>
+            </div>
+          )}
 
           <button className="btn btn-success px-4" onClick={handleAgregar}>
             <i className="fas fa-cart-plus me-2"></i> Agregar al carrito

@@ -22,16 +22,20 @@ export const CartProvider = ({ children }) => {
     saveCarrito(carrito);
   }, [carrito]);
 
-  // Agregar producto al carrito
+  // Agregar producto al carrito (respeta mensaje si viene, suma cantidad)
   const add = (producto) => {
     setCarrito((prev) => {
-      const existe = prev.find((item) => item.codigo === producto.codigo);
-      if (existe) {
-        return prev.map((item) =>
-          item.codigo === producto.codigo
-            ? { ...item, cantidad: item.cantidad + (producto.cantidad || 1) }
-            : item
-        );
+      const idx = prev.findIndex((it) => it.codigo === producto.codigo);
+      if (idx >= 0) {
+        const copy = [...prev];
+        const prevItem = copy[idx];
+        copy[idx] = {
+          ...prevItem,
+          cantidad: (prevItem.cantidad || 1) + (producto.cantidad || 1),
+          mensaje:
+            producto.mensaje !== undefined ? producto.mensaje : prevItem.mensaje
+        };
+        return copy;
       }
       return [...prev, { ...producto, cantidad: producto.cantidad || 1 }];
     });
@@ -44,15 +48,36 @@ export const CartProvider = ({ children }) => {
   // Vaciar carrito
   const clear = () => setCarrito([]);
 
+  // Establecer cantidad exacta (mínimo 1)
+  const setQty = (codigo, qty) => {
+    const q = Math.max(1, parseInt(qty, 10) || 1);
+    setCarrito((prev) =>
+      prev.map((it) =>
+        it.codigo === codigo ? { ...it, cantidad: q } : it
+      )
+    );
+  };
+
+  // Actualizar solo el mensaje personalizado
+  const updateMessage = (codigo, mensaje) => {
+    setCarrito((prev) =>
+      prev.map((it) =>
+        it.codigo === codigo ? { ...it, mensaje: (mensaje || '').slice(0, 50) } : it
+      )
+    );
+  };
+
   // Total calculado (por conveniencia)
   const total = carrito.reduce(
-    (sum, item) => sum + item.precio * (item.cantidad || 1),
+    (sum, item) => sum + (item.precio || 0) * (item.cantidad || 1),
     0
   );
 
   // Exportamos todo en el Provider
   return (
-    <CartContext.Provider value={{ carrito, add, remove, clear, total }}>
+    <CartContext.Provider
+      value={{ carrito, add, remove, clear, setQty, updateMessage, total }}
+    >
       {children}
     </CartContext.Provider>
   );
