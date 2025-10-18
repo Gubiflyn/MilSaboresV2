@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import { saveLocalstorage, loadFromLocalstorage } from '../utils/localstorageHelper';
+import { saveLocalstorage, loadFromLocalstorage, deleteFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
 import { useCart } from '../context/CartContext';
 
@@ -16,16 +16,22 @@ const categorias = [
   'Tortas Especiales',
 ];
 
+// Versiona la clave para limpiar datos antiguos con rutas malas
+const LS_KEY = 'tortas_v2';
+
 const Productos = () => {
   const [tortas, setTortas] = useState([]);
   const [categoria, setCategoria] = useState('Todas');
   const { add } = useCart();
 
   useEffect(() => {
-    const guardadas = loadFromLocalstorage('tortas');
+    // Limpia clave vieja si existiera
+    deleteFromLocalstorage('tortas');
+
+    const guardadas = loadFromLocalstorage(LS_KEY);
     if (!guardadas || guardadas.length === 0) {
+      saveLocalstorage(LS_KEY, tortasJson);
       setTortas(tortasJson);
-      saveLocalstorage('tortas', tortasJson);
     } else {
       setTortas(guardadas);
     }
