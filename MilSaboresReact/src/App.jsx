@@ -14,7 +14,7 @@ import Boleta from './pages/Boleta';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-// 🎯 usamos el carrito desde el contexto
+// usamos el carrito desde el contexto
 import { useCart } from './context/CartContext';
 import { publicUrl } from './utils/publicUrl';
 
@@ -22,7 +22,6 @@ const App = () => {
   const navigate = useNavigate();
   const { carrito, add, clear, remove } = useCart();
 
-  // Mantengo estas funciones para no tocar otros componentes
   const agregarAlCarrito = (torta) => add({ ...torta, cantidad: 1 });
   const vaciarCarrito = () => clear();
   const eliminarProducto = (codigo) => remove(codigo);
