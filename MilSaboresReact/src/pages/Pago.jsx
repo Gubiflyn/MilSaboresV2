@@ -5,17 +5,36 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { applyPromotions } from "../utils/promotions";
 
-const formatCLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
+const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function Pago() {
   const { carrito, clear } = useCart();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Total base SIN IVA ni promociones (compat con tu HTML antiguo)
-  const subtotalBase = useMemo(
+  // Totales base a partir del carrito (con precios ya aplicados por detalle/oferta)
+  const subtotalItems = useMemo(
     () => carrito.reduce((a, t) => a + (t.precio || 0) * (t.cantidad || 1), 0),
     [carrito]
+  );
+
+  // Ahorro por ofertas de producto (requiere precioOriginal en el item si vino desde Home->Detalle con oferta)
+  const ahorroOfertas = useMemo(
+    () =>
+      carrito.reduce((acc, t) => {
+        const po = Number(t.precioOriginal || 0);
+        const p = Number(t.precio || 0);
+        const q = Number(t.cantidad || 1);
+        if (po > p) return acc + (po - p) * q;
+        return acc;
+      }, 0),
+    [carrito]
+  );
+
+  // “Subtotal precio normal estimado” = lo que costaría sin ofertas de producto
+  const subtotalNormalEstimado = useMemo(
+    () => subtotalItems + ahorroOfertas,
+    [subtotalItems, ahorroOfertas]
   );
 
   // Fechas válidas (mañana a +30 días)
@@ -30,7 +49,7 @@ export default function Pago() {
     setDateLimits({ min: toISO(manana), max: toISO(max) });
   }, []);
 
-  // Form
+  // Formulario
   const [form, setForm] = useState({
     nombre: "",
     numero: "",
@@ -39,15 +58,11 @@ export default function Pago() {
     fechaEntrega: "",
     correo: ""
   });
-
-  // Errores simples
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const e = {};
-
     if (!form.nombre.trim()) e.nombre = "Ingresa el nombre en la tarjeta.";
-
     if (!/^\d{16}$/.test(form.numero)) e.numero = "Número de 16 dígitos.";
 
     // Exp MM/AA y no vencida
@@ -68,17 +83,19 @@ export default function Pago() {
       !form.fechaEntrega ||
       form.fechaEntrega < dateLimits.min ||
       form.fechaEntrega > dateLimits.max
-    )
+    ) {
       e.fechaEntrega = "Selecciona una fecha válida.";
+    }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim()))
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
       e.correo = "Correo electrónico inválido.";
+    }
 
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // Previsualización de promos según correo + carrito
+  // Promos/cupones (sobre el subtotal actual de items)
   const promoPreview = useMemo(
     () =>
       applyPromotions({
@@ -92,15 +109,13 @@ export default function Pago() {
     ev.preventDefault();
     if (!validate()) return;
 
-    // Simulación de pago fallido:
-    //  - Si la tarjeta empieza con "0000" o si pasas ?fail=1 en la URL, falla.
+    // Simulación de pago fallido (tarjeta "0000" o ?fail=1)
     const urlParams = new URLSearchParams(window.location.search);
     const forceFail = urlParams.get("fail") === "1";
     const startsWithZeros = form.numero.startsWith("0000");
     const shouldFail = forceFail || startsWithZeros;
 
     if (shouldFail) {
-      // Pasamos datos a la página de error para que muestre el resumen
       navigate("/pago/error", {
         state: {
           attemptId: `ERR-${Date.now()}`,
@@ -118,7 +133,7 @@ export default function Pago() {
             region: "",
             comuna: "",
             instrucciones: ""
-          }, // opcional, si luego agregas campos
+          },
           items: carrito.map((t) => ({
             id: t.id,
             nombre: t.nombre,
@@ -126,22 +141,21 @@ export default function Pago() {
             cantidad: t.cantidad || 1,
             imagen: t.imagen
           })),
-          total: promoPreview.total // mostramos el total con promo pre-aplicada
+          total: promoPreview.total
         }
       });
-      return; // importante: NO limpiar carrito ni generar boleta
+      return;
     }
 
-    // Aplicar promociones reales al momento de generar la boleta
+    // Aplicar promociones reales al confirmar
     const promo = applyPromotions({
       items: carrito,
       customerEmail: form.correo.trim()
     });
 
-    // 1) Generar ID y armar boleta (usando promo aplicada)
+    // Generar boleta
     const orderId =
-      "ORD-" +
-      new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+      "ORD-" + new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
 
     const receipt = {
       orderId,
@@ -151,7 +165,7 @@ export default function Pago() {
       receptor: {
         nombre: form.nombre.trim(),
         email: form.correo.trim(),
-        userId: isAuthenticated ? user?.id : null, // invitado vs usuario
+        userId: isAuthenticated ? user?.id : null,
         guest: !isAuthenticated
       },
       items: carrito.map((t) => ({
@@ -159,33 +173,31 @@ export default function Pago() {
         qty: t.cantidad || 1,
         precioUnit: t.precio || 0,
         total: (t.precio || 0) * (t.cantidad || 1),
-         mensaje: t.mensaje || ""
+        mensaje: t.mensaje || ""
       })),
-
-      // montos con promos
+      // Montos (ya incluyen ofertas en precio de cada item)
       subtotal: promo.subtotal,
       descuento: promo.descuento,
       total: promo.total,
       moneda: "CLP",
-
       notasPromo: {
-        porcentajeAplicado: promo.breakdown.porcentaje, // 0 | 0.1 | 0.5
-        descuentoPorcentaje: promo.breakdown.percDiscount, // $
-        descuentoCumpleDuoc: promo.breakdown.birthdayDiscount, // $
-        detalles: promo.breakdown.detalles // textos descriptivos
+        porcentajeAplicado: promo.breakdown.porcentaje,
+        descuentoPorcentaje: promo.breakdown.percDiscount,
+        descuentoCumpleDuoc: promo.breakdown.birthdayDiscount,
+        detalles: promo.breakdown.detalles
       }
     };
 
-    // 2) Guardar en localStorage (receipts_v1 como mapa por id)
+    // Guardar boleta
     const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
     map[orderId] = receipt;
     localStorage.setItem("receipts_v1", JSON.stringify(map));
 
-    // 3) Limpiar carrito y compat antiguo
+    // Limpiar
     clear();
     localStorage.removeItem("totalCompra");
 
-    // 4) Navegar a la boleta
+    // Ir a boleta
     navigate(`/boleta/${orderId}`);
   };
 
@@ -200,9 +212,8 @@ export default function Pago() {
 
   return (
     <div className="container py-5">
-      <h2 className="mb-3 text-center">Pago de tu Compra</h2>
+      <h2 className="mb-4 text-center">Pago de tu Compra</h2>
 
-      {/* Banner invitado */}
       {!isAuthenticated && (
         <div className="alert alert-info" role="alert">
           Estás comprando como <strong>invitado</strong>. Si inicias sesión,
@@ -210,29 +221,49 @@ export default function Pago() {
         </div>
       )}
 
-      {/* Previsualización de totales con promos (según correo ingresado) */}
-      <div className="mb-3">
-        <div>
-          Subtotal: <strong>${promoPreview.subtotal.toLocaleString("es-CL")}</strong>
+      {/* Resumen de montos con desglose claro */}
+      <div className="card shadow-sm mb-4">
+        <div className="card-body">
+          <h5 className="card-title mb-3">Resumen</h5>
+
+          <div className="d-flex justify-content-between">
+            <span>Subtotal precio normal (estimado)</span>
+            <span>${CLP(subtotalNormalEstimado)}</span>
+          </div>
+
+          <div className="d-flex justify-content-between text-success">
+            <span>Ahorro por ofertas de producto</span>
+            <span>-${CLP(ahorroOfertas)}</span>
+          </div>
+
+          <hr className="my-2" />
+
+          <div className="d-flex justify-content-between">
+            <span>Subtotal después de ofertas</span>
+            <span>${CLP(subtotalItems)}</span>
+          </div>
+
+          <div className="d-flex justify-content-between text-success">
+            <span>Descuentos adicionales (promociones/cupones)</span>
+            <span>-${CLP(promoPreview.descuento)}</span>
+          </div>
+
+          <div className="d-flex justify-content-between fw-semibold fs-5 mt-2">
+            <span>Total a pagar</span>
+            <span>${CLP(promoPreview.total)}</span>
+          </div>
+
+          {promoPreview.breakdown.detalles.length > 0 && (
+            <ul className="small text-muted mt-2 mb-0">
+              {promoPreview.breakdown.detalles.map((d, i) => (
+                <li key={i}>{d}</li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div>
-          Descuento:{" "}
-          <strong>-$
-            {promoPreview.descuento.toLocaleString("es-CL")}
-          </strong>
-        </div>
-        <div>
-          Total: <strong>${promoPreview.total.toLocaleString("es-CL")}</strong>
-        </div>
-        {promoPreview.breakdown.detalles.length > 0 && (
-          <ul className="small text-muted mt-2">
-            {promoPreview.breakdown.detalles.map((d, i) => (
-              <li key={i}>{d}</li>
-            ))}
-          </ul>
-        )}
       </div>
 
+      {/* Formulario de pago */}
       <form onSubmit={onSubmit} noValidate>
         <div className="mb-3">
           <label className="form-label">Nombre en la tarjeta</label>
@@ -266,24 +297,21 @@ export default function Pago() {
           {errors.numero && (
             <div className="invalid-feedback">{errors.numero}</div>
           )}
-          
         </div>
 
         <div className="mb-3">
           <label className="form-label">Fecha de expiración</label>
           <input
-            className={`form-control ${
-              errors.expiracion ? "is-invalid" : ""
-            }`}
+            className={`form-control ${errors.expiracion ? "is-invalid" : ""}`}
             value={form.expiracion}
             onChange={(e) => setForm({ ...form, expiracion: e.target.value })}
             placeholder="MM/AA"
             required
           />
+          {errors.expiracion && (
+            <div className="invalid-feedback d-block">{errors.expiracion}</div>
+          )}
         </div>
-        {errors.expiracion && (
-          <div className="invalid-feedback d-block">{errors.expiracion}</div>
-        )}
         <div className="form-text">Ej: 08/27 (mes/año)</div>
 
         <div className="mb-3">
@@ -309,13 +337,9 @@ export default function Pago() {
           <label className="form-label">Fecha de entrega</label>
           <input
             type="date"
-            className={`form-control ${
-              errors.fechaEntrega ? "is-invalid" : ""
-            }`}
+            className={`form-control ${errors.fechaEntrega ? "is-invalid" : ""}`}
             value={form.fechaEntrega}
-            onChange={(e) =>
-              setForm({ ...form, fechaEntrega: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, fechaEntrega: e.target.value })}
             min={dateLimits.min}
             max={dateLimits.max}
             required
