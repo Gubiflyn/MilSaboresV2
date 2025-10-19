@@ -282,22 +282,56 @@ h1, h2, h3, h4, h5, h6,
 }
 
 
-/* ========================================================================== */
-/* SECCIÓN CONTACTO (contacto.html) */
-/* ========================================================================== */
-.contact-section {
-    background-color: rgba(255, 214, 175, 0.3);
+/* ================================
+   CONTACTO (estética + footer fijo)
+   ================================ */
+
+.contacto-page {
+  background: var(--color-background); /* = #FFF5E1 */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
-.contact-section__info-title,
-.contact-section__form-title {
-    font-family: var(--font-heading);
-    color: var(--color-primary);
+/* Hero con suave gradiente */
+.contacto-hero {
+  background: var(--color-background); /* mismo crema */
+  border-bottom: 0;
 }
 
-.contact-section__label {
-    font-weight: 700;
+
+/* Tarjetas */
+.contacto-card .form-label { font-weight: 600; }
+.contacto-card .form-control {
+  border-radius: 0.75rem;
 }
+.contacto-card .btn { border-radius: 0.75rem; }
+
+/* Lista de contacto */
+.contacto-list .contacto-bullet {
+  width: 2rem; height: 2rem; line-height: 2rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+
+/* Cinta de confianza */
+.contacto-trust {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.06);
+  box-shadow: 0 4px 16px rgba(0,0,0,.05);
+  border-radius: 1rem;
+}
+
+/* Utilidad para imágenes sin distorsión (si usas logos/iconos) */
+.object-fit-cover { object-fit: cover; }
+
+/* Footer fijo al fondo del viewport (si tu Footer está fuera del main) */
+body, #root { min-height: 100dvh; }
+#root { display: flex; flex-direction: column; }
+main { flex: 1 0 auto; }       /* el contenido empuja el footer hacia abajo */
+footer { margin-top: auto; }   /* el footer se queda abajo */
+
 
 /* ========================================================================== */
 /* FOOTER (Usado en todos los HTML) */
@@ -479,4 +513,14 @@ h1, h2, h3, h4, h5, h6,
   min-width: 0 !important;
   width: auto !important;
   border-radius: 30px !important;
+}
+
+/* ✅ AÑADE: títulos marrón solo dentro de Contacto */
+.contacto-page h1,
+.contacto-page h2,
+.contacto-page h3,
+.contacto-page h4,
+.contacto-page h5,
+.contacto-page h6 {
+  color: var(--color-primary); /* = #8B4513 */
 }
