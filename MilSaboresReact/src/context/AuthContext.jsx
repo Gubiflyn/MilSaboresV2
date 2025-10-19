@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import seedUsers from "../data/usuarios.json";
 
 // helpers localStorage
-const LS_TOKEN   = "token";
-const LS_USER    = "usuario";
-const LS_PROFILES= "perfiles";
+const LS_TOKEN = "token";
+const LS_USER = "usuario";
+const LS_PROFILES = "perfiles";
 
 // genera un “token” simple con expiración de 30 min (como tu login.js)
 function makeToken(payload) {
@@ -15,11 +15,13 @@ function readToken(raw) {
   try { return JSON.parse(atob(raw)); } catch { return null; }
 }
 
-const AuthCtx = createContext(null);
+// Por seguridad devolvemos un objeto por defecto para evitar destructuring null si
+// algún componente se monta fuera del Provider (evita el crash 'cannot destructure user of null')
+const AuthCtx = createContext({});
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);         // usuario actual (sin password)
-  const [token, setToken] = useState(null);       // token raw
+  const [user, setUser] = useState(null);   // usuario actual (sin password)
+  const [token, setToken] = useState(null); // token raw
 
   // Semilla de usuarios fijos (una sola vez)
   useEffect(() => {
@@ -55,14 +57,16 @@ export function AuthProvider({ children }) {
     // Unifica seed + perfiles (sin duplicar)
     const users = [
       ...seedUsers,
-      ...perfiles.filter(u => !seedUsers.some(f => f.email === (u.email || u.correo))).map(u => ({
-        email: u.email || u.correo,
-        password: u.password || u.contrasena,
-        rol: u.rol || "cliente",
-        nombre: u.nombre || (u.nombres ? `${u.nombres} ${u.apellidos || ""}`.trim() : "Cliente"),
-        fechaNacimiento: u.fechaNacimiento || null,
-        beneficio: u.beneficio || null,
-      }))
+      ...perfiles
+        .filter(u => !seedUsers.some(f => f.email === (u.email || u.correo)))
+        .map(u => ({
+          email: u.email || u.correo,
+          password: u.password || u.contrasena,
+          rol: u.rol || "cliente",
+          nombre: u.nombre || (u.nombres ? `${u.nombres} ${u.apellidos || ""}`.trim() : "Cliente"),
+          fechaNacimiento: u.fechaNacimiento || null,
+          beneficio: u.beneficio || null,
+        }))
     ];
 
     const found = users.find(u => u.email === email && u.password === password);
@@ -85,6 +89,8 @@ export function AuthProvider({ children }) {
 
     setToken(tk);
     setUser(userView);
+
+    console.debug("Auth.login ->", { user: userView, token: tk });
     return { ok: true };
   };
 
@@ -94,15 +100,22 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(LS_USER);
     setToken(null);
     setUser(null);
+    console.debug("Auth.logout -> sesión cerrada");
   };
 
   // Datos derivados
   const isAuthenticated = !!user && !!token && readToken(token)?.exp > Date.now();
   const isAdmin = user?.rol === "admin";
 
+  // Incluimos `token` en el value para forzar re-render en consumidores cuando cambia
   const value = useMemo(() => ({
-    user, isAuthenticated, isAdmin, login, logout
-  }), [user, isAuthenticated, isAdmin]);
+    user,
+    token,
+    isAuthenticated,
+    isAdmin,
+    login,
+    logout
+  }), [user, token, isAuthenticated, isAdmin]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

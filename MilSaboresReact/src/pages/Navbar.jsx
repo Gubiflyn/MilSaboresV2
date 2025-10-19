@@ -1,18 +1,64 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 
-function Navbar() {
+function Navbar({ carrito: carritoProp }) {
   const navigate = useNavigate();
-  const { carrito } = useCart(); // ⬅ usamos carrito directamente
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { carrito: carritoCtx } = useCart();
 
+  // Soporta ambos: prop o contexto
+  const carrito = Array.isArray(carritoProp) ? carritoProp : (carritoCtx || []);
   const cantidadTotal = carrito.reduce((sum, t) => sum + (t.cantidad || 1), 0);
+
+  // Fallback: si bootstrap no engancha el dropdown, usamos estado React
+  const [fallbackOpen, setFallbackOpen] = useState(false);
+
+  useEffect(() => {
+    // intenta inicializar el dropdown de Bootstrap si existe
+    try {
+      // Si importaste 'bootstrap/dist/js/bootstrap.bundle.min.js' en main.jsx,
+      // window.bootstrap.Dropdown debería estar disponible.
+      const trigger = document.getElementById("userMenu");
+      if (trigger && window.bootstrap?.Dropdown) {
+        // eslint-disable-next-line no-new
+        new window.bootstrap.Dropdown(trigger);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const handleLogout = () => {
     logout();
-    navigate("/"); // vuelve al home después de cerrar sesión
+    setFallbackOpen(false);
+    navigate("/"); // vuelve al home
   };
+
+  // Maneja click cuando bootstrap no está inicializado
+  const handleUserBtnClick = (e) => {
+    // Si Bootstrap está, deja que él maneje el toggle
+    if (window.bootstrap?.Dropdown) return;
+    // Si no, prevenimos navegación y togglamos con estado
+    e.preventDefault();
+    setFallbackOpen((v) => !v);
+  };
+
+  // Cerrar el fallback al hacer click fuera
+  useEffect(() => {
+    if (!fallbackOpen) return;
+    const close = (ev) => {
+      const menu = document.getElementById("userMenuDropdown");
+      const btn = document.getElementById("userMenu");
+      if (!menu || !btn) return;
+      if (!menu.contains(ev.target) && !btn.contains(ev.target)) {
+        setFallbackOpen(false);
+      }
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [fallbackOpen]);
 
   return (
     <header className="header">
@@ -48,7 +94,6 @@ function Navbar() {
               <li className="nav-item"><Link className="nav-link header__menu-link" to="/blogs">Blogs</Link></li>
               <li className="nav-item"><Link className="nav-link header__menu-link" to="/contacto">Contacto</Link></li>
 
-              {/* Enlace Admin SOLO si es admin */}
               {isAdmin && (
                 <li className="nav-item">
                   <Link className="nav-link header__menu-link text-warning fw-semibold" to="/admin">
@@ -57,7 +102,6 @@ function Navbar() {
                 </li>
               )}
 
-              {/* Auth */}
               {!isAuthenticated ? (
                 <>
                   <li className="nav-item">
@@ -70,19 +114,29 @@ function Navbar() {
               ) : (
                 <li className="nav-item dropdown">
                   <button
-                    className="btn nav-link dropdown-toggle header__menu-link"
                     id="userMenu"
+                    className="btn nav-link dropdown-toggle header__menu-link"
                     data-bs-toggle="dropdown"
-                    aria-expanded="false"
+                    aria-expanded={fallbackOpen ? "true" : "false"}
+                    onClick={handleUserBtnClick}
                   >
                     Hola, {user?.nombre || "Usuario"}
                   </button>
-                  <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                    <li><span className="dropdown-item-text small text-muted">{user?.email}</span></li>
+                  <ul
+                    id="userMenuDropdown"
+                    className={`dropdown-menu dropdown-menu-end ${fallbackOpen ? "show" : ""}`}
+                    aria-labelledby="userMenu"
+                    style={{ minWidth: 220 }}
+                  >
+                    <li>
+                      <span className="dropdown-item-text small text-muted">
+                        {user?.email}
+                      </span>
+                    </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
                       <button className="dropdown-item text-danger" onClick={handleLogout}>
-                        Cerrar sesión
+                        <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
                       </button>
                     </li>
                   </ul>
