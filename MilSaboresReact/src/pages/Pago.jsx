@@ -1,4 +1,3 @@
-// src/pages/Pago.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -60,20 +59,36 @@ export default function Pago() {
   });
   const [errors, setErrors] = useState({});
 
+  // Prefill formulario con datos del usuario autenticado
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setForm((prev) => ({
+        ...prev,
+        correo: prev.correo?.trim() ? prev.correo : (user.email || ""),
+        nombre: prev.nombre?.trim() ? prev.nombre : (user.nombre || "")
+      }));
+    }
+  }, [isAuthenticated, user]);
+
   const validate = () => {
     const e = {};
     if (!form.nombre.trim()) e.nombre = "Ingresa el nombre en la tarjeta.";
     if (!/^\d{16}$/.test(form.numero)) e.numero = "Número de 16 dígitos.";
 
     // Exp MM/AA y no vencida
-    const expOK = /^(0[1-9]|1[0-2])\/\d{2}$/.test(form.expiracion.trim());
+    const expTrim = (form.expiracion || "").trim();
+    const expOK = /^(0[1-9]|1[0-2])\/\d{2}$/.test(expTrim);
     if (!expOK) {
       e.expiracion = "Formato MM/AA (ej: 08/27).";
     } else {
-      const [mm, aa] = form.expiracion.split("/");
-      const expDate = new Date(`20${aa}`, parseInt(mm, 10)); // primer día del mes siguiente
+      const [mm, aa] = expTrim.split("/");
+      // Fecha: primer día del mes siguiente al de expiración
+      const year = 2000 + Number(aa);
+      const monthIndexNext = Number(mm); // mes siguiente como índice (0-based +1)
+      const expDate = new Date(year, monthIndexNext, 1); // primer día del mes siguiente
       const now = new Date();
       now.setDate(1); // comparar mes/año
+      now.setHours(0, 0, 0, 0);
       if (expDate <= now) e.expiracion = "Tarjeta vencida.";
     }
 
@@ -87,7 +102,7 @@ export default function Pago() {
       e.fechaEntrega = "Selecciona una fecha válida.";
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((form.correo || "").trim())) {
       e.correo = "Correo electrónico inválido.";
     }
 
@@ -100,10 +115,14 @@ export default function Pago() {
     () =>
       applyPromotions({
         items: carrito,
-        customerEmail: form.correo.trim()
+        customerEmail: (form.correo || "").trim()
       }),
     [carrito, form.correo]
   );
+
+  useEffect(() => {
+    console.debug("Pago -> promoPreview:", promoPreview);
+  }, [promoPreview]);
 
   const onSubmit = (ev) => {
     ev.preventDefault();
@@ -112,7 +131,7 @@ export default function Pago() {
     // Simulación de pago fallido (tarjeta "0000" o ?fail=1)
     const urlParams = new URLSearchParams(window.location.search);
     const forceFail = urlParams.get("fail") === "1";
-    const startsWithZeros = form.numero.startsWith("0000");
+    const startsWithZeros = (form.numero || "").startsWith("0000");
     const shouldFail = forceFail || startsWithZeros;
 
     if (shouldFail) {
@@ -150,8 +169,10 @@ export default function Pago() {
     // Aplicar promociones reales al confirmar
     const promo = applyPromotions({
       items: carrito,
-      customerEmail: form.correo.trim()
+      customerEmail: (form.correo || "").trim()
     });
+
+    console.debug("Pago -> confirmar pago, promo:", promo);
 
     // Generar boleta
     const orderId =
@@ -181,10 +202,10 @@ export default function Pago() {
       total: promo.total,
       moneda: "CLP",
       notasPromo: {
-        porcentajeAplicado: promo.breakdown.porcentaje,
-        descuentoPorcentaje: promo.breakdown.percDiscount,
-        descuentoCumpleDuoc: promo.breakdown.birthdayDiscount,
-        detalles: promo.breakdown.detalles
+        porcentajeAplicado: promo.breakdown?.porcentaje,
+        descuentoPorcentaje: promo.breakdown?.percDiscount,
+        descuentoCumpleDuoc: promo.breakdown?.birthdayDiscount,
+        detalles: promo.breakdown?.detalles || []
       }
     };
 
@@ -245,17 +266,17 @@ export default function Pago() {
 
           <div className="d-flex justify-content-between text-success">
             <span>Descuentos adicionales (promociones/cupones)</span>
-            <span>-${CLP(promoPreview.descuento)}</span>
+            <span>-${CLP(promoPreview?.descuento || 0)}</span>
           </div>
 
           <div className="d-flex justify-content-between fw-semibold fs-5 mt-2">
             <span>Total a pagar</span>
-            <span>${CLP(promoPreview.total)}</span>
+            <span>${CLP(promoPreview?.total || subtotalItems)}</span>
           </div>
 
-          {promoPreview.breakdown.detalles.length > 0 && (
+          {(promoPreview?.breakdown?.detalles || []).length > 0 && (
             <ul className="small text-muted mt-2 mb-0">
-              {promoPreview.breakdown.detalles.map((d, i) => (
+              {(promoPreview.breakdown.detalles || []).map((d, i) => (
                 <li key={i}>{d}</li>
               ))}
             </ul>
