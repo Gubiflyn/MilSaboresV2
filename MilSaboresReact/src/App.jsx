@@ -7,7 +7,7 @@ import Footer from './components/Footer';
 import Productos from './pages/Productos';
 import Detalle from './pages/Detalle';
 import Carrito from './components/Carrito';
-import Configuración from './pages/Configuración';
+import Configuracion from './pages/Configuracion'; // <- sin tilde
 import Contacto from './pages/Contacto';
 import Noticias from './pages/Noticias';
 import Pago from './pages/Pago';
@@ -32,7 +32,7 @@ import UserHistory from './pages/admin/UserHistory';
 
 // usamos el carrito desde el contexto
 import { useCart } from './context/CartContext';
-import { useAuth } from './context/AuthContext'; // <<--- agregado para proteger rutas admin
+import { useAuth } from './context/AuthContext'; // para proteger rutas
 import { publicUrl } from './utils/publicUrl';
 
 /* ======== Guard para Admin ========
@@ -41,6 +41,13 @@ function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuth();
   const isAdmin = isAuthenticated && user?.rol === 'admin';
   if (!isAdmin) return <Navigate to="/login" replace />;
+  return children;
+}
+
+/* ======== Guard para autenticados (privado genérico) ======== */
+function PrivateRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -92,7 +99,14 @@ const App = () => {
           />
 
           {/* Otras páginas */}
-          <Route path="/configuracion" element={<Configuración />} />
+          <Route
+            path="/configuracion"
+            element={
+              <PrivateRoute>
+                <Configuracion />
+              </PrivateRoute>
+            }
+          />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/blogs" element={<Noticias />} />
@@ -102,7 +116,7 @@ const App = () => {
           <Route path="/pago/error" element={<PagoError />} />
 
           {/* === ADMIN ROUTES (anidadas bajo /admin) ===
-              Notar: protegidas con AdminRoute y renderizan su propio layout (sin Navbar/Footer públicos) */}
+              Protegidas con AdminRoute y renderizan su propio layout (sin Navbar/Footer públicos) */}
           <Route
             path="/admin"
             element={

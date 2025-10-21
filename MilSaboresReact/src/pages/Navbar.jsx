@@ -18,8 +18,6 @@ function Navbar({ carrito: carritoProp }) {
   useEffect(() => {
     // intenta inicializar el dropdown de Bootstrap si existe
     try {
-      // Si importaste 'bootstrap/dist/js/bootstrap.bundle.min.js' en main.jsx,
-      // window.bootstrap.Dropdown debería estar disponible.
       const trigger = document.getElementById("userMenu");
       if (trigger && window.bootstrap?.Dropdown) {
         // eslint-disable-next-line no-new
@@ -30,9 +28,11 @@ function Navbar({ carrito: carritoProp }) {
     }
   }, []);
 
+  const closeDropdown = () => setFallbackOpen(false);
+
   const handleLogout = () => {
     logout();
-    setFallbackOpen(false);
+    closeDropdown();
     navigate("/"); // vuelve al home
   };
 
@@ -134,6 +134,15 @@ function Navbar({ carrito: carritoProp }) {
                       </span>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <Link
+                        className="dropdown-item"
+                        to="/configuracion"
+                        onClick={closeDropdown}
+                      >
+                        <i className="fas fa-user-cog me-2"></i> Configuración
+                      </Link>
+                    </li>
                     <li>
                       <button className="dropdown-item text-danger" onClick={handleLogout}>
                         <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
