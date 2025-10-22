@@ -1,19 +1,19 @@
-// src/pages/Carrito.jsx
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import Carrito from "../components/Carrito";
 
-export default function CarritoPage({ irAlPago }) {
-  const { carrito, clear, remove } = useCart();
-
-  const vaciarCarrito = () => clear();
-  const eliminarProducto = (codigo) => remove(codigo);
+export default function CarritoPage() {
+  const navigate = useNavigate();
+  const { carrito, clear, remove, setQty, updateMessage } = useCart();
 
   return (
     <Carrito
       carrito={carrito}
-      vaciarCarrito={vaciarCarrito}
-      eliminarProducto={eliminarProducto}
-      irAlPago={irAlPago}
+      vaciarCarrito={clear}
+      eliminarProducto={remove}
+      setCantidad={setQty}            // ⬅️ clave
+      updateMensaje={updateMessage}
+      irAlPago={() => navigate("/pago")}
     />
   );
 }

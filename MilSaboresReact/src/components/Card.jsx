@@ -1,21 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { publicUrl } from '../utils/publicUrl';
 
 const Card = ({ torta, onAgregarCarrito }) => (
   <div className="col">
-    <div className="card h-100">
+    <div className="card h-100 shadow-sm border-0">
       <Link to={`/detalle/${torta.codigo}`}>
-        <img src={torta.imagen} className="card-img-top" alt={torta.nombre} />
+        <img
+          src={publicUrl(torta.imagen)}
+          className="card-img-top rounded-top"
+          alt={torta.nombre}
+          style={{ height: '220px', objectFit: 'cover' }}
+        />
       </Link>
+
       <div className="card-body text-center">
-        <h5 className="card-title">{torta.nombre}</h5>
-        <p className="card-text">{torta.categoria}</p>
-        <p className="product-card__price">${torta.precio} CLP</p>
+        <h5 className="card-title fw-bold">{torta.nombre}</h5>
+        <p className="text-muted mb-1">{torta.categoria}</p>
+        <p className="text-secondary small" style={{ minHeight: '50px' }}>
+          {torta.descripcion}
+        </p>
+        <p className="fw-semibold mb-3" style={{ color: '#8B4513' }}>
+          ${torta.precio.toLocaleString('es-CL')} CLP
+        </p>
+
         <button
-          className="btn btn-success mt-2"
+          className="btn btn-success btn-sm px-3"
           onClick={() => onAgregarCarrito(torta)}
         >
-          Agregar al carrito
+          <i className="fas fa-cart-plus me-2"></i> Agregar al carrito
         </button>
       </div>
     </div>
