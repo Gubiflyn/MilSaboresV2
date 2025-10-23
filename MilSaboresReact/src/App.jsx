@@ -1,13 +1,13 @@
 // App.jsx
 import React from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, useMatch } from 'react-router-dom';
-import Navbar from './pages/Navbar';
+import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Footer from './components/Footer';
 import Productos from './pages/Productos';
 import Detalle from './pages/Detalle';
 import Carrito from './components/Carrito';
-import Configuracion from './pages/Configuracion'; // <- sin tilde
+import Configuracion from './pages/Configuracion';
 import Contacto from './pages/Contacto';
 import Noticias from './pages/Noticias';
 import Pago from './pages/Pago';
