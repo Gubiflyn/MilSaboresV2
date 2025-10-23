@@ -10,7 +10,8 @@ export default function Sidebar() {
 
   return (
     <aside className="admin__sidebar">
-      <div className="admin__brand">Company name</div>
+      <div className="admin__brand">Mil Sabores</div>
+      <img src="/img/icono.png" alt="Logo Mil Sabores" className="admin__logo" />
       <nav className="admin__menu">
         <NavLink end to="/admin" className="admin__link">Dashboard</NavLink>
         <NavLink to="/admin/orders" className="admin__link">Órdenes</NavLink>

@@ -16,7 +16,10 @@ export default function AdminLayout() {
     <div className="admin-layout">
       {/* ===== Sidebar ===== */}
       <aside className="admin-sidebar">
-        <div className="admin-brand">Company name</div>
+        <div className="admin-brand">
+          <img src="/img/icono.png" alt="Logo Mil Sabores" className="admin-logo" />
+          Mil Sabores
+        </div>
 
         <nav className="admin-nav">
           <NavLink end to="/admin" className="admin-link">Dashboard</NavLink>
