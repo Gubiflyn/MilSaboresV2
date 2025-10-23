@@ -21,9 +21,11 @@ import AdminLayout from './pages/admin/AdminLayout';
 import DashboardAdmin from './pages/admin/Dashboard';
 import ProductsAdmin from './pages/admin/Products';
 import ProductEdit from './pages/admin/ProductEdit';
+import ProductNew from "./pages/admin/ProductNew";
 import ProductDetail from './pages/admin/ProductDetail';
 import CategoriesAdmin from './pages/admin/Categories';
 import OrdersAdmin from './pages/admin/Orders';
+import OrderReceipt from "./pages/admin/OrderReceipt";
 import UsersAdmin from './pages/admin/Users';
 import ProfileAdmin from './pages/admin/Profile';
 import ReportsAdmin from './pages/admin/Reports';
@@ -130,8 +132,10 @@ const App = () => {
             <Route path="productos" element={<ProductsAdmin />} />
             <Route path="productos/:id/editar" element={<ProductEdit />} />
             <Route path="productos/:id" element={<ProductDetail />} />
+            <Route path="productos/nuevo" element={<ProductNew />} />
             <Route path="categorias" element={<CategoriesAdmin />} />
             <Route path="pedidos" element={<OrdersAdmin />} />
+            <Route path="pedidos/:orderId/boleta" element={<OrderReceipt />} />
             <Route path="usuarios" element={<UsersAdmin />} />
             <Route path="usuarios/:id/historial" element={<UserHistory />} />
             <Route path="perfil" element={<ProfileAdmin />} />
