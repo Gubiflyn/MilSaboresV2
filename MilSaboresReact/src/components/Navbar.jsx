@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -7,25 +8,18 @@ function Navbar({ carrito: carritoProp }) {
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { carrito: carritoCtx } = useCart();
-
-  // Soporta ambos: prop o contexto
-  const carrito = Array.isArray(carritoProp) ? carritoProp : (carritoCtx || []);
+  const carrito = Array.isArray(carritoProp) ? carritoProp : carritoCtx || [];
   const cantidadTotal = carrito.reduce((sum, t) => sum + (t.cantidad || 1), 0);
 
-  // Fallback: si bootstrap no engancha el dropdown, usamos estado React
   const [fallbackOpen, setFallbackOpen] = useState(false);
 
   useEffect(() => {
-    // intenta inicializar el dropdown de Bootstrap si existe
     try {
       const trigger = document.getElementById("userMenu");
       if (trigger && window.bootstrap?.Dropdown) {
-        // eslint-disable-next-line no-new
         new window.bootstrap.Dropdown(trigger);
       }
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }, []);
 
   const closeDropdown = () => setFallbackOpen(false);
@@ -33,19 +27,16 @@ function Navbar({ carrito: carritoProp }) {
   const handleLogout = () => {
     logout();
     closeDropdown();
-    navigate("/"); // vuelve al home
+    navigate("/");
   };
 
-  // Maneja click cuando bootstrap no está inicializado
   const handleUserBtnClick = (e) => {
-    // Si Bootstrap está, deja que él maneje el toggle
     if (window.bootstrap?.Dropdown) return;
-    // Si no, prevenimos navegación y togglamos con estado
     e.preventDefault();
     setFallbackOpen((v) => !v);
   };
 
-  // Cerrar el fallback al hacer click fuera
+  // cerrar fallback
   useEffect(() => {
     if (!fallbackOpen) return;
     const close = (ev) => {
@@ -62,15 +53,10 @@ function Navbar({ carrito: carritoProp }) {
 
   return (
     <header className="header">
-      <nav className="navbar navbar-expand-lg header__nav py-3">
+      <nav className="navbar navbar-expand-lg header__nav py-3 navbar-dark">
         <div className="container-fluid d-flex justify-content-between align-items-center">
           <Link className="navbar-brand header__brand" to="/">
-            <img
-              src="/img/icono.png"
-              alt="Mil Sabores"
-              className="header__icon me-2"
-              style={{ height: "32px" }}
-            />
+            <img src="/img/icono.png" alt="Mil Sabores" style={{ height: "32px" }} className="me-2" />
             <span className="header__title">Mil Sabores</span>
           </Link>
 
@@ -79,20 +65,30 @@ function Navbar({ carrito: carritoProp }) {
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
           >
             <span className="navbar-toggler-icon"></span>
           </button>
 
           <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul className="navbar-nav header__menu align-items-lg-center">
-              <li className="nav-item"><Link className="nav-link header__menu-link" to="/">Inicio</Link></li>
-              <li className="nav-item"><Link className="nav-link header__menu-link" to="/productos">Productos</Link></li>
-              <li className="nav-item"><a className="nav-link header__menu-link" href="/#nosotros">Nosotros</a></li>
-              <li className="nav-item"><Link className="nav-link header__menu-link" to="/blogs">Blogs</Link></li>
-              <li className="nav-item"><Link className="nav-link header__menu-link" to="/contacto">Contacto</Link></li>
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/">Inicio</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/ofertas">Ofertas</Link> {/* ✅ nuevo link */}
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/productos">Productos</Link>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link header__menu-link" href="/#nosotros">Nosotros</a>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/blogs">Blogs</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/contacto">Contacto</Link>
+              </li>
 
               {isAdmin && (
                 <li className="nav-item">
@@ -125,21 +121,14 @@ function Navbar({ carrito: carritoProp }) {
                   <ul
                     id="userMenuDropdown"
                     className={`dropdown-menu dropdown-menu-end ${fallbackOpen ? "show" : ""}`}
-                    aria-labelledby="userMenu"
                     style={{ minWidth: 220 }}
                   >
                     <li>
-                      <span className="dropdown-item-text small text-muted">
-                        {user?.email}
-                      </span>
+                      <span className="dropdown-item-text small text-muted">{user?.email}</span>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
-                      <Link
-                        className="dropdown-item"
-                        to="/configuracion"
-                        onClick={closeDropdown}
-                      >
+                      <Link className="dropdown-item" to="/configuracion" onClick={closeDropdown}>
                         <i className="fas fa-user-cog me-2"></i> Configuración
                       </Link>
                     </li>
@@ -161,10 +150,7 @@ function Navbar({ carrito: carritoProp }) {
             >
               <i className="fas fa-shopping-cart fa-lg"></i>
               {cantidadTotal > 0 && (
-                <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style={{ fontSize: "0.7rem" }}
-                >
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: "0.7rem" }}>
                   {cantidadTotal}
                 </span>
               )}

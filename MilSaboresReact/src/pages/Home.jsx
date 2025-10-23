@@ -5,9 +5,9 @@ import tortasFallback from "../data/tortas.json";
 
 const LS_KEY = "tortas_v3";
 const DESCUENTOS = {
-  torta: 0.20,     // 20% para torta
-  postre: 0.15,    // 15% para Postres Individuales
-  sinAzucar: 0.10, // 10% para Productos Sin Azúcar
+  torta: 0.20,
+  postre: 0.15,
+  sinAzucar: 0.10,
 };
 
 const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
@@ -23,9 +23,7 @@ export default function Home() {
       if (Array.isArray(guardadas) && guardadas.length) {
         setProductos(guardadas);
       }
-    } catch {
-      // si falla el parse, mantenemos el fallback
-    }
+    } catch {}
   }, []);
 
   const ofertas = useMemo(() => {
@@ -33,18 +31,13 @@ export default function Home() {
 
     const pick = (pred) => productos.find(pred);
 
-    // Elegimos una torta (categoría que empiece por “Tortas ” o nombre que contenga “torta”)
     const torta =
-      pick(p => (p.categoria || "").toLowerCase().startsWith("tortas ")) ||
-      productos.find(p => (p.nombre || "").toLowerCase().includes("torta"));
+      pick((p) => (p.categoria || "").toLowerCase().startsWith("tortas ")) ||
+      productos.find((p) => (p.nombre || "").toLowerCase().includes("torta"));
 
-    // Postre individual
-    const postre = pick(p => (p.categoria || "") === "Postres Individuales");
+    const postre = pick((p) => (p.categoria || "") === "Postres Individuales");
+    const sinAzucar = pick((p) => (p.categoria || "") === "Productos Sin Azúcar");
 
-    // Producto sin azúcar
-    const sinAzucar = pick(p => (p.categoria || "") === "Productos Sin Azúcar");
-
-    // Armamos lista base y evitamos duplicados por código (o nombre si no hay código)
     const base = [torta, postre, sinAzucar].filter(Boolean);
     const unique = [];
     const seen = new Set();
@@ -57,7 +50,6 @@ export default function Home() {
       }
     }
 
-    // Si por cualquier razón no llegamos a 3, completamos con otros productos
     if (unique.length < 3) {
       for (const p of productos) {
         const key = p.codigo ?? p.nombre;
@@ -69,12 +61,10 @@ export default function Home() {
       }
     }
 
-    // Añadimos metadata de oferta (tipo, % y precio con descuento)
     return unique.slice(0, 3).map((p) => {
       let tipo = "torta";
       if ((p.categoria || "") === "Postres Individuales") tipo = "postre";
       if ((p.categoria || "") === "Productos Sin Azúcar") tipo = "sinAzucar";
-
       const pct = DESCUENTOS[tipo] ?? 0.1;
       return {
         ...p,
@@ -102,10 +92,16 @@ export default function Home() {
               <p className="hero-section__text fs-5 mb-4">
                 Pastelería artesanal: tortas, postres y sabores hechos con cariño. Pide online o visita nuestra tienda.
               </p>
-              <Link to="/productos" className="btn btn--primary">Ver Productos</Link>
+              <Link to="/productos" className="btn btn--primary">
+                Ver Productos
+              </Link>
             </div>
             <div className="col-md-5 d-none d-md-block text-center">
-              <img src="/public/img/Tindex.webp" className="img-fluid rounded-3 shadow-lg" alt="Pastel destacado" />
+              <img
+                src="/public/img/Tindex.webp"
+                className="img-fluid rounded-3 shadow-lg"
+                alt="Pastel destacado"
+              />
             </div>
           </div>
         </div>
@@ -114,8 +110,16 @@ export default function Home() {
       {/* OFERTAS (3 productos con descuento) */}
       <section className="products-section py-5" id="productos">
         <div className="container">
-          <h2 className="section-heading text-center mb-1">Ofertas de la Semana</h2>
-          <p className="text-center text-muted mb-5">Elegimos una torta, un postre y una opción sin azúcar a precio especial.</p>
+          <div className="d-flex align-items-center justify-content-between mb-1">
+            <h2 className="section-heading m-0">Ofertas de la Semana</h2>
+            {/* ✅ Botón para ver todas las ofertas */}
+            <Link to="/ofertas" className="btn btn-sm btn-outline-primary">
+              Ver todas las ofertas
+            </Link>
+          </div>
+          <p className="text-center text-muted mb-5">
+            Elegimos una torta, un postre y una opción sin azúcar a precio especial.
+          </p>
 
           <div className="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
             {ofertas.length === 0 ? (
@@ -129,13 +133,18 @@ export default function Home() {
                 return (
                   <div className="col" key={t.codigo ?? t.nombre}>
                     <Link
-                      to={`/detalle/${t.codigo ?? ""}?oferta=1&pct=${(t._pct || 0)}&tag=${encodeURIComponent(t._tipoOferta || "")}`}
-                        className="text-decoration-none text-reset">
+                      to={`/detalle/${t.codigo ?? ""}?oferta=1&pct=${t._pct || 0}&tag=${encodeURIComponent(
+                        t._tipoOferta || ""
+                      )}`}
+                      className="text-decoration-none text-reset"
+                    >
                       <div className="card product-card h-100 shadow-sm">
                         <div className="position-relative">
                           <img
                             src={imgSrc}
-                            onError={(e) => { e.currentTarget.src = "/img/placeholder.png"; }}
+                            onError={(e) => {
+                              e.currentTarget.src = "/img/placeholder.png";
+                            }}
                             className="card-img-top product-card__image"
                             alt={t.nombre || "Producto"}
                             style={{ objectFit: "cover", height: 220 }}
@@ -150,7 +159,6 @@ export default function Home() {
 
                         <div className="card-body text-center">
                           <h5 className="card-title mb-1">{t.nombre || "Producto"}</h5>
-                          {/* Precio original y con descuento */}
                           {t.precio != null && (
                             <>
                               <div className="small text-decoration-line-through text-muted">
@@ -189,7 +197,11 @@ export default function Home() {
               </p>
             </div>
             <div className="col-md-6 text-center">
-              <img src="/public/img/pasteleros.jpg" className="img-fluid rounded shadow" alt="Equipo" />
+              <img
+                src="/public/img/pasteleros.jpg"
+                className="img-fluid rounded shadow"
+                alt="Equipo"
+              />
             </div>
           </div>
         </div>
