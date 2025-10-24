@@ -1,10 +1,5 @@
 import React, { useState } from "react";
 
-/*
-  Mantiene tu lógica (useState, handleChange, handleSubmit) intacta.
-  Solo ubicamos TU formulario dentro de la tarjeta .contacto-card.
-*/
-
 export default function Contacto() {
   const [form, setForm] = useState({ nombre: "", email: "", mensaje: "" });
 
@@ -120,7 +115,7 @@ export default function Contacto() {
                       <span className="contacto-bullet">📞</span>
                       <div>
                         <a href="tel:+56900000000" className="link-underline-opacity-0">
-                          +56 9 0000 0000
+                          +56 9 5642 1253
                         </a>
                         <div>
                           <small className="text-body-secondary">Lun–Sáb 10:00–19:00</small>
