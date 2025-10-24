@@ -138,11 +138,6 @@ export default function Users() {
           </tbody>
         </table>
       </div>
-
-      <div className="card-footer small text-muted">
-        * Usa “Nuevo” para crear una cuenta rápida (se guarda localmente).<br />
-        * “Alternar rol” cambia entre <strong>admin</strong> y <strong>cliente</strong>.
-      </div>
     </div>
   );
 }
