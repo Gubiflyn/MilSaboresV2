@@ -1,10 +1,5 @@
 import React, { useState } from "react";
 
-/*
-  Mantiene tu lógica (useState, handleChange, handleSubmit) intacta.
-  Solo ubicamos TU formulario dentro de la tarjeta .contacto-card.
-*/
-
 export default function Contacto() {
   const [form, setForm] = useState({ nombre: "", email: "", mensaje: "" });
 
@@ -120,7 +115,7 @@ export default function Contacto() {
                       <span className="contacto-bullet">📞</span>
                       <div>
                         <a href="tel:+56900000000" className="link-underline-opacity-0">
-                          +56 9 0000 0000
+                          +56 9 5642 1253
                         </a>
                         <div>
                           <small className="text-body-secondary">Lun–Sáb 10:00–19:00</small>
@@ -162,23 +157,6 @@ export default function Contacto() {
                     <li>¿Puedo pedir opciones sin azúcar o sin gluten?</li>
                   </ul>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cinta de confianza */}
-          <div className="row mt-5">
-            <div className="col-12">
-              <div className="contacto-trust d-flex flex-wrap gap-3 align-items-center justify-content-center py-3 px-3 rounded-4">
-                <span className="badge bg-success-subtle text-success-emphasis px-3 py-2">
-                  ✅ Pagos seguros
-                </span>
-                <span className="badge bg-primary-subtle text-primary-emphasis px-3 py-2">
-                  🚚 Envíos en 24h (RM)
-                </span>
-                <span className="badge bg-warning-subtle text-warning-emphasis px-3 py-2">
-                  ⭐ 4.9/5 reseñas
-                </span>
               </div>
             </div>
           </div>
