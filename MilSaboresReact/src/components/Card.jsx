@@ -7,7 +7,7 @@ const Card = ({ torta, onAgregarCarrito }) => (
     <div className="card h-100 shadow-sm border-0">
       <Link to={`/detalle/${torta.codigo}`}>
         <img
-          src={publicUrl(torta.imagen)}
+          src={torta.imagen ? publicUrl(torta.imagen) : null}
           className="card-img-top rounded-top"
           alt={torta.nombre}
           style={{ height: '220px', objectFit: 'cover' }}
