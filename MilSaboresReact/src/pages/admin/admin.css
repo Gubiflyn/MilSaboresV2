@@ -164,3 +164,127 @@
   .kpi-grid { grid-template-columns: 1fr; }
   .quick-tiles { grid-template-columns: 1fr; }
 }
+
+/* ====== Perfil (layout limpio) ====== */
+.admin-section {
+  padding: 1rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.06);
+  padding: 1rem 1.25rem;
+}
+
+.card-title {
+  font-size: 1.2rem;
+  margin: 0 0 .75rem 0;
+}
+
+.card-subsection {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: .75rem .9rem 1rem;
+  margin-top: 1rem;
+  background: #fafafa;
+}
+
+.card-subsection > legend {
+  padding: 0 .4rem;
+  font-weight: 600;
+}
+
+/* Toolbar/links superiores para que no queden pegados ni subrayados raro */
+.admin-toolbar {
+  display: flex;
+  gap: 1rem;
+  margin: .25rem 0 .75rem;
+  flex-wrap: wrap;
+}
+.admin-toolbar a {
+  text-decoration: none;
+  color: #0b5ed7;
+}
+.admin-toolbar a:hover { text-decoration: underline; }
+
+/* Formulario en filas */
+.admin-form {
+  display: grid;
+  gap: .75rem;
+  margin-top: .5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  gap: .75rem;
+}
+
+.form-row label {
+  font-weight: 600;
+  white-space: nowrap;      /* evita cortes tipo "av-atar" */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-row input,
+.form-row textarea {
+  width: 100%;
+  padding: .55rem .7rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  outline: none;
+}
+
+.form-row textarea { resize: vertical; }
+
+/* Acciones */
+.form-actions {
+  grid-column: 1 / -1;     /* botón a ancho completo de la grilla */
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-top: .25rem;
+}
+
+/* Botones */
+.btn {
+  border: 1px solid #ccc;
+  padding: .45rem .8rem;
+  border-radius: 8px;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(0.98); }
+
+.btn-primary {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+}
+
+.btn-group {
+  display: inline-flex;
+  gap: .5rem;
+}
+
+/* Nota inferior */
+.helper-note {
+  margin-top: .75rem;
+  color: #666;
+  font-size: .92rem;
+}
+
+/* Móvil: apilar etiquetas sobre inputs */
+@media (max-width: 720px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .form-actions {
+    justify-content: stretch;
+  }
+  .btn, .btn-primary { width: 100%; }
+}
