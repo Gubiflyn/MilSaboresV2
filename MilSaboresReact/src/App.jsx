@@ -1,3 +1,4 @@
+// src/App.jsx
 import React from "react";
 import {
   Routes,
@@ -21,7 +22,7 @@ import Boleta from "./pages/Boleta";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PagoError from "./pages/PagoError";
-import Ofertas from "./pages/Ofertas"; 
+import Ofertas from "./pages/Ofertas";
 
 // ADMIN
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -38,6 +39,11 @@ import ProfileAdmin from "./pages/admin/Profile";
 import ReportsAdmin from "./pages/admin/Reports";
 import CriticalProducts from "./pages/admin/CriticalProducts";
 import UserHistory from "./pages/admin/UserHistory";
+
+// ➕ (AGREGADOS) Páginas de Usuarios: Ver, Editar y Nuevo
+import UserView from "./pages/admin/UserView";
+import UserEdit from "./pages/admin/UserEdit";
+import UserNew from "./pages/admin/UserNew";
 
 import { useCart } from "./context/CartContext";
 import { useAuth } from "./context/AuthContext";
@@ -135,8 +141,14 @@ const App = () => {
             <Route path="categorias" element={<CategoriesAdmin />} />
             <Route path="pedidos" element={<OrdersAdmin />} />
             <Route path="pedidos/:orderId/boleta" element={<OrderReceipt />} />
+
+            {/* USUARIOS */}
             <Route path="usuarios" element={<UsersAdmin />} />
+            <Route path="usuarios/nuevo" element={<UserNew />} />          {/* ➕ NUEVO */}
+            <Route path="usuarios/:id" element={<UserView />} />           {/* ➕ VER */}
+            <Route path="usuarios/:id/editar" element={<UserEdit />} />    {/* ➕ EDITAR */}
             <Route path="usuarios/:id/historial" element={<UserHistory />} />
+
             <Route path="perfil" element={<ProfileAdmin />} />
             <Route path="reportes" element={<ReportsAdmin />} />
             <Route path="criticos" element={<CriticalProducts />} />
