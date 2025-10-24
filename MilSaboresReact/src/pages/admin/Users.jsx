@@ -1,3 +1,4 @@
+// src/pages/admin/Users.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import seed from "../../data/usuarios.json";
@@ -38,13 +39,6 @@ export default function Users() {
     persist(next);
   };
 
-  // (Opcional) eliminar usuario — descomentarlo si lo necesitas
-  // const onDelete = (idx) => {
-  //   if (!confirm("¿Eliminar este usuario?")) return;
-  //   const next = list.filter((_, i) => i !== idx);
-  //   persist(next);
-  // };
-
   return (
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
@@ -56,7 +50,7 @@ export default function Users() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <Link to="/admin/users/new" className="btn btn-primary">
+          <Link to="/admin/usuarios/nuevo" className="btn btn-primary">
             + Nuevo
           </Link>
         </div>
@@ -83,7 +77,7 @@ export default function Users() {
               </tr>
             )}
 
-            {filtered.map((u, idx) => (
+            {filtered.map((u) => (
               <tr key={u.email}>
                 <td>{u.nombre || "—"}</td>
                 <td>{u.email}</td>
@@ -101,19 +95,19 @@ export default function Users() {
                 <td className="text-end">
                   <div className="btn-group">
                     <Link
-                      to={`/admin/users/${encodeURIComponent(u.email)}`}
+                      to={`/admin/usuarios/${encodeURIComponent(u.email)}`}
                       className="btn btn-sm btn-outline-primary"
                     >
                       Ver
                     </Link>
                     <Link
-                      to={`/admin/users/${encodeURIComponent(u.email)}/edit`}
+                      to={`/admin/usuarios/${encodeURIComponent(u.email)}/editar`}
                       className="btn btn-sm btn-outline-secondary"
                     >
                       Editar
                     </Link>
                     <Link
-                      to={`/admin/users/${encodeURIComponent(u.email)}/history`}
+                      to={`/admin/usuarios/${encodeURIComponent(u.email)}/historial`}
                       className="btn btn-sm btn-outline-dark"
                     >
                       Historial
@@ -125,12 +119,6 @@ export default function Users() {
                     >
                       Alternar rol
                     </button>
-                    {/* <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => onDelete(list.findIndex(x => x.email === u.email))}
-                    >
-                      Eliminar
-                    </button> */}
                   </div>
                 </td>
               </tr>

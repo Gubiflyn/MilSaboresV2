@@ -1,36 +1,36 @@
+// src/pages/admin/UserHistory.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const LS_USERS = "usuarios_v1";
-// Si tienes pedidos reales, cambia por tu clave, p.ej. const LS_ORDERS = "ordenes_v1";
 const LS_FAKE_HISTORY = "usuarios_historial_v1";
 
 export default function UserHistory() {
-  const { id } = useParams();
+  const { id } = useParams(); // email
   const [user, setUser] = useState(null);
   const [historial, setHistorial] = useState([]);
 
-  // Genera historial ficticio si no existe
   useEffect(() => {
     const users = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    setUser(users.find((u) => u.id === id) || null);
+    const u = users.find((x) => x.email === id) || null;
+    setUser(u);
 
     let h = JSON.parse(localStorage.getItem(LS_FAKE_HISTORY) || "null");
     if (!h) {
       h = {
-        u1: [
+        "ana@correo.cl": [
           { fecha: "2025-10-01", tipo: "Pedido", detalle: "Orden #1001 - 2 productos" },
           { fecha: "2025-10-05", tipo: "Login",  detalle: "Inicio de sesión" },
         ],
-        u2: [{ fecha: "2025-10-02", tipo: "Cambio de rol", detalle: "Cliente → Admin" }],
-        u3: [{ fecha: "2025-10-03", tipo: "Pedido", detalle: "Orden #1005 - 1 producto" }],
+        "bruno@correo.cl": [{ fecha: "2025-10-02", tipo: "Cambio de rol", detalle: "Cliente → Admin" }],
+        "clara@correo.cl": [{ fecha: "2025-10-03", tipo: "Pedido", detalle: "Orden #1005 - 1 producto" }],
       };
       localStorage.setItem(LS_FAKE_HISTORY, JSON.stringify(h));
     }
     setHistorial(h[id] || []);
   }, [id]);
 
-  const titulo = useMemo(() => (user ? `${user.nombre} ${user.apellidos}` : id), [user, id]);
+  const titulo = useMemo(() => (user ? `${user.nombre}${user.apellidos ? " " + user.apellidos : ""}` : id), [user, id]);
 
   return (
     <div>
@@ -62,7 +62,7 @@ export default function UserHistory() {
       )}
 
       <div style={{ marginTop: 12 }}>
-        <Link to={`/admin/usuarios/${id}`}><button>Volver al usuario</button></Link>
+        <Link to={`/admin/usuarios/${encodeURIComponent(id)}`}><button>Volver al usuario</button></Link>
       </div>
     </div>
   );

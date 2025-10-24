@@ -1,35 +1,46 @@
+// src/pages/admin/UserEdit.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 const LS_USERS = "usuarios_v1";
 
 export default function UserEdit() {
-  const { id } = useParams();
+  const { id } = useParams(); // email
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nombre: "", apellidos: "", correo: "", rol: "cliente", activo: true });
+  const [form, setForm] = useState({ nombre: "", apellidos: "", email: "", rol: "cliente", beneficio: "", fechaNacimiento: "" });
 
   useEffect(() => {
     const lista = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    const u = lista.find((x) => x.id === id);
+    const u = lista.find((x) => x.email === id);
     if (u) {
-      setForm({ nombre: u.nombre, apellidos: u.apellidos, correo: u.correo, rol: u.rol, activo: !!u.activo });
+      setForm({
+        nombre: u.nombre || "",
+        apellidos: u.apellidos || "",
+        email: u.email || id,
+        rol: u.rol || "cliente",
+        beneficio: u.beneficio || "",
+        fechaNacimiento: u.fechaNacimiento || ""
+      });
     }
   }, [id]);
 
   const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
   const onSubmit = (e) => {
     e.preventDefault();
     const lista = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    const idx = lista.findIndex((x) => x.id === id);
+    const idx = lista.findIndex((x) => x.email === id);
     if (idx >= 0) {
-      lista[idx] = { ...lista[idx], ...form };
+      // si cambió el email, úsalo como nueva clave
+      const nextEmail = form.email || id;
+      lista[idx] = { ...lista[idx], ...form, email: nextEmail };
       localStorage.setItem(LS_USERS, JSON.stringify(lista));
+      return navigate(`/admin/usuarios/${encodeURIComponent(nextEmail)}`);
     }
-    navigate(`/admin/usuarios/${id}`);
+    navigate(`/admin/usuarios`);
   };
 
   return (
@@ -45,8 +56,8 @@ export default function UserEdit() {
           <input name="apellidos" value={form.apellidos} onChange={onChange} />
         </label>
         <label>
-          Correo
-          <input name="correo" type="email" value={form.correo} onChange={onChange} />
+          Email
+          <input name="email" type="email" value={form.email} onChange={onChange} />
         </label>
         <label>
           Rol
@@ -55,14 +66,18 @@ export default function UserEdit() {
             <option value="admin">Admin</option>
           </select>
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input name="activo" type="checkbox" checked={form.activo} onChange={onChange} />
-          Activo
+        <label>
+          Beneficio
+          <input name="beneficio" value={form.beneficio} onChange={onChange} placeholder="p.ej. 10%" />
+        </label>
+        <label>
+          Fecha Nac.
+          <input name="fechaNacimiento" type="date" value={form.fechaNacimiento} onChange={onChange} />
         </label>
 
         <div style={{ display: "flex", gap: 8 }}>
           <button type="submit">Guardar</button>
-          <Link to={`/admin/usuarios/${id}`}><button type="button">Cancelar</button></Link>
+          <Link to={`/admin/usuarios/${encodeURIComponent(id)}`}><button type="button">Cancelar</button></Link>
         </div>
       </form>
     </div>
