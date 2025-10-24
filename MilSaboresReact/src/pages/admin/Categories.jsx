@@ -155,12 +155,6 @@ export default function Categories() {
           </tbody>
         </table>
       </div>
-
-      <div className="card-footer small text-muted">
-        * Para asignar productos a una categoría, edítalos en <strong>Productos</strong>.  
-        * “Eliminar” mueve sus productos a <em>Sin categoría</em>.  
-        * “Mover a…” reubica en lote todos los productos de una categoría.
-      </div>
     </div>
   );
 }
