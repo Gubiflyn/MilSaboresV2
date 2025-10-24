@@ -165,23 +165,6 @@ export default function Contacto() {
               </div>
             </div>
           </div>
-
-          {/* Cinta de confianza */}
-          <div className="row mt-5">
-            <div className="col-12">
-              <div className="contacto-trust d-flex flex-wrap gap-3 align-items-center justify-content-center py-3 px-3 rounded-4">
-                <span className="badge bg-success-subtle text-success-emphasis px-3 py-2">
-                  ✅ Pagos seguros
-                </span>
-                <span className="badge bg-primary-subtle text-primary-emphasis px-3 py-2">
-                  🚚 Envíos en 24h (RM)
-                </span>
-                <span className="badge bg-warning-subtle text-warning-emphasis px-3 py-2">
-                  ⭐ 4.9/5 reseñas
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </main>
