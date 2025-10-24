@@ -1,4 +1,3 @@
-// App.jsx
 import React from "react";
 import {
   Routes,
@@ -22,7 +21,7 @@ import Boleta from "./pages/Boleta";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PagoError from "./pages/PagoError";
-import Ofertas from "./pages/Ofertas"; // ✅ nueva página
+import Ofertas from "./pages/Ofertas"; 
 
 // ADMIN
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -79,7 +78,7 @@ const App = () => {
         <Routes>
           {/* PÚBLICAS */}
           <Route path="/" element={<Home />} />
-          <Route path="/ofertas" element={<Ofertas />} /> {/* ✅ nueva ruta */}
+          <Route path="/ofertas" element={<Ofertas />} /> {}
           <Route path="/productos" element={<Productos agregarAlCarrito={agregarAlCarrito} />} />
           <Route path="/detalle/:codigo" element={<Detalle agregarAlCarrito={agregarAlCarrito} />} />
           <Route path="/contacto" element={<Contacto />} />
