@@ -262,7 +262,6 @@ export default function Products() {
                 <th>Categoría</th>
                 <th style={{ minWidth: 120 }}>Precio</th>
                 <th style={{ minWidth: 90 }}>Stock</th>
-                <th>Imagen</th>
                 <th style={{ width: 160 }}></th>
               </tr>
             </thead>
@@ -291,11 +290,6 @@ export default function Products() {
                       </span>
                     </td>
                     <td>
-                      {p.imagen ? (
-                        <code style={{ fontSize: 12 }}>{p.imagen}</code>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
                     </td>
                     <td className="text-end">
                       <div className="btn-group">
