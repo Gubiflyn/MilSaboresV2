@@ -272,10 +272,6 @@ export default function Reports() {
             </tbody>
           </table>
         </div>
-        <div className="card-footer small text-muted">
-          * El total por categoría usa <code>precioUnit</code> de cada ítem si está presente; si tus boletas no lo guardan,
-          el total por categoría puede mostrarse como 0 y el indicador fiable es la columna “Ítems”.
-        </div>
       </div>
     </div>
   );

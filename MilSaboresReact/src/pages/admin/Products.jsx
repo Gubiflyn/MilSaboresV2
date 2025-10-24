@@ -19,17 +19,27 @@ export default function Products() {
     descripcion: "",
   });
 
-  // Carga inicial (semilla o datos guardados)
+  // Carga inicial: si LS está vacío/ inválido, cae a seed
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem(LS_TORTAS) || "null") || seed;
-    // normalizamos stock si no existiera
-    setList(data.map((p) => ({ stock: 0, ...p })));
+    let data = null;
+    try {
+      const raw = localStorage.getItem(LS_TORTAS);
+      data = raw ? JSON.parse(raw) : null;
+    } catch {
+      data = null;
+    }
+    if (!Array.isArray(data) || data.length === 0) {
+      data = seed;
+    }
+    setList(data.map((p) => ({ ...p, stock: p?.stock ?? 0 })));
   }, []);
 
-  // Persistencia
+  // Persistencia: evita guardar [] en el primer render
   useEffect(() => {
     try {
-      localStorage.setItem(LS_TORTAS, JSON.stringify(list));
+      if (Array.isArray(list) && list.length > 0) {
+        localStorage.setItem(LS_TORTAS, JSON.stringify(list));
+      }
     } catch {}
   }, [list]);
 
@@ -87,7 +97,7 @@ export default function Products() {
       nombre: String(form.nombre || "").trim(),
       categoria: String(form.categoria || "").trim(),
       precio: parseInt(form.precio, 10) || 0,
-      stock: parseInt(form.stock, 10) || 0,
+      stock: Math.max(0, parseInt(form.stock, 10) || 0),
       imagen: String(form.imagen || "").trim(),
       descripcion: String(form.descripcion || "").trim(),
     };
@@ -247,13 +257,12 @@ export default function Products() {
           <table className="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th style={{minWidth: 110}}>Código</th>
+                <th style={{ minWidth: 110 }}>Código</th>
                 <th>Nombre</th>
                 <th>Categoría</th>
-                <th style={{minWidth: 120}}>Precio</th>
-                <th style={{minWidth: 90}}>Stock</th>
-                <th>Imagen</th>
-                <th style={{width: 160}}></th>
+                <th style={{ minWidth: 120 }}>Precio</th>
+                <th style={{ minWidth: 90 }}>Stock</th>
+                <th style={{ width: 160 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -264,8 +273,9 @@ export default function Products() {
                   </td>
                 </tr>
               )}
-              {filtered.map((p, idx) => {
+              {filtered.map((p) => {
                 const realIdx = list.findIndex((x) => x.codigo === p.codigo);
+                const s = p.stock ?? 0;
                 return (
                   <tr key={p.codigo}>
                     <td><code>{p.codigo}</code></td>
@@ -275,16 +285,11 @@ export default function Products() {
                     </td>
                     <td>{CLP(p.precio)}</td>
                     <td>
-                      <span className={p.stock <= 5 ? "badge text-bg-danger" : "badge text-bg-secondary"}>
-                        {p.stock ?? 0}
+                      <span className={s <= 5 ? "badge text-bg-danger" : "badge text-bg-secondary"}>
+                        {s}
                       </span>
                     </td>
                     <td>
-                      {p.imagen ? (
-                        <code style={{ fontSize: 12 }}>{p.imagen}</code>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
                     </td>
                     <td className="text-end">
                       <div className="btn-group">
@@ -301,10 +306,6 @@ export default function Products() {
                           Eliminar
                         </button>
                       </div>
-                      {/* Si más adelante creas rutas show/edit:
-                          <Link to={`/admin/products/${p.codigo}`} className="btn btn-sm btn-outline-primary">Ver</Link>
-                          <Link to={`/admin/products/${p.codigo}/edit`} className="btn btn-sm btn-outline-secondary">Editar</Link>
-                      */}
                     </td>
                   </tr>
                 );
@@ -314,7 +315,7 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Acciones rápidas opcionales */}
+      {/* Acciones rápidas */}
       <div className="d-flex gap-2">
         <button
           className="btn btn-outline-primary"
@@ -329,15 +330,7 @@ export default function Products() {
         >
           Exportar CSV
         </button>
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => {
-            if (!confirm("¿Volver a cargar la semilla y sobrescribir los cambios?")) return;
-            setList(seed.map((p) => ({ stock: 0, ...p })));
-          }}
-        >
-          Restaurar desde semilla
-        </button>
+        {/* Botón "Restaurar desde semilla" eliminado */}
       </div>
     </div>
   );
