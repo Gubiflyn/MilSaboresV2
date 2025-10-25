@@ -41,3 +41,13 @@ export const loadCarrito = () => {
         return [];
     }
 };
+
+// --- Categorías (sin JSON, solo localStorage) ---
+export const LS_CATEGORIAS = "categorias";
+
+export const loadCategorias = () =>
+  JSON.parse(localStorage.getItem(LS_CATEGORIAS) || "[]");
+
+export const saveCategorias = (data) =>
+  localStorage.setItem(LS_CATEGORIAS, JSON.stringify(data));
+

@@ -11,6 +11,13 @@
     --font-body: 'Lato', sans-serif;
 }
 
+/* Fondo general del sitio */
+body {
+  background-color: var(--color-background) !important;
+}
+
+
+
 body {
     background-color: var(--color-background);
     color: var(--color-text-main);
@@ -524,3 +531,5 @@ footer { margin-top: auto; }   /* el footer se queda abajo */
 .contacto-page h6 {
   color: var(--color-primary); /* = #8B4513 */
 }
+
+

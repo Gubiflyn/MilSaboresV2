@@ -14,7 +14,10 @@ const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
 const precioConDescuento = (precio, pct) =>
   Math.max(0, Math.round((Number(precio) || 0) * (1 - pct)));
 
+
+
 export default function Ofertas() {
+  
   const [productos, setProductos] = useState(Array.isArray(tortasFallback) ? tortasFallback : []);
 
   useEffect(() => {
