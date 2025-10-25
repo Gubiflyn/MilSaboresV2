@@ -42,7 +42,10 @@ export default function Categories() {
 
   const persistCategorias = (next) => {
     setCategorias(next);
-    try { localStorage.setItem(LS_CATS, JSON.stringify(next)); } catch {}
+    try { 
+      localStorage.setItem(LS_CATS, JSON.stringify(next)); 
+      window.dispatchEvent(new Event("categorias:updated")); // ➕ NUEVO: notificar cambio de categorías
+    } catch {}
   };
   const persistProductos = (next) => {
     setProductos(next);
@@ -92,7 +95,7 @@ export default function Categories() {
       const msg = validar(valor);
       if (msg) return setError(msg);
       const next = normalizarLista([...categorias, valor]);
-      persistCategorias(next);
+      persistCategorias(next);   // guarda estado + LS + notifica
       cerrarPanel();
       return;
     }
@@ -105,7 +108,7 @@ export default function Categories() {
 
     // 1) renombrar en lista de categorías
     const nextCats = normalizarLista(categorias.map(c => (c === catOriginal ? nuevo : c)));
-    persistCategorias(nextCats);
+    persistCategorias(nextCats); // guarda estado + LS + notifica
 
     // 2) actualizar productos que tenían la categoría original
     const nextProds = productos.map(p => {
@@ -212,4 +215,3 @@ export default function Categories() {
     </div>
   );
 }
-

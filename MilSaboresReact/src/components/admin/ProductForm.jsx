@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ➕ NUEVO: useEffect
 
 const initial = {
   codigo: "",
@@ -13,6 +13,28 @@ const initial = {
 export default function ProductForm({ initialValues = initial, onSubmit, submitText = "Guardar" }) {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
+
+  // ➕ NUEVO: leer categorías de localStorage (y actualizar al vuelo)
+  const [catOptions, setCatOptions] = useState([]);            // ➕ NUEVO
+  const LS_CATS = "categorias_v1";                             // ➕ NUEVO
+  const loadCats = () => {                                     // ➕ NUEVO
+    try {
+      const raw = localStorage.getItem(LS_CATS);
+      const arr = raw ? JSON.parse(raw) : [];
+      const clean = Array.from(new Set((arr || []).map(s => (s || "").trim()).filter(Boolean)))
+        .sort((a,b) => a.localeCompare(b, "es"));
+      setCatOptions(clean);
+    } catch {
+      setCatOptions([]);
+    }
+  };
+  useEffect(() => {                                            // ➕ NUEVO
+    loadCats(); // al montar
+    const handler = () => loadCats(); // escucha notificación desde Categories.jsx
+    window.addEventListener("categorias:updated", handler);
+    return () => window.removeEventListener("categorias:updated", handler);
+  }, []);
+  // ————————————————————————————————————————————————————————————————
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,8 +96,20 @@ export default function ProductForm({ initialValues = initial, onSubmit, submitT
 
         <div className="col-md-6">
           <label className="form-label">Categoría</label>
-          <input name="categoria" className="form-control"
-                 value={form.categoria} onChange={handleChange} />
+          {/* Mantienes tu input. Solo añado list y onFocus para recargar opciones. */}
+          <input
+            name="categoria"
+            className="form-control"
+            value={form.categoria}
+            onChange={handleChange}
+            list="cat-options"       // ➕ NUEVO
+            onFocus={loadCats}       // ➕ NUEVO
+          />
+          <datalist id="cat-options">  {/* ➕ NUEVO */}
+            {catOptions.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </div>
 
         <div className="col-md-6">
