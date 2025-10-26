@@ -1,68 +1,43 @@
-// src/pages/admin/UserHistory.jsx
-import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-const LS_USERS = "usuarios_v1";
-const LS_FAKE_HISTORY = "usuarios_historial_v1";
-
 export default function UserHistory() {
-  const { id } = useParams(); // email
-  const [user, setUser] = useState(null);
-  const [historial, setHistorial] = useState([]);
+  const { id } = useParams();
 
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    const u = users.find((x) => x.email === id) || null;
-    setUser(u);
-
-    let h = JSON.parse(localStorage.getItem(LS_FAKE_HISTORY) || "null");
-    if (!h) {
-      h = {
-        "ana@correo.cl": [
-          { fecha: "2025-10-01", tipo: "Pedido", detalle: "Orden #1001 - 2 productos" },
-          { fecha: "2025-10-05", tipo: "Login",  detalle: "Inicio de sesión" },
-        ],
-        "bruno@correo.cl": [{ fecha: "2025-10-02", tipo: "Cambio de rol", detalle: "Cliente → Admin" }],
-        "clara@correo.cl": [{ fecha: "2025-10-03", tipo: "Pedido", detalle: "Orden #1005 - 1 producto" }],
-      };
-      localStorage.setItem(LS_FAKE_HISTORY, JSON.stringify(h));
-    }
-    setHistorial(h[id] || []);
-  }, [id]);
-
-  const titulo = useMemo(() => (user ? `${user.nombre}${user.apellidos ? " " + user.apellidos : ""}` : id), [user, id]);
+  // ejemplo: podrías cargar un historial real si lo guardas
+  const history = JSON.parse(localStorage.getItem("usuarios_historial") || "[]")
+    .filter((h) => encodeURIComponent(h.email) === id)
+    .reverse();
 
   return (
-    <div>
-      <h2>Historial de {titulo}</h2>
+    <div className="card shadow-sm">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Historial del usuario</h5>
+        <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
+          ← Volver
+        </Link>
+      </div>
 
-      {historial.length === 0 ? (
-        <p>Sin actividades registradas.</p>
-      ) : (
-        <div className="tabla-responsive">
-          <table className="tabla-admin" width="100%">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historial.map((ev, i) => (
-                <tr key={i}>
-                  <td>{ev.fecha}</td>
-                  <td>{ev.tipo}</td>
-                  <td>{ev.detalle}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div style={{ marginTop: 12 }}>
-        <Link to={`/admin/usuarios/${encodeURIComponent(id)}`}><button>Volver al usuario</button></Link>
+      <div className="card-body">
+        {history.length > 0 ? (
+          <ul className="list-group list-group-flush">
+            {history.map((h, i) => (
+              <li
+                key={i}
+                className="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <div>
+                  <div className="fw-semibold">{h.accion}</div>
+                  <small className="text-muted">Por: {h.admin}</small>
+                </div>
+                <small className="text-muted">{h.fecha}</small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted mb-0">
+            No hay registros en el historial de este usuario.
+          </p>
+        )}
       </div>
     </div>
   );

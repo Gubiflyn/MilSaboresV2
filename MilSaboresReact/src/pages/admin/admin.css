@@ -288,3 +288,15 @@
   }
   .btn, .btn-primary { width: 100%; }
 }
+
+/* ===== Admin › Users: Acciones en tabla ===== */
+.admin-actions {
+  display: inline-flex;
+  gap: .5rem;               /* separación entre botones */
+}
+
+.admin-actions .btn {
+  white-space: nowrap;      /* evita que el texto se corte */
+  min-width: 106px;         /* ancho parejo */
+  border-radius: 999px;     /* look redondeado consistente */
+}

@@ -1,40 +1,69 @@
-// src/pages/admin/UserView.jsx
-import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const LS_USERS = "usuarios_v1";
 
 export default function UserView() {
-  const { id } = useParams(); // aquí 'id' es el email
+  const { id } = useParams(); // normalmente email codificado
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const lista = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    setUser(lista.find((u) => u.email === id) || null);
+    const all = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
+    const found = all.find((u) => encodeURIComponent(u.email) === id);
+    setUser(found || null);
   }, [id]);
 
   if (!user) {
     return (
-      <div>
-        <p>No se encontró el usuario.</p>
-        <Link to="/admin/usuarios">Volver</Link>
+      <div className="text-center text-muted py-5">
+        Usuario no encontrado
       </div>
     );
   }
 
   return (
-    <div>
-      <h2>Detalle usuario</h2>
-      <p><b>Email (ID):</b> {user.email}</p>
-      <p><b>Nombre:</b> {user.nombre}{user.apellidos ? ` ${user.apellidos}` : ""}</p>
-      <p><b>Rol:</b> {user.rol || "cliente"}</p>
-      <p><b>Beneficio:</b> {user.beneficio || "—"}</p>
-      <p><b>Fecha Nac.:</b> {user.fechaNacimiento || "—"}</p>
+    <div className="card shadow-sm">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Detalle del usuario</h5>
+        <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
+          ← Volver
+        </Link>
+      </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <Link to={`/admin/usuarios/${encodeURIComponent(id)}/editar`}><button>Editar</button></Link>
-        <Link to={`/admin/usuarios/${encodeURIComponent(id)}/historial`}><button>Historial</button></Link>
-        <Link to="/admin/usuarios"><button>Volver</button></Link>
+      <div className="card-body">
+        <ul className="list-group list-group-flush">
+          <li className="list-group-item">
+            <strong>Nombre:</strong> {user.nombre || "—"}
+          </li>
+          <li className="list-group-item">
+            <strong>Correo:</strong> {user.email || "—"}
+          </li>
+          <li className="list-group-item">
+            <strong>Rol:</strong>{" "}
+            <span
+              className={`badge bg-${
+                user.rol === "admin" ? "primary" : "secondary"
+              }`}
+            >
+              {user.rol}
+            </span>
+          </li>
+          <li className="list-group-item">
+            <strong>Beneficio:</strong> {user.beneficio || "—"}
+          </li>
+          <li className="list-group-item">
+            <strong>Fecha Nacimiento:</strong> {user.fechaNacimiento || "—"}
+          </li>
+        </ul>
+      </div>
+
+      <div className="card-footer text-end">
+        <Link
+          to={`/admin/usuarios/${id}/editar`}
+          className="btn btn-primary btn-sm"
+        >
+          Editar
+        </Link>
       </div>
     </div>
   );

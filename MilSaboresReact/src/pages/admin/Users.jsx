@@ -15,10 +15,10 @@ export default function Users() {
     setList(saved);
   }, []);
 
-  // Persistencia
+  // Persistencia local
   const persist = (next) => {
+    localStorage.setItem(LS_USERS, JSON.stringify(next));
     setList(next);
-    try { localStorage.setItem(LS_USERS, JSON.stringify(next)); } catch {}
   };
 
   // Búsqueda por nombre o email
@@ -40,91 +40,105 @@ export default function Users() {
   };
 
   return (
-    <div className="card">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <span>Usuarios</span>
+    <div className="d-flex flex-column gap-3">
+      {/* Encabezado */}
+      <div className="d-flex align-items-center justify-content-between">
+        <h3 className="mb-0">Usuarios</h3>
+
         <div className="d-flex gap-2">
           <input
             className="form-control"
-            placeholder="Buscar por nombre o email…"
+            placeholder="Buscar por nombre o correo…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            style={{ maxWidth: 320 }}
           />
+
+          {/* Importante: usar Link para que navegue a la página de nuevo usuario */}
           <Link to="/admin/usuarios/nuevo" className="btn btn-primary">
             + Nuevo
           </Link>
         </div>
       </div>
 
-      <div className="table-responsive">
-        <table className="table table-hover align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Fecha Nac.</th>
-              <th>Beneficio</th>
-              <th style={{ width: 280 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
+      {/* Tabla */}
+      <div className="card">
+        <div className="table-responsive">
+          <table className="table table-hover mb-0 align-middle">
+            <thead className="table-light">
               <tr>
-                <td colSpan={6} className="text-center text-muted py-4">
-                  Sin resultados.
-                </td>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Beneficio</th>
+                <th>Fecha Nacimiento</th>
+                <th style={{ width: 420 }}>Acciones</th>
               </tr>
-            )}
+            </thead>
 
-            {filtered.map((u) => (
-              <tr key={u.email}>
-                <td>{u.nombre || "—"}</td>
-                <td>{u.email}</td>
-                <td>
-                  <span
-                    className={
-                      "badge " + (u.rol === "admin" ? "text-bg-warning" : "text-bg-light")
-                    }
-                  >
-                    {u.rol}
-                  </span>
-                </td>
-                <td>{u.fechaNacimiento || "—"}</td>
-                <td>{u.beneficio || "—"}</td>
-                <td className="text-end">
-                  <div className="btn-group">
-                    <Link
-                      to={`/admin/usuarios/${encodeURIComponent(u.email)}`}
-                      className="btn btn-sm btn-outline-primary"
-                    >
-                      Ver
-                    </Link>
-                    <Link
-                      to={`/admin/usuarios/${encodeURIComponent(u.email)}/editar`}
-                      className="btn btn-sm btn-outline-secondary"
-                    >
-                      Editar
-                    </Link>
-                    <Link
-                      to={`/admin/usuarios/${encodeURIComponent(u.email)}/historial`}
-                      className="btn btn-sm btn-outline-dark"
-                    >
-                      Historial
-                    </Link>
-                    <button
-                      className="btn btn-sm btn-outline-warning"
-                      onClick={() => toggleRol(list.findIndex(x => x.email === u.email))}
-                      title="Alternar rol (admin/cliente)"
-                    >
-                      Alternar rol
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <tbody>
+              {filtered.length > 0 ? (
+                filtered.map((u) => {
+                  const index = list.findIndex((x) => x.email === u.email);
+                  const id = encodeURIComponent(u.email || "");
+
+                  return (
+                    <tr key={u.email || u.nombre}>
+                      <td>{u.nombre}</td>
+                      <td>{u.email}</td>
+                      <td>{u.rol || "cliente"}</td>
+                      <td>{u.beneficio || "—"}</td>
+                      <td>{u.fechaNacimiento || "—"}</td>
+                      <td>
+                        {/* Grupo de acciones: NO cambiamos handlers ni rutas; solo agrupamos */}
+                        <div className="admin-actions">
+                          <Link
+                            to={`/admin/usuarios/${id}`}
+                            className="btn btn-outline-primary btn-sm text-nowrap"
+                            title="Ver usuario"
+                          >
+                            Ver
+                          </Link>
+
+                          <Link
+                            to={`/admin/usuarios/${id}/editar`}
+                            className="btn btn-outline-secondary btn-sm text-nowrap"
+                            title="Editar usuario"
+                          >
+                            Editar
+                          </Link>
+
+                          <Link
+                            to={`/admin/usuarios/${id}/historial`}
+                            className="btn btn-outline-dark btn-sm text-nowrap"
+                            title="Ver historial"
+                          >
+                            Historial
+                          </Link>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-warning btn-sm text-nowrap"
+                            onClick={() => toggleRol(index)}
+                            title="Alternar rol (admin/cliente)"
+                          >
+                            Alternar rol
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted py-4">
+                    No hay usuarios para mostrar
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
