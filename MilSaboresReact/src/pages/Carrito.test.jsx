@@ -69,7 +69,7 @@ describe("Carrito", () => {
     expect(totalLike).toBeInTheDocument();
   });
 
-  it("TCAR 05: Muestra el botón 'Ir al pago'", async () => {
+  it("TCAR 04: Muestra el botón 'Ir al pago'", async () => {
     renderCarrito();
     const payBtn = await screen.findByRole("button", { name: /ir al pago/i });
     expect(payBtn).toBeInTheDocument();
