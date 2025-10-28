@@ -1,42 +1,58 @@
-import { useEffect, useRef, useState } from "react";
-// Si usas tu AuthContext, puedes descomentar esto y aprovechar el user autenticado
-// import { useAuth } from "../context/AuthContext";
+import { useEffect, useRef, useState, useMemo } from "react";
+import regionesComunas from "../data/chile-regiones-comunas.json";
 
-const DEFAULT_AVATAR = "/img/default-profile.png"; // pon ese archivo en /public/img/
+const DEFAULT_AVATAR = "/img/default-profile.png";
 
-export default function Configuración() {
-  // const { user: authUser } = useAuth(); // opcional si manejas usuario por contexto
+export default function Configuracion() {
   const formRef = useRef(null);
 
-  // Cargamos desde localStorage manteniendo compatibilidad con tu proyecto antiguo
+  // ✅ Combina los datos de "usuario" y "perfiles"
   const getUsuarioLS = () => {
-    try { return JSON.parse(localStorage.getItem("usuario")) || {}; }
-    catch { return {}; }
+    try {
+      const auth = JSON.parse(localStorage.getItem("usuario")) || {};
+      const perfiles = JSON.parse(localStorage.getItem("perfiles")) || [];
+      const perfil = perfiles.find(
+        (p) =>
+          (p.email || p.correo || "").toLowerCase() ===
+          (auth.email || auth.correo || "").toLowerCase()
+      );
+      return { ...perfil, ...auth };
+    } catch {
+      return {};
+    }
   };
 
   const inicio = getUsuarioLS();
+  const regiones = useMemo(() => regionesComunas.map((r) => r.region), []);
+
+  // separa nombre y apellido si vienen juntos
+  const separarNombre = (nombreCompleto = "") => {
+    const partes = nombreCompleto.trim().split(" ");
+    const nombre = partes.slice(0, -1).join(" ") || partes[0] || "";
+    const apellido = partes.slice(-1).join(" ") || "";
+    return { nombre, apellido };
+  };
+
+  const { nombre, apellido } = separarNombre(inicio.nombre || inicio.nombres || "");
+
   const [foto, setFoto] = useState(inicio.fotoPerfil || DEFAULT_AVATAR);
   const [form, setForm] = useState({
-    nombre: inicio.nombre || inicio.nombres || "",
-    apellidos: inicio.apellidos || "",
+    nombre,
+    apellidos: inicio.apellidos || apellido,
     correo: inicio.correo || inicio.email || "",
+    direccion: inicio.direccion || "",
+    region: inicio.region || "",
+    comuna: inicio.comuna || "",
   });
+
   const [editando, setEditando] = useState(false);
   const [ok, setOk] = useState("");
-  const fotoAntesRef = useRef(foto); // para restaurar si se cancela
+  const fotoAntesRef = useRef(foto);
 
-  // Si tu AuthContext expone el usuario real, podrías sincronizarlo aquí:
-  // useEffect(() => {
-  //   if (authUser) {
-  //     setForm(f => ({
-  //       ...f,
-  //       nombre: authUser.nombre || authUser.nombres || f.nombre,
-  //       apellidos: authUser.apellidos || f.apellidos,
-  //       correo: authUser.email || authUser.correo || f.correo,
-  //     }));
-  //     if (authUser.fotoPerfil) setFoto(authUser.fotoPerfil);
-  //   }
-  // }, [authUser]);
+  const comunasDeRegion = useMemo(() => {
+    const r = regionesComunas.find((x) => x.region === form.region);
+    return r ? r.comunas : [];
+  }, [form.region]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -57,25 +73,26 @@ export default function Configuración() {
     try {
       const b64 = await toBase64(file);
       setFoto(b64);
-    } catch {
-      // si algo falla, no rompemos el flujo
-    }
+    } catch {}
   };
 
   const entrarEdicion = () => {
     fotoAntesRef.current = foto;
     setEditando(true);
     setOk("");
-    // limpiamos estilos de validación previos
     formRef.current?.classList.remove("was-validated");
   };
 
   const cancelar = () => {
     const u = getUsuarioLS();
+    const { nombre, apellido } = separarNombre(u.nombre || u.nombres || "");
     setForm({
-      nombre: u.nombre || u.nombres || "",
-      apellidos: u.apellidos || "",
+      nombre,
+      apellidos: u.apellidos || apellido,
       correo: u.correo || u.email || "",
+      direccion: u.direccion || "",
+      region: u.region || "",
+      comuna: u.comuna || "",
     });
     setFoto(u.fotoPerfil || DEFAULT_AVATAR);
     setEditando(false);
@@ -93,14 +110,29 @@ export default function Configuración() {
 
     const usuarioActualizado = {
       ...getUsuarioLS(),
-      nombre: form.nombre.trim(),
+      nombre: `${form.nombre.trim()} ${form.apellidos.trim()}`.trim(),
+      nombres: form.nombre.trim(),
       apellidos: form.apellidos.trim(),
       correo: form.correo.trim(),
-      email: form.correo.trim(),     // compatibilidad con tu código anterior
+      email: form.correo.trim(),
+      direccion: form.direccion.trim(),
+      region: form.region,
+      comuna: form.comuna,
       fotoPerfil: foto,
     };
 
+    // Actualiza tanto "usuario" como su entrada en "perfiles"
     localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
+
+    const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
+    const idx = perfiles.findIndex(
+      (p) =>
+        (p.email || p.correo || "").toLowerCase() ===
+        (form.correo || "").toLowerCase()
+    );
+    if (idx >= 0) perfiles[idx] = { ...perfiles[idx], ...usuarioActualizado };
+    localStorage.setItem("perfiles", JSON.stringify(perfiles));
+
     setOk("¡Información actualizada correctamente!");
     setEditando(false);
   };
@@ -112,7 +144,7 @@ export default function Configuración() {
           <div className="row justify-content-center">
             <div className="col-md-7 col-lg-6">
               <div className="card shadow-lg p-4 bg-white rounded">
-                <div className="config-card__header mb-3">
+                <div className="config-card__header mb-3 text-center">
                   <h3 className="mb-0">Mi Perfil</h3>
                 </div>
 
@@ -121,8 +153,13 @@ export default function Configuración() {
                     <img
                       src={foto || DEFAULT_AVATAR}
                       alt="Foto de perfil"
-                      className="profile-img-preview"
-                      style={{ width: 128, height: 128, objectFit: "cover", borderRadius: "50%" }}
+                      style={{
+                        width: 128,
+                        height: 128,
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                        border: "3px solid #f3c1c1",
+                      }}
                     />
                     <input
                       type="file"
@@ -135,62 +172,125 @@ export default function Configuración() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label config-card__label" htmlFor="nombre">Nombres</label>
+                    <label className="form-label">Nombres</label>
                     <input
-                      id="nombre"
                       name="nombre"
                       type="text"
-                      className="form-control config-card__input"
+                      className="form-control"
                       value={form.nombre}
                       onChange={onChange}
                       readOnly={!editando}
                       required
                     />
-                    <div className="invalid-feedback">Por favor, ingresa tus nombres.</div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label config-card__label" htmlFor="apellidos">Apellidos</label>
+                    <label className="form-label">Apellidos</label>
                     <input
-                      id="apellidos"
                       name="apellidos"
                       type="text"
-                      className="form-control config-card__input"
+                      className="form-control"
                       value={form.apellidos}
                       onChange={onChange}
                       readOnly={!editando}
                       required
                     />
-                    <div className="invalid-feedback">Por favor, ingresa tus apellidos.</div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label config-card__label" htmlFor="correo">Correo electrónico</label>
+                    <label className="form-label">Correo electrónico</label>
                     <input
-                      id="correo"
                       name="correo"
                       type="email"
-                      className="form-control config-card__input"
+                      className="form-control"
                       value={form.correo}
                       onChange={onChange}
                       readOnly={!editando}
                       required
                     />
-                    <div className="invalid-feedback">Por favor, ingresa un correo válido.</div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Dirección</label>
+                    <input
+                      name="direccion"
+                      type="text"
+                      className="form-control"
+                      value={form.direccion}
+                      onChange={onChange}
+                      readOnly={!editando}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Región</label>
+                    <select
+                      name="region"
+                      className="form-select"
+                      value={form.region}
+                      onChange={(e) =>
+                        setForm({ ...form, region: e.target.value, comuna: "" })
+                      }
+                      disabled={!editando}
+                      required
+                    >
+                      <option value="" disabled>
+                        Selecciona una región
+                      </option>
+                      {regiones.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Comuna</label>
+                    <select
+                      name="comuna"
+                      className="form-select"
+                      value={form.comuna}
+                      onChange={(e) =>
+                        setForm({ ...form, comuna: e.target.value })
+                      }
+                      disabled={!editando || !form.region}
+                      required
+                    >
+                      <option value="" disabled>
+                        {form.region
+                          ? "Selecciona una comuna"
+                          : "Primero elige una región"}
+                      </option>
+                      {comunasDeRegion.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {!editando ? (
                     <div className="d-flex justify-content-end gap-2 mt-4">
-                      <button type="button" className="config-card__btn btn btn-primary" onClick={entrarEdicion}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={entrarEdicion}
+                      >
                         <i className="fas fa-pen" /> Editar
                       </button>
                     </div>
                   ) : (
                     <div className="d-flex justify-content-end gap-2 mt-4">
-                      <button type="button" className="config-card__cancel btn btn-outline-secondary" onClick={cancelar}>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={cancelar}
+                      >
                         Cancelar
                       </button>
-                      <button type="submit" className="config-card__btn btn btn-primary">
+                      <button type="submit" className="btn btn-primary">
                         Aplicar cambios
                       </button>
                     </div>
@@ -198,7 +298,7 @@ export default function Configuración() {
                 </form>
 
                 {ok && (
-                  <div className="alert alert-success config-card__success mt-3 mb-0">
+                  <div className="alert alert-success mt-3 mb-0 text-center">
                     {ok}
                   </div>
                 )}

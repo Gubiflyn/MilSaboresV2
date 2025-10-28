@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import seed from "../../data/tortas.json";
 
 const LS_TORTAS = "tortas_v1";
@@ -21,6 +22,7 @@ export default function Products() {
   });
 
   const [catsLS, setCatsLS] = useState([]); // ➕ NUEVO
+  const navigate = useNavigate(); // ➕ NUEVO
 
   // Carga inicial de productos
   useEffect(() => {
@@ -139,6 +141,19 @@ export default function Products() {
       setList((prev) => prev.filter((_, i) => i !== idx));
     }
   };
+
+  // ➕ NUEVO: ir al detalle del producto
+  // Reemplaza tu handleView por este
+  const handleView = (p) => {
+    const code =
+      p?.codigo ?? p?.id ?? p?.sku ?? p?.code ?? p?.slug ?? p?.nombre;
+    if (!code) {
+      alert("Este producto no tiene identificador para ver el detalle.");
+      return;
+    }
+    navigate(`/admin/productos/${encodeURIComponent(String(code))}`);
+  };
+
 
   return (
     <div className="container-fluid">
@@ -303,7 +318,7 @@ export default function Products() {
               <th>Categoría</th>
               <th>Precio</th>
               <th>Stock</th>
-              <th style={{ width: 140 }}>Acciones</th>
+              <th style={{ width: 210 }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -315,6 +330,13 @@ export default function Products() {
                 <td>{CLP(p.precio)}</td>
                 <td>{p.stock}</td>
                 <td>
+                  <button
+                    className="btn btn-sm btn-outline-info me-1"
+                    onClick={() => handleView(p)}
+                  >
+                    Detalle
+                  </button>
+
                   <button
                     className="btn btn-sm btn-outline-primary me-1"
                     onClick={() => handleEdit(i)}

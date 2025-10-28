@@ -1,11 +1,35 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const LS_USERS = "usuarios_v1";
+const LS_PRIMARY = "usuarios_v1";
+const LS_FALLBACKS = ["perfiles", "usuarios", "USERS"]; // otras llaves que usaste en el proyecto
+
+function readUsers() {
+  // intenta leer en orden: principal -> fallbacks
+  const keys = [LS_PRIMARY, ...LS_FALLBACKS];
+  for (const k of keys) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return { key: k, list: arr };
+    } catch {
+      // ignore parse errors
+    }
+  }
+  return { key: LS_PRIMARY, list: [] };
+}
+
+function writeUsers(key, list) {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch {}
+}
 
 export default function UserEdit() {
-  const { id } = useParams();
+  const { id } = useParams(); // id = encodeURIComponent(email)
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     nombre: "",
     email: "",
@@ -13,12 +37,41 @@ export default function UserEdit() {
     beneficio: "",
     fechaNacimiento: "",
   });
+  const [storageKey, setStorageKey] = useState(LS_PRIMARY);
+  const [notFound, setNotFound] = useState(false);
+
+  const idDecoded = useMemo(() => {
+    try {
+      return decodeURIComponent(id || "");
+    } catch {
+      return id || "";
+    }
+  }, [id]);
 
   useEffect(() => {
-    const all = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    const found = all.find((u) => encodeURIComponent(u.email) === id);
-    if (found) setForm(found);
-  }, [id]);
+    const { key, list } = readUsers();
+    setStorageKey(key);
+
+    // busca por email con ambas comparaciones (codificada y directa)
+    const found = list.find(
+      (u) =>
+        encodeURIComponent(String(u?.email || "")) === String(id) ||
+        String(u?.email || "") === idDecoded
+    );
+
+    if (found) {
+      setForm({
+        nombre: found.nombre || "",
+        email: found.email || "",
+        rol: found.rol || "cliente",
+        beneficio: found.beneficio || "",
+        fechaNacimiento: found.fechaNacimiento || "",
+      });
+      setNotFound(false);
+    } else {
+      setNotFound(true);
+    }
+  }, [id, idDecoded]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,14 +80,55 @@ export default function UserEdit() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const all = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    const idx = all.findIndex((u) => encodeURIComponent(u.email) === id);
-    if (idx !== -1) {
-      all[idx] = form;
-      localStorage.setItem(LS_USERS, JSON.stringify(all));
-      navigate("/admin/usuarios");
+
+    const { key, list } = readUsers();
+    // busca índice por el email original de la URL (tolerante)
+    const idx = list.findIndex(
+      (u) =>
+        encodeURIComponent(String(u?.email || "")) === String(id) ||
+        String(u?.email || "") === idDecoded
+    );
+
+    if (idx === -1) {
+      alert("No se encontró el usuario a editar. Vuelve al listado e inténtalo nuevamente.");
+      return;
     }
+
+    // Actualiza manteniendo la misma posición
+    const updated = [...list];
+    updated[idx] = {
+      ...updated[idx],
+      ...form,
+    };
+
+    writeUsers(key, updated);
+    navigate("/admin/usuarios");
   };
+
+  if (notFound) {
+    return (
+      <div className="card shadow-sm">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Editar usuario</h5>
+          <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
+            ← Volver
+          </Link>
+        </div>
+        <div className="card-body">
+          <div className="alert alert-warning">
+            No se encontró el usuario con id <code>{id}</code>
+            {id !== idDecoded ? (
+              <>
+                {" "}
+                (email decodificado: <code>{idDecoded}</code>)
+              </>
+            ) : null}
+            . Revisa el listado e intenta nuevamente.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card shadow-sm">
@@ -122,6 +216,8 @@ export default function UserEdit() {
           </button>
         </div>
       </form>
+
+      
     </div>
   );
 }

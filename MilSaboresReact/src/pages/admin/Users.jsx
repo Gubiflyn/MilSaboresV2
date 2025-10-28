@@ -1,7 +1,8 @@
-// src/pages/admin/Users.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllUsers } from "../../utils/usersRepo";
+
 
 export default function Users() {
   const [list, setList] = useState([]);
