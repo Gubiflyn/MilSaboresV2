@@ -31,7 +31,7 @@ export default function Ofertas() {
     }
   }, []);
 
-  // 👉 MISMOS 3 ÍTEMS QUE EN HOME (torta, postre, sin azúcar)
+  // 
   const ofertas = useMemo(() => {
     if (!Array.isArray(productos) || productos.length === 0) return [];
 
@@ -96,7 +96,7 @@ export default function Ofertas() {
         <Link to="/productos" className="btn btn-sm btn-outline-primary">Ver todos los productos</Link>
       </div>
       <p className="text-muted mb-4">
-        Misma selección destacada del inicio: una torta, un postre individual y una opción sin azúcar.
+        Nuestra selección destacada de torta, un postre individual y una opción sin azúcar.
       </p>
 
       <div className="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
