@@ -1,12 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Boleta from "../Boleta"; // Boleta.jsx está en /src/pages, por eso ../
+import Boleta from "../Boleta"; 
 
-/**
- * Vista “Mostrar Boleta” dentro del área Admin.
- * Reusa la misma página pública Boleta, sin modificarla.
- * Solo envuelve con un header y un enlace de retorno a /admin/pedidos.
- */
 export default function OrderReceipt() {
   return (
     <div className="p-3">

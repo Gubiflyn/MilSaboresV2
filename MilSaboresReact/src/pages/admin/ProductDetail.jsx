@@ -1,203 +1,224 @@
-import React, { useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import dataFallback from "../../data/tortas.json"; // respaldo si no hay localStorage
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import seed from "../../data/tortas.json";
 
-// ---- Helpers ----
-const formatCLP = (n) =>
-  (parseInt(n, 10) || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP" });
+const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
+const SOURCES = ["tortas_v1", "PRODUCTS", "productos", "productosMilSabores"];
 
-function readProducts() {
-  // intenta distintas llaves comunes
-  const keys = ["PRODUCTS", "productos", "productosMilSabores"];
-  for (const k of keys) {
-    const raw = localStorage.getItem(k);
-    if (raw) {
-      try {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) return arr;
-      } catch (e) {
-        // ignore
-      }
-    }
-  }
-  return Array.isArray(dataFallback) ? dataFallback : [];
+const norm = (v) => String(v ?? "").trim().toLowerCase();
+
+// Devuelve el primer valor definido de useParams (sirve si tu ruta usa :id en vez de :codigo)
+function getAnyParam(obj) {
+  if (!obj) return "";
+  const keys = ["codigo", "id", "sku", "code", "slug", "param"]; // nombres comunes
+  for (const k of keys) if (obj[k] != null) return String(obj[k]);
+  // si vino con otro nombre raro, toma el primero
+  const dynamic = Object.values(obj)[0];
+  return dynamic != null ? String(dynamic) : "";
 }
 
-function isCritical(p) {
-  const crit = typeof p.minStock === "number" ? p.minStock : 5;
-  return (p.stock ?? 0) <= crit;
+function getIdCandidates(p) {
+  return [p?.codigo, p?.id, p?.sku, p?.code, p?.slug, p?.nombre].filter(Boolean);
 }
 
 export default function ProductDetail() {
-  const { codigo } = useParams();
+  const params = useParams();
+  const rawParam = getAnyParam(params);
+  const searchKey = norm(decodeURIComponent(rawParam));
   const navigate = useNavigate();
 
-  const product = useMemo(() => {
-    const products = readProducts();
-    // Buscar por codigo, id o slug
-    return (
-      products.find((p) => String(p.codigo) === String(codigo)) ||
-      products.find((p) => String(p.id) === String(codigo)) ||
-      products.find((p) => String(p.slug) === String(codigo)) ||
-      null
-    );
-  }, [codigo]);
+  const [product, setProduct] = useState(null);
+  const [loadedFrom, setLoadedFrom] = useState(null);
+
+  function loadAll() {
+    const all = [];
+    let first = null;
+    for (const key of SOURCES) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) {
+          all.push(...arr);
+          if (!first) first = key;
+        }
+      } catch {}
+    }
+    if (all.length) {
+      setLoadedFrom(first);
+      return all;
+    }
+    setLoadedFrom("tortas.json");
+    return Array.isArray(seed) ? seed.slice() : [];
+  }
+
+  function findFlexible(items, param) {
+    if (!Array.isArray(items) || !param) return null;
+
+    // 1) exacto por cualquier id candidate (normalizado)
+    const exact = items.find((p) => getIdCandidates(p).some((v) => norm(v) === param));
+    if (exact) return exact;
+
+    // 2) incluye por nombre (busca parcial)
+    const partial = items.find((p) => norm(p?.nombre).includes(param));
+    if (partial) return partial;
+
+    return null;
+  }
+
+  useEffect(() => {
+    const items = loadAll();
+    const found = findFlexible(items, searchKey);
+    setProduct(found);
+  }, [searchKey]);
+
+  const isCritical = useMemo(() => {
+    if (!product) return false;
+    const stock = Number(product.stock ?? 0);
+    const min = Number(product.minStock ?? 5);
+    return stock <= min;
+  }, [product]);
 
   if (!product) {
     return (
-      <div className="admin-content">
-        <div className="card">
-          <div className="card-header">
-            <strong>Producto no encontrado</strong>
-            <div className="admin-actions">
-              <button className="btn-admin" onClick={() => navigate(-1)}>Volver</button>
-              <Link className="btn-admin btn-primary" to="/admin/products">Ir a Productos</Link>
-            </div>
-          </div>
-          <div className="card-body">
-            <p className="muted">
-              No encontramos un producto con el identificador <code>{codigo}</code>. Revisa el enlace o vuelve a la
-              lista.
-            </p>
-          </div>
+      <div className="container py-3">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h2 className="m-0">Detalle de producto</h2>
+          <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
+            ← Volver
+          </button>
+        </div>
+
+        <div className="alert alert-danger">
+          <strong>Producto no encontrado.</strong> Verifica la URL o vuelve al listado.
+        </div>
+        <div className="text-muted small">
+          Buscado por: <code>{decodeURIComponent(rawParam || "") || "(vacío)"}</code> ·
+          Fuentes probadas: <code>{SOURCES.join(", ")}</code>
         </div>
       </div>
     );
   }
 
-  const {
-    nombre,
-    descripcion,
-    categoria,
-    precio,
-    stock,
-    imagen,
-    codigo: cod,
-    id,
-    minStock,
-    creadoEn,
-    actualizadoEn,
-    activo = true,
-    peso,
-    unidad,
-  } = product;
-
   return (
-    <div className="admin-content">
-      {/* Encabezado */}
-      <div className="card" style={{ marginBottom: 14 }}>
-        <div className="card-header">
-          <div>
-            <div className="section-title">{nombre || "Producto"}</div>
-            <div className="muted">
-              Código: <strong>{cod ?? id}</strong> {categoria ? <>• Categoría: <strong>{categoria}</strong></> : null}
+    <div className="container py-3">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2 className="m-0">{product.nombre || "Producto"}</h2>
+          <small className="text-muted">
+            ID:{" "}
+            <code>
+              {product.codigo ?? product.id ?? product.sku ?? product.code ?? product.slug ?? "—"}
+            </code>
+          </small>
+        </div>
+        <div className="d-flex gap-2">
+          <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>
+            ← Volver
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="row g-3">
+        <div className="col-md-5">
+          <div className="card h-100">
+            <div className="ratio ratio-4x3">
+              <img
+                src={product.imagen || "/img/placeholder-cake.png"}
+                alt={product.nombre || product.codigo}
+                className="card-img-top object-fit-cover"
+              />
             </div>
-          </div>
-          <div className="admin-actions">
-            <button className="btn-admin" onClick={() => navigate(-1)}>Volver</button>
-            <Link className="btn-admin" to="/admin/products">Listado</Link>
-            <Link className="btn-admin btn-primary" to={`/admin/products/${cod ?? id}/edit`}>
-              Editar
-            </Link>
+            <div className="card-body">
+              <div className="d-flex align-items-center gap-2">
+                <span className="badge bg-secondary">
+                  {product.categoria || "Sin categoría"}
+                </span>
+                <span className={`badge ${isCritical ? "bg-danger" : "bg-success"}`}>
+                  {isCritical ? "Stock crítico" : "Stock OK"}
+                </span>
+                {product?.activo === false && (
+                  <span className="badge bg-warning text-dark">Inactivo</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Cuerpo */}
-        <div className="card-body">
-          <div className="form-grid">
-            {/* Col izquierda: imagen */}
-            <div className="form-col-6">
-              <div className="card" style={{ overflow: "hidden" }}>
-                <div className="card-body" style={{ display: "grid", placeItems: "center" }}>
-                  <img
-                    src={imagen || "/img/placeholder-cake.png"}
-                    alt={nombre}
-                    style={{ maxWidth: "100%", borderRadius: 12, objectFit: "cover" }}
-                    onError={(e) => {
-                      e.currentTarget.src = "/img/placeholder-cake.png";
-                    }}
-                  />
+        <div className="col-md-7">
+          <div className="card h-100">
+            <div className="card-body">
+              <h5 className="card-title mb-3">Información</h5>
+              <div className="row g-3">
+                <div className="col-6">
+                  <div className="text-muted small">Precio</div>
+                  <div className="fw-semibold fs-5">{CLP(product.precio)}</div>
+                </div>
+                <div className="col-6">
+                  <div className="text-muted small">Stock</div>
+                  <div className="fw-semibold fs-5">
+                    {Number(product.stock ?? 0)}
+                    {product?.minStock != null && (
+                      <span className="text-muted small ms-2">
+                        (mín. {Number(product.minStock)})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-6">
+                  <div className="text-muted small">Estado</div>
+                  <div className="fw-semibold">
+                    {product?.activo === false ? "Inactivo" : "Activo"}
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="text-muted small">Categoría</div>
+                  <div className="fw-semibold">{product.categoria || "—"}</div>
+                </div>
+
+                {product?.peso && (
+                  <div className="col-6">
+                    <div className="text-muted small">Peso</div>
+                    <div className="fw-semibold">{product.peso}</div>
+                  </div>
+                )}
+                {product?.unidad && (
+                  <div className="col-6">
+                    <div className="text-muted small">Unidad</div>
+                    <div className="fw-semibold">{product.unidad}</div>
+                  </div>
+                )}
+
+                <div className="col-6">
+                  <div className="text-muted small">Creado</div>
+                  <div className="fw-semibold">
+                    {product.creadoEn
+                      ? new Date(product.creadoEn).toLocaleString()
+                      : "—"}
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="text-muted small">Actualizado</div>
+                  <div className="fw-semibold">
+                    {product.actualizadoEn
+                      ? new Date(product.actualizadoEn).toLocaleString()
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="col-12">
+                  <div className="text-muted small mb-1">Descripción</div>
+                  <div>{product.descripcion || "Sin descripción."}</div>
                 </div>
               </div>
             </div>
 
-            {/* Col derecha: datos */}
-            <div className="form-col-6">
-              <div className="table-wrap">
-                <table className="table">
-                  <tbody>
-                    <tr>
-                      <th style={{ width: 220 }}>Precio</th>
-                      <td>{formatCLP(precio)}</td>
-                    </tr>
-                    <tr>
-                      <th>Stock</th>
-                      <td>
-                        {stock}{" "}
-                        {isCritical(product) ? (
-                          <span className="badge danger">Crítico{typeof minStock === "number" ? ` (≤ ${minStock})` : ""}</span>
-                        ) : (
-                          <span className="badge success">OK</span>
-                        )}
-                      </td>
-                    </tr>
-                    {peso ? (
-                      <tr>
-                        <th>Peso</th>
-                        <td>
-                          {peso} {unidad || "kg"}
-                        </td>
-                      </tr>
-                    ) : null}
-                    <tr>
-                      <th>Estado</th>
-                      <td>
-                        {activo ? <span className="badge success">Activo</span> : <span className="badge warn">Inactivo</span>}
-                      </td>
-                    </tr>
-                    {creadoEn ? (
-                      <tr>
-                        <th>Creado</th>
-                        <td>{new Date(creadoEn).toLocaleString("es-CL")}</td>
-                      </tr>
-                    ) : null}
-                    {actualizadoEn ? (
-                      <tr>
-                        <th>Actualizado</th>
-                        <td>{new Date(actualizadoEn).toLocaleString("es-CL")}</td>
-                      </tr>
-                    ) : null}
-                    {typeof minStock === "number" ? (
-                      <tr>
-                        <th>Stock mínimo</th>
-                        <td>{minStock}</td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-
-              {descripcion ? (
-                <>
-                  <div className="spacer" />
-                  <div className="card">
-                    <div className="card-header"><strong>Descripción</strong></div>
-                    <div className="card-body">
-                      <p style={{ margin: 0 }}>{descripcion}</p>
-                    </div>
-                  </div>
-                </>
-              ) : null}
-            </div>
+           
           </div>
         </div>
-      </div>
-
-      {/* Accesos rápidos */}
-      <div className="quick-tiles">
-        <Link className="tile" to={`/admin/products/${cod ?? id}/edit`}>Editar producto</Link>
-        <Link className="tile" to="/admin/products">Volver al listado</Link>
-        <Link className="tile" to="/admin/products/critical">Ver productos críticos</Link>
       </div>
     </div>
   );
