@@ -46,7 +46,7 @@ const renderCarrito = () =>
   );
 
 describe("Carrito", () => {
-  it("TCAR 01: Renderiza el título exacto del carrito", async () => {
+  it("TC-Pages 7: Renderiza el título exacto del carrito", async () => {
     renderCarrito();
     const heading = await screen.findByRole("heading", {
       name: /carrito de compras/i,
@@ -55,7 +55,7 @@ describe("Carrito", () => {
     expect(heading).toBeInTheDocument();
   });
 
-  it("TCAR 02: Muestra los productos con sus cantidades (en inputs)", async () => {
+  it("TC-Pages 8: Muestra los productos con sus cantidades (en inputs)", async () => {
     renderCarrito();
     expect(await screen.findByText(/torta chocolate/i)).toBeInTheDocument();
     expect(await screen.findByText(/kuchen manzana/i)).toBeInTheDocument();
@@ -63,13 +63,13 @@ describe("Carrito", () => {
     expect(screen.getAllByDisplayValue("1").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("TCAR 03: Calcula y muestra el total en CLP", async () => {
+  it("TC-Pages 9: Calcula y muestra el total en CLP", async () => {
     renderCarrito();
     const totalLike = await screen.findByText(/total:\s*\$?\s*39\.?990/i);
     expect(totalLike).toBeInTheDocument();
   });
 
-  it("TCAR 04: Muestra el botón 'Ir al pago'", async () => {
+  it("TC-Pages 10: Muestra el botón 'Ir al pago'", async () => {
     renderCarrito();
     const payBtn = await screen.findByRole("button", { name: /ir al pago/i });
     expect(payBtn).toBeInTheDocument();
