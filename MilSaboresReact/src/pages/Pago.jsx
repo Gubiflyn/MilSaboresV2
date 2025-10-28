@@ -1,3 +1,4 @@
+// src/pages/Pago.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -204,7 +205,8 @@ export default function Pago() {
       notasPromo: {
         porcentajeAplicado: promo.breakdown?.porcentaje,
         descuentoPorcentaje: promo.breakdown?.percDiscount,
-        descuentoCumpleDuoc: promo.breakdown?.birthdayDiscount,
+        // 👇 corregido: guardar el descuento de torta gratis real
+        descuentoCumpleDuoc: promo.breakdown?.cakeDiscount,
         detalles: promo.breakdown?.detalles || []
       }
     };
@@ -271,7 +273,8 @@ export default function Pago() {
 
           <div className="d-flex justify-content-between fw-semibold fs-5 mt-2">
             <span>Total a pagar</span>
-            <span>${CLP(promoPreview?.total || subtotalItems)}</span>
+            {/* 👇 corregido: si total es 0, que se muestre 0 y no el subtotal */}
+            <span>${CLP(promoPreview?.total ?? subtotalItems)}</span>
           </div>
 
           {(promoPreview?.breakdown?.detalles || []).length > 0 && (
