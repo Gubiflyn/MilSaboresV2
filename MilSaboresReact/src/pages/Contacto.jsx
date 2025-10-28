@@ -20,7 +20,7 @@ export default function Contacto() {
         <div className="container">
           <div className="row align-items-center g-4">
             <div className="col-12 col-lg-7">
-              <h1 className="display-5 fw-bold mb-2">Hablemos 🍰</h1>
+              <h1 className="display-5 fw-bold mb-2">Hablemos </h1>
               <p className="lead mb-0 text-body-secondary">
                 Escríbenos para cotizaciones, pedidos especiales o soporte. Te
                 responderemos a la brevedad.
