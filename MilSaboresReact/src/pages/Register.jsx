@@ -1,11 +1,14 @@
 // src/pages/Register.jsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import regionesComunas from "../data/chile-regiones-comunas.json";
 
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const regiones = useMemo(() => regionesComunas.map((r) => r.region), []);
 
   const [form, setForm] = useState({
     nombres: "",
@@ -13,19 +16,36 @@ export default function Register() {
     correo: "",
     contrasena: "",
     fechaNacimiento: "",
-    telefono: "",
+    telefono: "+569", 
     direccion: "",
     region: "",
     comuna: "",
-    codigoDescuento: ""
+    codigoDescuento: "",
   });
+
   const [err, setErr] = useState("");
+
+  // Comunas dependientes de la región
+  const comunasDeRegion = useMemo(() => {
+    const r = regionesComunas.find((x) => x.region === form.region);
+    return r ? r.comunas : [];
+  }, [form.region]);
+
+  // Forzar prefijo +569, permitir solo dígitos y cortar a +569########
+  const enforcePhone = (value) => {
+    if (!value.startsWith("+569")) {
+      value = "+569" + value.replace(/[^0-9]/g, "").replace(/^569/, "");
+    }
+    value = value.replace(/(?!^\+)[^0-9]/g, "");
+    if (value.length > 12) value = value.slice(0, 12);
+    return value;
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
 
-    // Validaciones básicas
+    // Obligatorios
     const oblig = [
       "nombres",
       "apellidos",
@@ -34,7 +54,8 @@ export default function Register() {
       "fechaNacimiento",
       "direccion",
       "region",
-      "comuna"
+      "comuna",
+      "telefono",
     ];
     for (const k of oblig) {
       if (!String(form[k] || "").trim()) {
@@ -42,16 +63,23 @@ export default function Register() {
         return;
       }
     }
+
+    // Teléfono chileno móvil: +569 + 8 dígitos
+    if (!/^\+569\d{8}$/.test(form.telefono)) {
+      setErr("El teléfono debe tener el formato +569XXXXXXXX (8 dígitos).");
+      return;
+    }
+
     if (form.contrasena.length < 4 || form.contrasena.length > 15) {
       setErr("La contraseña debe tener entre 4 y 15 caracteres.");
       return;
     }
 
-    // ===== Normalización de cupón/beneficio =====
+    // ===== Beneficios coherentes con tu Admin/Promos =====
     const codigoRegistro = (form.codigoDescuento || "").trim().toUpperCase();
     const isDuoc = /@(duocuc|duoc)\.cl$/i.test(form.correo);
 
-    // calcular edad para el beneficio 50%
+    // Calcular edad
     let edad = 0;
     if (form.fechaNacimiento) {
       const d = new Date(form.fechaNacimiento);
@@ -61,11 +89,7 @@ export default function Register() {
       if (m < 0 || (m === 0 && now.getDate() < d.getDate())) edad--;
     }
 
-    // Resolución de beneficio PRIORITARIO según tu lógica global:
-    // 1) 50% si edad >= 50
-    // 2) Si no, FELICES50 (10%) si ingresó el cupón
-    // 3) Si no, TORTA GRATIS (marcador para DUOC; el regalo se valida por cumpleaños en promotions.js)
-    // 4) Si nada, "Sin beneficio"
+    // Prioridad de beneficios
     let beneficio = "Sin beneficio";
     if (edad >= 50) {
       beneficio = "50%";
@@ -75,34 +99,54 @@ export default function Register() {
       beneficio = "TORTA GRATIS";
     }
 
+    // Estructura coherente con Admin (Users.jsx)
     const usuario = {
-      nombres: form.nombres,
-      apellidos: form.apellidos,
-      correo: form.correo,
+      nombre: `${form.nombres} ${form.apellidos}`.trim(),
+      email: form.correo,
+      // 🔐 IMPRESCINDIBLE: guardar password para que AuthContext.login lo valide
+      password: form.contrasena,
+      // (compat opcional)
       contrasena: form.contrasena,
+
+      rol: "cliente",
+      beneficio,
       fechaNacimiento: form.fechaNacimiento,
+
+      // detalle adicional
       telefono: form.telefono,
       direccion: form.direccion,
       region: form.region,
       comuna: form.comuna,
-      // ⚠️ claves compatibles con promotions.js
-      codigoRegistro, // p.ej. "FELICES50"
-      beneficio       // "50%" | "FELICES50" | "TORTA GRATIS" | "Sin beneficio"
+
+      // compat con promociones
+      codigoRegistro,
+
+      // campos separados por si los usas en otra vista
+      nombres: form.nombres,
+      apellidos: form.apellidos,
     };
 
-    // Guardar en localStorage bajo "perfiles"
+    // Persistimos en localStorage (colección perfiles) SIN duplicar por email (case-insensitive)
     const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
-    perfiles.push(usuario);
+    const emailLC = form.correo.toLowerCase();
+    const idx = perfiles.findIndex(
+      (p) => (p.email || p.correo || "").toLowerCase() === emailLC
+    );
+    if (idx >= 0) {
+      perfiles[idx] = { ...perfiles[idx], ...usuario };
+    } else {
+      perfiles.push(usuario);
+    }
     localStorage.setItem("perfiles", JSON.stringify(perfiles));
 
-    // Auto-login
+    // Auto-login básico (con tu AuthContext actual)
     const res = await login(form.correo, form.contrasena);
-    if (!res.ok) {
+    if (!res?.ok) {
+      // Si algo raro ocurre, redirige a /login
       navigate("/login");
       return;
     }
 
-    // Mensaje amigable
     let msg = "Sin beneficio";
     if (beneficio === "50%") msg = "50% de descuento en todos los productos";
     else if (beneficio === "FELICES50") msg = "10% de descuento de por vida";
@@ -137,6 +181,7 @@ export default function Register() {
                   required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Correo *</label>
                 <input
@@ -157,6 +202,7 @@ export default function Register() {
                   required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Fecha de nacimiento *</label>
                 <input
@@ -172,13 +218,12 @@ export default function Register() {
                 <input
                   className="form-control"
                   value={form.codigoDescuento}
-                  onChange={(e) =>
-                    setForm({ ...form, codigoDescuento: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, codigoDescuento: e.target.value })}
                   placeholder="FELICES50"
                 />
               </div>
-              <div className="col-md-6">
+
+              <div className="col-md-8">
                 <label className="form-label">Dirección *</label>
                 <input
                   className="form-control"
@@ -187,31 +232,55 @@ export default function Register() {
                   required
                 />
               </div>
-              <div className="col-md-6">
-                <label className="form-label">Teléfono</label>
+              <div className="col-md-4">
+                <label className="form-label">Teléfono *</label>
                 <input
                   className="form-control"
                   value={form.telefono}
-                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                  onChange={(e) => setForm({ ...form, telefono: enforcePhone(e.target.value) })}
+                  placeholder="+569XXXXXXXX"
+                  inputMode="tel"
+                  required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Región *</label>
-                <input
-                  className="form-control"
+                <select
+                  className="form-select"
                   value={form.region}
-                  onChange={(e) => setForm({ ...form, region: e.target.value })}
+                  onChange={(e) => setForm({ ...form, region: e.target.value, comuna: "" })}
                   required
-                />
+                >
+                  <option value="" disabled>
+                    Selecciona una región
+                  </option>
+                  {regiones.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Comuna *</label>
-                <input
-                  className="form-control"
+                <select
+                  className="form-select"
                   value={form.comuna}
                   onChange={(e) => setForm({ ...form, comuna: e.target.value })}
+                  disabled={!form.region}
                   required
-                />
+                >
+                  <option value="" disabled>
+                    {form.region ? "Selecciona una comuna" : "Primero elige una región"}
+                  </option>
+                  {comunasDeRegion.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
