@@ -35,7 +35,7 @@ describe("Carrito", () => {
   });
 
   //Verifica estado vacío
-  it('TC-01: Muestra el mensaje "Tu carrito está vacío" cuando no hay items', () => {
+  it('TCC-06: Muestra el mensaje "Tu carrito está vacío" cuando no hay items', () => {
     render(
       <Carrito
         carrito={[]}
@@ -49,7 +49,7 @@ describe("Carrito", () => {
   });
 
   //Renderiza ítems con nombre, cantidad y total
-  it("TC-02: Renderiza ítems con nombre, cantidad y total formateado", () => {
+  it("TCC-07: Renderiza ítems con nombre, cantidad y total formateado", () => {
     render(
       <Carrito
         carrito={[mockItem]}
@@ -67,7 +67,7 @@ describe("Carrito", () => {
   });
 
   //Botón Eliminar
-  it('TC-04: "Eliminar" invoca eliminarProducto con el código del ítem', () => {
+  it('TCC-08: "Eliminar" invoca eliminarProducto con el código del ítem', () => {
     render(
       <Carrito
         carrito={[mockItem]}
@@ -81,7 +81,7 @@ describe("Carrito", () => {
   });
 
   //Botones globales
-  it('TC-05: Botones "Vaciar carrito" e "Ir al pago" llaman a sus handlers', () => {
+  it('TCC-09: Botones "Vaciar carrito" e "Ir al pago" llaman a sus handlers', () => {
     render(
       <Carrito
         carrito={[mockItem]}
