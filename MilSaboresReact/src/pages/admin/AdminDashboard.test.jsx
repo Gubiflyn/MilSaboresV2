@@ -1,10 +1,8 @@
-// src/pages/admin/AdminDashboard.test.jsx
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
 
-// Ajusta el import según tu estructura
 import AdminLayout from "./AdminLayout";
 
 function renderAdmin() {
@@ -51,15 +49,13 @@ describe("Página Admin - Panel Principal", () => {
     ).toBeVisible();
   });
 
-  // 🔹 Nuevo test 1
-  it("TA-Admin4: Muestra el correo del usuario administrador en el header", () => {
+  it("TA-Admin4: Muestra el correo del usuario administrador", () => {
     renderAdmin();
     const email = screen.getByText(/admin@mail/i);
     expect(email).toBeInTheDocument();
     expect(email).toHaveClass("admin-user-email");
   });
 
-  // 🔹 Nuevo test 2
   it("TA-Admin5: El logo 'Mil Sabores' se muestra correctamente en el sidebar", () => {
     renderAdmin();
     const logo = screen.getByRole("img", { name: /logo mil sabores/i });
@@ -67,7 +63,6 @@ describe("Página Admin - Panel Principal", () => {
     expect(logo).toHaveAttribute("src", expect.stringContaining("icono"));
   });
 
-  // 🔹 Nuevo test 3
   it("TA-Admin6: El layout principal de administrador existe y contiene el sidebar", () => {
     renderAdmin();
     const layout = document.querySelector(".admin-layout");
