@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import seed from "../../data/tortas.json";
 
-const LS_TORTAS = "tortas_v1";
+const LS_TORTAS = "tortas_v3";
 const LS_CATS = "categorias_v1"; // ➕ NUEVO
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 

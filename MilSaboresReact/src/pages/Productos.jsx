@@ -22,18 +22,22 @@ const LS_KEY = 'tortas_v3';
 const Productos = () => {
   const [tortas, setTortas] = useState([]);
   const [categoria, setCategoria] = useState('Todas');
-  const { add } = useCart(); // 👈 usamos el hook
+  const { add } = useCart(); // usamos el hook
 
   useEffect(() => {
-    deleteFromLocalstorage('tortas');
-    const guardadas = loadFromLocalstorage(LS_KEY);
-    if (!guardadas || guardadas.length === 0) {
-      saveLocalstorage(LS_KEY, tortasJson);
-      setTortas(tortasJson);
-    } else {
-      setTortas(guardadas);
-    }
-  }, []);
+  
+  const guardadas = loadFromLocalstorage(LS_KEY);
+
+  if (guardadas === null) {
+
+    saveLocalstorage(LS_KEY, tortasJson);
+    setTortas(tortasJson);
+  } else {
+
+    setTortas(guardadas);
+  }
+}, []);
+
 
   const handleAgregar = (torta) => {
     add({ ...torta, cantidad: 1 });

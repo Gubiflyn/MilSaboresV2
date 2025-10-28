@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import seed from "../../data/tortas.json";
 
-const LS_TORTAS = "tortas_v1";
+const LS_TORTAS = "tortas_v3";
 const LS_CATS   = "categorias_v1";
 
 export default function Categories() {
