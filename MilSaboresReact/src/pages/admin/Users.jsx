@@ -3,25 +3,61 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import seed from "../../data/usuarios.json";
 
-const LS_USERS = "usuarios_v1";
-
+// El componente principal
 export default function Users() {
   const [list, setList] = useState([]);
   const [q, setQ] = useState("");
 
-  // Carga inicial desde localStorage o semilla
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(LS_USERS) || "null") || seed;
-    setList(saved);
-  }, []);
-
-  // Persistencia local
-  const persist = (next) => {
-    localStorage.setItem(LS_USERS, JSON.stringify(next));
-    setList(next);
+  // Función auxiliar: evita duplicados por correo
+  const uniqueByEmail = (arr) => {
+    const map = new Map();
+    for (const u of arr) {
+      if (!u?.email) continue;
+      map.set(u.email.toLowerCase(), u);
+    }
+    return [...map.values()];
   };
 
-  // Búsqueda por nombre o email
+  // Carga inicial
+  useEffect(() => {
+    // 1) Leer perfiles del registro (localStorage)
+    const rawPerfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
+
+    // 2) Normalizar datos para que coincidan con las columnas de admin
+    const perfiles = rawPerfiles
+      .map((p) => {
+        const nombrePlano =
+          (p.nombre ?? "").toString().trim() ||
+          `${p.nombres || ""} ${p.apellidos || ""}`.trim();
+
+        const emailPlano = (p.email ?? p.correo ?? "").toString().trim().toLowerCase();
+
+        return {
+          nombre: nombrePlano || "Sin nombre",
+          email: emailPlano,
+          rol: p.rol || "cliente",
+          beneficio: p.beneficio || "—",
+          fechaNacimiento: p.fechaNacimiento || "—",
+        };
+      })
+      .filter((u) => !!u.email); // filtra usuarios sin correo
+
+    // 3) Leer usuarios semilla desde el JSON
+    const seedUsers = (seed || []).map((u) => ({
+      nombre: u.nombre || "Sin nombre",
+      email: (u.email || "").toLowerCase(),
+      rol: u.rol || "cliente",
+      beneficio: u.beneficio || "—",
+      fechaNacimiento: u.fechaNacimiento || "—",
+    }));
+
+    // 4) Combinar ambos evitando duplicados
+    const combined = uniqueByEmail([...seedUsers, ...perfiles]);
+
+    setList(combined);
+  }, []);
+
+  // Filtro de búsqueda
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return list;
@@ -33,10 +69,13 @@ export default function Users() {
   }, [q, list]);
 
   // Alternar rol admin/cliente
-  const toggleRol = (idx) => {
-    const next = [...list];
-    next[idx].rol = next[idx].rol === "admin" ? "cliente" : "admin";
-    persist(next);
+  const toggleRol = (email) => {
+    const next = list.map((u) =>
+      u.email === email
+        ? { ...u, rol: u.rol === "admin" ? "cliente" : "admin" }
+        : u
+    );
+    setList(next);
   };
 
   return (
@@ -53,8 +92,6 @@ export default function Users() {
             onChange={(e) => setQ(e.target.value)}
             style={{ maxWidth: 320 }}
           />
-
-          {/* Importante: usar Link para que navegue a la página de nuevo usuario */}
           <Link to="/admin/usuarios/nuevo" className="btn btn-primary">
             + Nuevo
           </Link>
@@ -78,57 +115,47 @@ export default function Users() {
 
             <tbody>
               {filtered.length > 0 ? (
-                filtered.map((u) => {
-                  const index = list.findIndex((x) => x.email === u.email);
-                  const id = encodeURIComponent(u.email || "");
+                filtered.map((u, i) => (
+                  <tr key={`usr-${(u.email || "").toLowerCase()}-${i}`}>
+                    <td>{u.nombre}</td>
+                    <td>{u.email}</td>
+                    <td>{u.rol}</td>
+                    <td>{u.beneficio}</td>
+                    <td>{u.fechaNacimiento}</td>
+                    <td>
+                      <div className="admin-actions d-flex flex-wrap gap-1">
+                        <Link
+                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}`}
+                          className="btn btn-outline-primary btn-sm text-nowrap"
+                        >
+                          Ver
+                        </Link>
 
-                  return (
-                    <tr key={u.email || u.nombre}>
-                      <td>{u.nombre}</td>
-                      <td>{u.email}</td>
-                      <td>{u.rol || "cliente"}</td>
-                      <td>{u.beneficio || "—"}</td>
-                      <td>{u.fechaNacimiento || "—"}</td>
-                      <td>
-                        {/* Grupo de acciones: NO cambiamos handlers ni rutas; solo agrupamos */}
-                        <div className="admin-actions">
-                          <Link
-                            to={`/admin/usuarios/${id}`}
-                            className="btn btn-outline-primary btn-sm text-nowrap"
-                            title="Ver usuario"
-                          >
-                            Ver
-                          </Link>
+                        <Link
+                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}/editar`}
+                          className="btn btn-outline-secondary btn-sm text-nowrap"
+                        >
+                          Editar
+                        </Link>
 
-                          <Link
-                            to={`/admin/usuarios/${id}/editar`}
-                            className="btn btn-outline-secondary btn-sm text-nowrap"
-                            title="Editar usuario"
-                          >
-                            Editar
-                          </Link>
+                        <Link
+                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}/historial`}
+                          className="btn btn-outline-dark btn-sm text-nowrap"
+                        >
+                          Historial
+                        </Link>
 
-                          <Link
-                            to={`/admin/usuarios/${id}/historial`}
-                            className="btn btn-outline-dark btn-sm text-nowrap"
-                            title="Ver historial"
-                          >
-                            Historial
-                          </Link>
-
-                          <button
-                            type="button"
-                            className="btn btn-outline-warning btn-sm text-nowrap"
-                            onClick={() => toggleRol(index)}
-                            title="Alternar rol (admin/cliente)"
-                          >
-                            Alternar rol
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        <button
+                          type="button"
+                          className="btn btn-outline-warning btn-sm text-nowrap"
+                          onClick={() => toggleRol(u.email)}
+                        >
+                          Alternar rol
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
                   <td colSpan={6} className="text-center text-muted py-4">

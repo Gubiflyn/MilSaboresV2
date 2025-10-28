@@ -151,7 +151,7 @@ const Detalle = () => {
                 className="form-control"
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value.slice(0, 50))}
-                placeholder="Ej: ¡Feliz Cumple, Nico!"
+                placeholder="Ej: Feliz cumpleaños"
               />
               <div className="form-text">{mensaje.length}/50</div>
             </div>
