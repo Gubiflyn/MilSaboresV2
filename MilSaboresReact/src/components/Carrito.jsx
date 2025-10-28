@@ -110,7 +110,7 @@ const Carrito = ({
                             className="form-control form-control-sm"
                             value={it.mensaje || ""}
                             onChange={(e) => updateMensaje?.(it.codigo, e.target.value)}
-                            placeholder="Ej: ¡Feliz Cumple, Nico!"
+                            placeholder="Ej: ¡feliz cumpleeeee"
                             maxLength={50}
                           />
                           <div className="form-text text-end">
