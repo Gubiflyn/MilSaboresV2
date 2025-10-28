@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import {
   Routes,
@@ -37,10 +36,9 @@ import OrderReceipt from "./pages/admin/OrderReceipt";
 import UsersAdmin from "./pages/admin/Users";
 import ProfileAdmin from "./pages/admin/Profile";
 import ReportsAdmin from "./pages/admin/Reports";
-import CriticalProducts from "./pages/admin/CriticalProducts";
+// import CriticalProducts from "./pages/admin/CriticalProducts"; // eliminado
 import UserHistory from "./pages/admin/UserHistory";
 
-// ➕ (AGREGADOS) Páginas de Usuarios: Ver, Editar y Nuevo
 import UserView from "./pages/admin/UserView";
 import UserEdit from "./pages/admin/UserEdit";
 import UserNew from "./pages/admin/UserNew";
@@ -84,9 +82,15 @@ const App = () => {
         <Routes>
           {/* PÚBLICAS */}
           <Route path="/" element={<Home />} />
-          <Route path="/ofertas" element={<Ofertas />} /> {}
-          <Route path="/productos" element={<Productos agregarAlCarrito={agregarAlCarrito} />} />
-          <Route path="/detalle/:codigo" element={<Detalle agregarAlCarrito={agregarAlCarrito} />} />
+          <Route path="/ofertas" element={<Ofertas />} />
+          <Route
+            path="/productos"
+            element={<Productos agregarAlCarrito={agregarAlCarrito} />}
+          />
+          <Route
+            path="/detalle/:codigo"
+            element={<Detalle agregarAlCarrito={agregarAlCarrito} />}
+          />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/blogs" element={<Noticias />} />
@@ -144,14 +148,15 @@ const App = () => {
 
             {/* USUARIOS */}
             <Route path="usuarios" element={<UsersAdmin />} />
-            <Route path="usuarios/nuevo" element={<UserNew />} />          {/* ➕ NUEVO */}
-            <Route path="usuarios/:id" element={<UserView />} />           {/* ➕ VER */}
-            <Route path="usuarios/:id/editar" element={<UserEdit />} />    {/* ➕ EDITAR */}
+            <Route path="usuarios/nuevo" element={<UserNew />} />
+            <Route path="usuarios/:id" element={<UserView />} />
+            <Route path="usuarios/:id/editar" element={<UserEdit />} />
             <Route path="usuarios/:id/historial" element={<UserHistory />} />
 
             <Route path="perfil" element={<ProfileAdmin />} />
             <Route path="reportes" element={<ReportsAdmin />} />
-            <Route path="criticos" element={<CriticalProducts />} />
+            {/* Redirigimos /admin/criticos al listado de productos */}
+            <Route path="criticos" element={<Navigate to="productos" replace />} />
           </Route>
         </Routes>
       </main>
