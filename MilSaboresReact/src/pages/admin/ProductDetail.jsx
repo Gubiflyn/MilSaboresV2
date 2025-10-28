@@ -7,12 +7,10 @@ const SOURCES = ["tortas_v1", "PRODUCTS", "productos", "productosMilSabores"];
 
 const norm = (v) => String(v ?? "").trim().toLowerCase();
 
-// Devuelve el primer valor definido de useParams (sirve si tu ruta usa :id en vez de :codigo)
 function getAnyParam(obj) {
   if (!obj) return "";
-  const keys = ["codigo", "id", "sku", "code", "slug", "param"]; // nombres comunes
+  const keys = ["codigo", "id", "sku", "code", "slug", "param"]; 
   for (const k of keys) if (obj[k] != null) return String(obj[k]);
-  // si vino con otro nombre raro, toma el primero
   const dynamic = Object.values(obj)[0];
   return dynamic != null ? String(dynamic) : "";
 }
@@ -55,11 +53,9 @@ export default function ProductDetail() {
   function findFlexible(items, param) {
     if (!Array.isArray(items) || !param) return null;
 
-    // 1) exacto por cualquier id candidate (normalizado)
     const exact = items.find((p) => getIdCandidates(p).some((v) => norm(v) === param));
     if (exact) return exact;
 
-    // 2) incluye por nombre (busca parcial)
     const partial = items.find((p) => norm(p?.nombre).includes(param));
     if (partial) return partial;
 
@@ -102,7 +98,6 @@ export default function ProductDetail() {
 
   return (
     <div className="container py-3">
-      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h2 className="m-0">{product.nombre || "Producto"}</h2>
@@ -120,7 +115,6 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Body */}
       <div className="row g-3">
         <div className="col-md-5">
           <div className="card h-100">

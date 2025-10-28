@@ -19,10 +19,9 @@ export default function Reports() {
   const [orders, setOrders] = useState([]);
   const [productos, setProductos] = useState([]);
   const [q, setQ] = useState("");
-  const [from, setFrom] = useState(""); // YYYY-MM-DD
-  const [to, setTo] = useState("");     // YYYY-MM-DD
+  const [from, setFrom] = useState(""); 
+  const [to, setTo] = useState("");     
 
-  // Carga inicial y auto-refresh de órdenes
   useEffect(() => {
     const load = () => {
       const raw = JSON.parse(localStorage.getItem(LS_RCPTS) || "{}");
@@ -34,33 +33,28 @@ export default function Reports() {
     return () => clearInterval(t);
   }, []);
 
-  // Cargar productos (para categorías)
   useEffect(() => {
     const p = JSON.parse(localStorage.getItem(LS_TORTAS) || "null") || tortasSeed;
     setProductos(p);
   }, []);
 
-  // Índice rápido nombreProducto → categoría
   const categoriaByNombre = useMemo(() => {
     const map = new Map();
     productos.forEach((p) => map.set((p.nombre || "").toLowerCase(), p.categoria || "Otros"));
     return map;
   }, [productos]);
 
-  // Filtro por texto (boleta/cliente) y rango de fechas
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     const fromDate = from ? new Date(`${from}T00:00:00`) : null;
     const toDate = to ? new Date(`${to}T23:59:59.999`) : null;
 
     return orders.filter((o) => {
-      // texto
       const matchText =
         !s ||
         (o.numeroBoleta || "").toLowerCase().includes(s) ||
         (o.receptor?.nombre || "").toLowerCase().includes(s);
 
-      // fecha
       const d = new Date(o.fechaEmision);
       const matchFrom = !fromDate || d >= fromDate;
       const matchTo = !toDate || d <= toDate;
@@ -69,7 +63,6 @@ export default function Reports() {
     }).sort((a, b) => new Date(b.fechaEmision) - new Date(a.fechaEmision));
   }, [orders, q, from, to]);
 
-  // KPIs
   const kpis = useMemo(() => {
     const n = filtered.length;
     const total = filtered.reduce((a, o) => a + (o.total || 0), 0);
@@ -78,30 +71,25 @@ export default function Reports() {
     return { n, total, items, avg };
   }, [filtered]);
 
-  // Resumen por categoría
   const resumenCategorias = useMemo(() => {
-    const acc = new Map(); // cat -> { items, total }
+    const acc = new Map(); 
     filtered.forEach((o) => {
       o.items?.forEach((it) => {
         const name = (it.nombre || "").toLowerCase();
         const cat = categoriaByNombre.get(name) || "Otros";
         const qty = it.qty || 0;
-        const line = (it.precioUnit || 0) * qty; // si tienes precioUnit; si no, solo qty
+        const line = (it.precioUnit || 0) * qty; 
         if (!acc.has(cat)) acc.set(cat, { items: 0, total: 0 });
         const cur = acc.get(cat);
         cur.items += qty;
         cur.total += line;
       });
     });
-    // a falta de precioUnit en items, es común que total por categoría no cuadre exactamente con o.total;
-    // si tus items no tienen precioUnit, puedes repartir usando proporcion de qty o mostrar solo "items".
-    // Este ejemplo usa precioUnit si existe; si no, el total será 0 y quedará como contador de ítems.
     return Array.from(acc.entries())
       .map(([cat, v]) => ({ categoria: cat, items: v.items, total: v.total }))
       .sort((a, b) => b.items - a.items);
   }, [filtered, categoriaByNombre]);
 
-  // Exportar CSV de órdenes filtradas
   const exportOrders = () => {
     const rows = filtered.map((o) => ({
       orderId: o.orderId,
@@ -120,7 +108,6 @@ export default function Reports() {
     URL.revokeObjectURL(url);
   };
 
-  // Exportar CSV de categorías (resumen)
   const exportCategorias = () => {
     const rows = resumenCategorias.map((r) => ({
       categoria: r.categoria,
@@ -136,7 +123,6 @@ export default function Reports() {
 
   return (
     <div className="d-flex flex-column gap-3">
-      {/* Header + filtros */}
       <div className="card">
         <div className="card-header">Reportes</div>
         <div className="card-body d-flex flex-wrap gap-2 align-items-end">
@@ -178,7 +164,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* KPIs */}
       <div className="row g-3">
         <div className="col-md-3">
           <div className="kpi kpi--blue">
@@ -210,7 +195,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Tabla de órdenes */}
       <div className="card">
         <div className="card-header">Órdenes filtradas ({filtered.length})</div>
         <div className="table-responsive">
@@ -244,7 +228,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Resumen por categoría */}
       <div className="card">
         <div className="card-header">Resumen por categoría</div>
         <div className="table-responsive">

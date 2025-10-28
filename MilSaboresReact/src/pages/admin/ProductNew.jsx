@@ -2,16 +2,11 @@ import React, { useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProductForm from "../../components/admin/ProductForm";
 
-/**
- * Página de “Nuevo Producto” para Admin.
- * No modifica tu flujo actual: guarda como “borrador” en localStorage
- * (clave: productos_nuevos) para no tocar tu data/tortas.json.
- */
+
 export default function ProductNew() {
   const navigate = useNavigate();
 
   const handleSubmit = useCallback((producto) => {
-    // Guardar como borrador local sin tocar tu JSON actual
     const key = "productos_nuevos";
     const actuales = JSON.parse(localStorage.getItem(key) || "[]");
     const existe = actuales.some(p => p.codigo === producto.codigo);

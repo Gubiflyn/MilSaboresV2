@@ -1,20 +1,7 @@
-// src/components/admin/QuickTiles.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
-/**
- * Componente QuickTiles
- * Muestra una cuadrícula de botones (tiles) con enlaces rápidos del admin.
- * Props:
- *  - tiles: array de objetos { to, label, icon }
- * Ejemplo:
- *   <QuickTiles
- *      tiles={[
- *        { to: "/admin/products", label: "Productos", icon: <Package /> },
- *        { to: "/admin/orders", label: "Órdenes", icon: <Receipt /> },
- *      ]}
- *   />
- */
+
 export default function QuickTiles({ tiles = [] }) {
   if (!tiles.length) return null;
 

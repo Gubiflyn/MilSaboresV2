@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import seed from "../../data/tortas.json";
 
 const LS_TORTAS = "tortas_v3";
-const LS_CATS = "categorias_v1"; // ➕ NUEVO
+const LS_CATS = "categorias_v1"; 
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function Products() {
@@ -21,10 +21,9 @@ export default function Products() {
     descripcion: "",
   });
 
-  const [catsLS, setCatsLS] = useState([]); // ➕ NUEVO
-  const navigate = useNavigate(); // ➕ NUEVO
+  const [catsLS, setCatsLS] = useState([]); 
+  const navigate = useNavigate(); 
 
-  // Carga inicial de productos
   useEffect(() => {
     let data = null;
     try {
@@ -39,7 +38,6 @@ export default function Products() {
     setList(data.map((p) => ({ ...p, stock: p?.stock ?? 0 })));
   }, []);
 
-  // Persistencia de productos
   useEffect(() => {
     try {
       if (Array.isArray(list) && list.length > 0) {
@@ -48,7 +46,6 @@ export default function Products() {
     } catch {}
   }, [list]);
 
-  // ➕ NUEVO: cargar categorías desde localStorage
   const loadCatsLS = () => {
     try {
       const raw = localStorage.getItem(LS_CATS);
@@ -63,21 +60,19 @@ export default function Products() {
   };
 
   useEffect(() => {
-    loadCatsLS(); // al montar
+    loadCatsLS(); 
   }, []);
 
   useEffect(() => {
-    if (showForm) loadCatsLS(); // recarga al abrir el form
+    if (showForm) loadCatsLS(); 
   }, [showForm]);
 
   useEffect(() => {
-    // escuchar aviso desde Categories.jsx
     const h = () => loadCatsLS();
-    window.addEventListener("categorias:updated", h); // ➕ NUEVO
+    window.addEventListener("categorias:updated", h); 
     return () => window.removeEventListener("categorias:updated", h);
   }, []);
 
-  // Búsqueda
   const filtered = useMemo(() => {
     const term = q.toLowerCase().trim();
     if (!term) return list;
@@ -88,7 +83,6 @@ export default function Products() {
     );
   }, [q, list]);
 
-  // Categorías deducidas desde los productos existentes
   const categoriasDerivadas = useMemo(
     () =>
       Array.from(new Set(list.map((p) => p.categoria)))
@@ -97,7 +91,6 @@ export default function Products() {
     [list]
   );
 
-  // ➕ NUEVO: unión de categorías persistidas + deducidas
   const categorias = useMemo(() => {
     const set = new Set(
       [...(catsLS || []), ...(categoriasDerivadas || [])].filter(Boolean)
@@ -109,7 +102,7 @@ export default function Products() {
     setForm({
       codigo: "",
       nombre: "",
-      categoria: categorias[0] || "", // ➕ NUEVO
+      categoria: categorias[0] || "", 
       precio: 0,
       stock: 0,
       imagen: "",
@@ -142,8 +135,6 @@ export default function Products() {
     }
   };
 
-  // ➕ NUEVO: ir al detalle del producto
-  // Reemplaza tu handleView por este
   const handleView = (p) => {
     const code =
       p?.codigo ?? p?.id ?? p?.sku ?? p?.code ?? p?.slug ?? p?.nombre;
@@ -157,7 +148,6 @@ export default function Products() {
 
   return (
     <div className="container-fluid">
-      {/* header */}
       <div className="d-flex align-items-center justify-content-between mb-3">
         <h2 className="m-0">Productos</h2>
         <div className="d-flex gap-2">
@@ -179,7 +169,6 @@ export default function Products() {
         </div>
       </div>
 
-      {/* formulario */}
       {showForm && (
         <div className="card mb-3">
           <div className="card-header d-flex justify-content-between align-items-center">
@@ -220,7 +209,6 @@ export default function Products() {
 
               <div className="col-md-4">
                 <label className="form-label">Categoría</label>
-                {/* recarga categorías al enfocar */}
                 <select
                   className="form-select"
                   value={form.categoria}
@@ -308,7 +296,6 @@ export default function Products() {
         </div>
       )}
 
-      {/* tabla de productos */}
       <div className="table-responsive">
         <table className="table align-middle">
           <thead>

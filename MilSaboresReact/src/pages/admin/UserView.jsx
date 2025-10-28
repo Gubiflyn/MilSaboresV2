@@ -1,10 +1,9 @@
-// src/pages/admin/UserView.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { findUserByEmail } from "../../utils/usersRepo";
 
 export default function UserView() {
-  const { id } = useParams(); // id es el email codificado
+  const { id } = useParams(); 
   const email = decodeURIComponent(id || "");
   const [user, setUser] = useState(null);
 

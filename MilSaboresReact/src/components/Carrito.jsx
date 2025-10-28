@@ -14,16 +14,13 @@ const Carrito = ({
   vaciarCarrito,
   irAlPago,
   eliminarProducto,
-  setCantidad,     // <- puede venir undefined según tu error
+  setCantidad,   
   updateMensaje,
 }) => {
-  // ✅ Fallback: si no viene la prop, usamos el contexto
   const cartCtx = useCart();
   const safeSetCantidad = useMemo(() => {
     const fn = setCantidad || cartCtx?.setQty;
     if (typeof fn !== "function") {
-      // advertencia clara para depurar si vuelve a pasar
-      // (no rompe la UI: los botones no harán nada)
       console.error("Carrito.jsx: setCantidad no está definido ni en props ni en contexto.");
       return null;
     }
@@ -67,8 +64,6 @@ const Carrito = ({
                     <div className="card-body d-flex flex-column">
                       <h5 className="card-title text-center">{it.nombre}</h5>
                       <p className="card-text text-center text-muted">{it.categoria}</p>
-
-                      {/* Cantidad + / - */}
                       <div className="d-flex justify-content-center align-items-center gap-2 my-2">
                         <button
                           type="button"
@@ -102,7 +97,6 @@ const Carrito = ({
                         </button>
                       </div>
 
-                      {/* Mensaje personalizado solo para tortas */}
                       {esTorta(it) && (
                         <div className="mt-2">
                           <label className="form-label small mb-1">Mensaje en la torta</label>
@@ -118,8 +112,6 @@ const Carrito = ({
                           </div>
                         </div>
                       )}
-
-                      {/* Subtotal + acciones */}
                       <div className="mt-auto pt-2">
                         <div className="d-flex justify-content-between align-items-center">
                           <span className="fw-semibold">Subtotal:</span>
@@ -142,8 +134,6 @@ const Carrito = ({
               );
             })}
           </div>
-
-          {/* Total y acciones */}
           <h4 className="text-end mb-3">Total: ${CLP(total)} CLP</h4>
           <div className="d-flex justify-content-between">
             <button type="button" className="btn btn-secondary" onClick={vaciarCarrito}>

@@ -8,12 +8,10 @@ export default function Users() {
   const [list, setList] = useState([]);
   const [q, setQ] = useState("");
 
-  // Carga inicial desde el repositorio unificado (localStorage + seed)
   useEffect(() => {
     setList(getAllUsers());
   }, []);
 
-  // Filtro de búsqueda por nombre/correo
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return list;
@@ -26,7 +24,6 @@ export default function Users() {
 
   return (
     <div className="d-flex flex-column gap-3">
-      {/* Encabezado */}
       <div className="d-flex align-items-center justify-content-between">
         <h3 className="mb-0">Usuarios</h3>
 
@@ -44,7 +41,6 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Tabla */}
       <div className="card">
         <div className="table-responsive">
           <table className="table table-hover mb-0 align-middle">
