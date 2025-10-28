@@ -1,63 +1,18 @@
 // src/pages/admin/Users.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import seed from "../../data/usuarios.json";
+import { getAllUsers } from "../../utils/usersRepo";
 
-// El componente principal
 export default function Users() {
   const [list, setList] = useState([]);
   const [q, setQ] = useState("");
 
-  // Función auxiliar: evita duplicados por correo
-  const uniqueByEmail = (arr) => {
-    const map = new Map();
-    for (const u of arr) {
-      if (!u?.email) continue;
-      map.set(u.email.toLowerCase(), u);
-    }
-    return [...map.values()];
-  };
-
-  // Carga inicial
+  // Carga inicial desde el repositorio unificado (localStorage + seed)
   useEffect(() => {
-    // 1) Leer perfiles del registro (localStorage)
-    const rawPerfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
-
-    // 2) Normalizar datos para que coincidan con las columnas de admin
-    const perfiles = rawPerfiles
-      .map((p) => {
-        const nombrePlano =
-          (p.nombre ?? "").toString().trim() ||
-          `${p.nombres || ""} ${p.apellidos || ""}`.trim();
-
-        const emailPlano = (p.email ?? p.correo ?? "").toString().trim().toLowerCase();
-
-        return {
-          nombre: nombrePlano || "Sin nombre",
-          email: emailPlano,
-          rol: p.rol || "cliente",
-          beneficio: p.beneficio || "—",
-          fechaNacimiento: p.fechaNacimiento || "—",
-        };
-      })
-      .filter((u) => !!u.email); // filtra usuarios sin correo
-
-    // 3) Leer usuarios semilla desde el JSON
-    const seedUsers = (seed || []).map((u) => ({
-      nombre: u.nombre || "Sin nombre",
-      email: (u.email || "").toLowerCase(),
-      rol: u.rol || "cliente",
-      beneficio: u.beneficio || "—",
-      fechaNacimiento: u.fechaNacimiento || "—",
-    }));
-
-    // 4) Combinar ambos evitando duplicados
-    const combined = uniqueByEmail([...seedUsers, ...perfiles]);
-
-    setList(combined);
+    setList(getAllUsers());
   }, []);
 
-  // Filtro de búsqueda
+  // Filtro de búsqueda por nombre/correo
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return list;
@@ -67,16 +22,6 @@ export default function Users() {
         (u.email || "").toLowerCase().includes(s)
     );
   }, [q, list]);
-
-  // Alternar rol admin/cliente
-  const toggleRol = (email) => {
-    const next = list.map((u) =>
-      u.email === email
-        ? { ...u, rol: u.rol === "admin" ? "cliente" : "admin" }
-        : u
-    );
-    setList(next);
-  };
 
   return (
     <div className="d-flex flex-column gap-3">
@@ -144,14 +89,6 @@ export default function Users() {
                         >
                           Historial
                         </Link>
-
-                        <button
-                          type="button"
-                          className="btn btn-outline-warning btn-sm text-nowrap"
-                          onClick={() => toggleRol(u.email)}
-                        >
-                          Alternar rol
-                        </button>
                       </div>
                     </td>
                   </tr>

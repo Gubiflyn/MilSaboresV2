@@ -61,16 +61,16 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .btn--accent {
-    background-color: var(--color-accent);
-    color: #fff;
-    border: none;
-    transition: background-color 0.3s ease;
-    border-radius: 0;
-    padding: 0.5rem 1rem;
+  background-color: #6b3e2e;   /* café oscuro */
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s ease;
+  border-radius: 0;
+  padding: 0.5rem 1rem;
 }
 
 .btn--accent:hover {
-    background-color: #e6a7b3;
+  background-color: #5a2d1a;   /* más oscuro al hover */
 }
 
 /* ========================================================================== */

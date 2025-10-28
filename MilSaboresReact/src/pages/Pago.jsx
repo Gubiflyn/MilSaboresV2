@@ -7,6 +7,18 @@ import { applyPromotions } from "../utils/promotions";
 
 const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
+// ➕ ADD: helper para guardar órdenes en localStorage (ordenes_v1)
+const saveOrderToHistory = (order) => {
+  try {
+    const key = "ordenes_v1";
+    const list = JSON.parse(localStorage.getItem(key) || "[]");
+    list.push(order);
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch (err) {
+    console.warn("No se pudo guardar el historial de compra:", err);
+  }
+};
+
 export default function Pago() {
   const { carrito, clear } = useCart();
   const { user, isAuthenticated } = useAuth();
@@ -215,6 +227,33 @@ export default function Pago() {
     const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
     map[orderId] = receipt;
     localStorage.setItem("receipts_v1", JSON.stringify(map));
+
+    //Guardar también un registro compacto para el historial del Admin
+    try {
+      const orderRecord = {
+        id: orderId,
+        userEmail: (
+          (isAuthenticated ? (user?.email || user?.correo) : form.correo) || ""
+        ).toLowerCase(),
+        items: carrito.map((t, i) => ({
+          codigo: t.codigo ?? t.id ?? t.sku ?? `SKU-${i + 1}`,
+          nombre: t.nombre || "Producto",
+          cantidad: t.cantidad || 1,
+          precio: t.precio || 0,
+        })),
+        total: receipt.total,                // total final (con promos)
+        date: new Date().toISOString(),     // ISO para ordenar
+        estado: "pagado",
+      };
+
+      // Persistir en localStorage["ordenes_v1"]
+      saveOrderToHistory(orderRecord);
+    } catch (err) {
+      console.warn("No se pudo registrar la orden en historial:", err);
+    }
+
+
+    
 
     // Limpiar
     clear();

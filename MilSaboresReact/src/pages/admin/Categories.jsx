@@ -199,7 +199,7 @@ export default function Categories() {
                 <td>{conteo.get(c) || 0}</td>
                 <td>
                   <button className="btn btn-sm btn-outline-primary" onClick={() => abrirEditar(c)}>
-                    ✏️ Editar
+                     Editar
                   </button>
                 </td>
               </tr>
