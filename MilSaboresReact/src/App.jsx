@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PagoError from "./pages/PagoError";
 import Ofertas from "./pages/Ofertas";
+import Categorias from "./pages/Categorias"; // ✅ NUEVA IMPORTACIÓN
 
 // ADMIN
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -36,16 +37,13 @@ import OrderReceipt from "./pages/admin/OrderReceipt";
 import UsersAdmin from "./pages/admin/Users";
 import ProfileAdmin from "./pages/admin/Profile";
 import ReportsAdmin from "./pages/admin/Reports";
-// import CriticalProducts from "./pages/admin/CriticalProducts"; // eliminado
 import UserHistory from "./pages/admin/UserHistory";
-
 import UserView from "./pages/admin/UserView";
 import UserEdit from "./pages/admin/UserEdit";
 import UserNew from "./pages/admin/UserNew";
 
 import { useCart } from "./context/CartContext";
 import { useAuth } from "./context/AuthContext";
-import { publicUrl } from "./utils/publicUrl";
 
 /* ======== Guards ======== */
 function AdminRoute({ children }) {
@@ -65,7 +63,7 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { carrito, add, clear, remove } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const agregarAlCarrito = (torta) => add({ ...torta, cantidad: 1 });
   const vaciarCarrito = () => clear();
@@ -87,6 +85,7 @@ const App = () => {
             path="/productos"
             element={<Productos agregarAlCarrito={agregarAlCarrito} />}
           />
+          <Route path="/categorias" element={<Categorias />} /> {/* ✅ NUEVA RUTA */}
           <Route
             path="/detalle/:codigo"
             element={<Detalle agregarAlCarrito={agregarAlCarrito} />}
@@ -145,17 +144,13 @@ const App = () => {
             <Route path="categorias" element={<CategoriesAdmin />} />
             <Route path="pedidos" element={<OrdersAdmin />} />
             <Route path="pedidos/:orderId/boleta" element={<OrderReceipt />} />
-
-            {/* USUARIOS */}
             <Route path="usuarios" element={<UsersAdmin />} />
             <Route path="usuarios/nuevo" element={<UserNew />} />
             <Route path="usuarios/:id" element={<UserView />} />
             <Route path="usuarios/:id/editar" element={<UserEdit />} />
             <Route path="usuarios/:id/historial" element={<UserHistory />} />
-
             <Route path="perfil" element={<ProfileAdmin />} />
             <Route path="reportes" element={<ReportsAdmin />} />
-            {/* Redirigimos /admin/criticos al listado de productos */}
             <Route path="criticos" element={<Navigate to="productos" replace />} />
           </Route>
         </Routes>

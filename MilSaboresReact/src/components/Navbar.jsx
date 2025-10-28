@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -75,7 +74,11 @@ function Navbar({ carrito: carritoProp }) {
                 <Link className="nav-link header__menu-link" to="/">Inicio</Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link header__menu-link" to="/ofertas">Ofertas</Link> {/* ✅ nuevo link */}
+                <Link className="nav-link header__menu-link" to="/ofertas">Ofertas</Link>
+              </li>
+              {/* ✅ NUEVO LINK DE CATEGORÍAS */}
+              <li className="nav-item">
+                <Link className="nav-link header__menu-link" to="/categorias">Categorías</Link>
               </li>
               <li className="nav-item">
                 <Link className="nav-link header__menu-link" to="/productos">Productos</Link>
