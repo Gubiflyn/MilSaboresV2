@@ -14,10 +14,10 @@ export default function ProductForm({ initialValues = initial, onSubmit, submitT
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState({});
 
-  // ➕ NUEVO: leer categorías de localStorage (y actualizar al vuelo)
-  const [catOptions, setCatOptions] = useState([]);            // ➕ NUEVO
-  const LS_CATS = "categorias_v1";                             // ➕ NUEVO
-  const loadCats = () => {                                     // ➕ NUEVO
+  // NUEVO: leer categorías de localStorage (y actualizar al vuelo)
+  const [catOptions, setCatOptions] = useState([]);            //  NUEVO
+  const LS_CATS = "categorias_v1";                             // NUEVO
+  const loadCats = () => {                                     // NUEVO
     try {
       const raw = localStorage.getItem(LS_CATS);
       const arr = raw ? JSON.parse(raw) : [];
@@ -28,7 +28,7 @@ export default function ProductForm({ initialValues = initial, onSubmit, submitT
       setCatOptions([]);
     }
   };
-  useEffect(() => {                                            // ➕ NUEVO
+  useEffect(() => {                                            //  NUEVO
     loadCats(); // al montar
     const handler = () => loadCats(); // escucha notificación desde Categories.jsx
     window.addEventListener("categorias:updated", handler);
@@ -102,10 +102,10 @@ export default function ProductForm({ initialValues = initial, onSubmit, submitT
             className="form-control"
             value={form.categoria}
             onChange={handleChange}
-            list="cat-options"       // ➕ NUEVO
-            onFocus={loadCats}       // ➕ NUEVO
+            list="cat-options"       //  NUEVO
+            onFocus={loadCats}       //  NUEVO
           />
-          <datalist id="cat-options">  {/* ➕ NUEVO */}
+          <datalist id="cat-options">  {/* NUEVO */}
             {catOptions.map((c) => (
               <option key={c} value={c} />
             ))}
