@@ -16,7 +16,7 @@ export default function Register() {
     correo: "",
     contrasena: "",
     fechaNacimiento: "",
-    telefono: "+569", 
+    telefono: "+569",
     direccion: "",
     region: "",
     comuna: "",
@@ -25,13 +25,11 @@ export default function Register() {
 
   const [err, setErr] = useState("");
 
-  // Comunas dependientes de la región
   const comunasDeRegion = useMemo(() => {
     const r = regionesComunas.find((x) => x.region === form.region);
     return r ? r.comunas : [];
   }, [form.region]);
 
-  // Forzar prefijo +569, permitir solo dígitos y cortar a +569########
   const enforcePhone = (value) => {
     if (!value.startsWith("+569")) {
       value = "+569" + value.replace(/[^0-9]/g, "").replace(/^569/, "");
@@ -45,7 +43,6 @@ export default function Register() {
     e.preventDefault();
     setErr("");
 
-    // Obligatorios
     const oblig = [
       "nombres",
       "apellidos",
@@ -64,7 +61,6 @@ export default function Register() {
       }
     }
 
-    // Teléfono chileno móvil: +569 + 8 dígitos
     if (!/^\+569\d{8}$/.test(form.telefono)) {
       setErr("El teléfono debe tener el formato +569XXXXXXXX (8 dígitos).");
       return;
@@ -75,15 +71,18 @@ export default function Register() {
       return;
     }
 
-    // ===== Beneficios coherentes con tu Admin/Promos =====
     const codigoRegistro = (form.codigoDescuento || "").trim().toUpperCase();
     const isDuoc = /@(duocuc|duoc)\.cl$/i.test(form.correo);
 
-    // Calcular edad
+    // === Calcular edad + validar fecha coherente ===
     let edad = 0;
     if (form.fechaNacimiento) {
       const d = new Date(form.fechaNacimiento);
       const now = new Date();
+      if (d > now) {
+        setErr("La fecha de nacimiento no puede ser futura.");
+        return;
+      }
       edad = now.getFullYear() - d.getFullYear();
       const m = now.getMonth() - d.getMonth();
       if (m < 0 || (m === 0 && now.getDate() < d.getDate())) edad--;
@@ -99,34 +98,23 @@ export default function Register() {
       beneficio = "TORTA GRATIS";
     }
 
-    // Estructura coherente con Admin (Users.jsx)
     const usuario = {
       nombre: `${form.nombres} ${form.apellidos}`.trim(),
       email: form.correo,
-      // 🔐 IMPRESCINDIBLE: guardar password para que AuthContext.login lo valide
       password: form.contrasena,
-      // (compat opcional)
       contrasena: form.contrasena,
-
       rol: "cliente",
       beneficio,
       fechaNacimiento: form.fechaNacimiento,
-
-      // detalle adicional
       telefono: form.telefono,
       direccion: form.direccion,
       region: form.region,
       comuna: form.comuna,
-
-      // compat con promociones
       codigoRegistro,
-
-      // campos separados por si los usas en otra vista
       nombres: form.nombres,
       apellidos: form.apellidos,
     };
 
-    // Persistimos en localStorage (colección perfiles) SIN duplicar por email (case-insensitive)
     const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
     const emailLC = form.correo.toLowerCase();
     const idx = perfiles.findIndex(
@@ -139,10 +127,8 @@ export default function Register() {
     }
     localStorage.setItem("perfiles", JSON.stringify(perfiles));
 
-    // Auto-login básico (con tu AuthContext actual)
     const res = await login(form.correo, form.contrasena);
     if (!res?.ok) {
-      // Si algo raro ocurre, redirige a /login
       navigate("/login");
       return;
     }
@@ -209,6 +195,7 @@ export default function Register() {
                   type="date"
                   className="form-control"
                   value={form.fechaNacimiento}
+                  max={new Date().toISOString().split("T")[0]} // 🔒 no permite fechas futuras
                   onChange={(e) => setForm({ ...form, fechaNacimiento: e.target.value })}
                   required
                 />
