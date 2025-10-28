@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 describe('Admin - Categories', () => {
-  it('Muestra el título de la sección de categorías', () => {
+  it('TAC-Admin 17: Muestra el título de la sección de categorías', () => {
     render(
       <MemoryRouter>
         <Categories />
@@ -41,7 +41,7 @@ describe('Admin - Categories', () => {
     expect(screen.getByRole('heading', { name: /categor/i })).toBeInTheDocument();
   });
 
-  it('Carga y renderiza la lista de categorías desde la API', async () => {
+  it('TAC-Admin 18: Carga y renderiza la lista de categorías desde la API', async () => {
     render(
       <MemoryRouter>
         <Categories />
@@ -52,7 +52,7 @@ describe('Admin - Categories', () => {
     expect(screen.getByText('Postres Individuales')).toBeInTheDocument();
   });
 
-  it('Cada categoría muestra el botón "Editar" y existe el botón "Nuevo +"', async () => {
+  it('TAC-Admin 19:Cada categoría muestra el botón "Editar" y existe el botón "Nuevo +"', async () => {
     render(
       <MemoryRouter>
         <Categories />

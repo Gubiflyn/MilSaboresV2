@@ -22,12 +22,12 @@ function renderAdminLayout() {
 }
 
 describe("AdminLayout", () => {
-  it("Renderiza el layout administrativo", () => {
+  it("TAL-Admin 7: Renderiza el layout administrativo", () => {
     const { container } = renderAdminLayout();
     expect(container.getElementsByClassName("admin-layout")[0]).toBeInTheDocument();
   });
 
-  it("Muestra los enlaces de navegación principales", () => {
+  it("TAL-Admin 8: Muestra los enlaces de navegación principales", () => {
     renderAdminLayout();
     
     const linksEsperados = ["Dashboard", "Órdenes", "Productos"];
@@ -38,19 +38,19 @@ describe("AdminLayout", () => {
     });
   });
 
-  it("Muestra el botón de cerrar sesión", () => {
+  it("TAL-Admin 9: Muestra el botón de cerrar sesión", () => {
     renderAdminLayout();
     const logoutButton = screen.getByRole("button", { name: /cerrar sesión/i });
     expect(logoutButton).toBeInTheDocument();
   });
 
-  it("Renderiza el contenedor principal", () => {
+  it("TAL-Admin 10: Renderiza el contenedor principal", () => {
     renderAdminLayout();
     const mainContainer = screen.getByRole("complementary", { class: "admin-content" });
     expect(mainContainer).toBeInTheDocument();
   });
 
-  it("Muestra el título del Dashboard", () => {
+  it("TAL-Admin 11: Muestra el título del Dashboard", () => {
     renderAdminLayout();
     const title = screen.getByRole("heading", { name: /dashboard/i });
     expect(title).toBeInTheDocument();
