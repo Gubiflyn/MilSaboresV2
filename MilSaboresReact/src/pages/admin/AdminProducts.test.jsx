@@ -1,8 +1,7 @@
-// src/pages/admin/AdminProducts.test.jsx
 import { render, screen, within } from "@testing-library/react";
 import { describe, it, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";
-import Products from "./Products"; // ✅ CORREGIDO: apunta al archivo real
+import Products from "./Products"; 
 
 function renderAdminProducts() {
   return render(<Products />);
@@ -57,9 +56,6 @@ describe("Admin - Gestión de Productos", () => {
     });
     expect(boton).toBeInTheDocument();
   });
-
-  // Se elimina el test TA-AdmProd5 que causaba error
-  // y continuamos con el siguiente estable
 
   it("TA-AdmProd5: Cada producto muestra su precio formateado con miles (ej. '$ 45.000')", async () => {
     renderAdminProducts();
