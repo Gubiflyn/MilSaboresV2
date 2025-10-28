@@ -12,7 +12,7 @@ describe("Admin - Gestión de Productos", () => {
     document.body.innerHTML = "";
   });
 
-  it("TA-AdmProd1: Muestra el título principal 'Gestión de Productos' o similar", async () => {
+  it("TAP-Admin 12: Muestra el título principal 'Gestión de Productos' o similar", async () => {
     renderAdminProducts();
     const titulo = await screen.findByRole("heading", {
       name: /productos|gestión/i,
@@ -20,7 +20,7 @@ describe("Admin - Gestión de Productos", () => {
     expect(titulo).toBeInTheDocument();
   });
 
-  it("TA-AdmProd2: Renderiza una tabla con columnas visibles", async () => {
+  it("TAP-Admin 13: Renderiza una tabla con columnas visibles", async () => {
     renderAdminProducts();
 
     // Columnas que sí existen en tu tabla
@@ -37,7 +37,7 @@ describe("Admin - Gestión de Productos", () => {
     expect(botonesEliminar.length).toBeGreaterThan(0);
   });
 
-  it("TA-AdmProd3: Cada fila de producto tiene botones de edición y eliminación", async () => {
+  it("TAP-Admin 14: Cada fila de producto tiene botones de edición y eliminación", async () => {
     renderAdminProducts();
     const filas = await screen.findAllByRole("row");
     for (const fila of filas.slice(1)) {
@@ -49,7 +49,7 @@ describe("Admin - Gestión de Productos", () => {
     }
   });
 
-  it("TA-AdmProd4: El botón '+ Nuevo producto' está visible", async () => {
+  it("TAP-Admin 15: El botón '+ Nuevo producto' está visible", async () => {
     renderAdminProducts();
     const boton = await screen.findByRole("button", {
       name: /\+ nuevo producto/i,
@@ -57,7 +57,7 @@ describe("Admin - Gestión de Productos", () => {
     expect(boton).toBeInTheDocument();
   });
 
-  it("TA-AdmProd5: Cada producto muestra su precio formateado con miles (ej. '$ 45.000')", async () => {
+  it("TAP-Admin 16: Cada producto muestra su precio formateado con miles (ej. '$ 45.000')", async () => {
     renderAdminProducts();
 
     const precios = await screen.findAllByText((_, node) => {

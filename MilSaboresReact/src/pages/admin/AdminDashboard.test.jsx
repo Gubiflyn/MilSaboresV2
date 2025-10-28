@@ -13,12 +13,12 @@ function renderAdmin() {
   );
 }
 
-describe("Página Admin - Panel Principal", () => {
+describe("Página Admin", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
 
-  it("TA-Admin1: Muestra el título principal del panel (Dashboard)", () => {
+  it("TAD-Admin 1: Muestra el título principal del panel (Dashboard)", () => {
     renderAdmin();
     expect(
       screen.getByRole("heading", { level: 1, name: /dashboard/i })
@@ -30,7 +30,7 @@ describe("Página Admin - Panel Principal", () => {
     ).toBeInTheDocument();
   });
 
-  it("TA-Admin2: Sidebar contiene las secciones principales", () => {
+  it("TAD-Admin 2: Sidebar contiene las secciones principales", () => {
     renderAdmin();
     expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /órdenes/i })).toBeInTheDocument();
@@ -42,28 +42,28 @@ describe("Página Admin - Panel Principal", () => {
     expect(screen.getByRole("link", { name: /tienda/i })).toBeInTheDocument();
   });
 
-  it("TA-Admin3: El botón 'Cerrar Sesión' es visible", () => {
+  it("TAD-Admin 3: El botón 'Cerrar Sesión' es visible", () => {
     renderAdmin();
     expect(
       screen.getByRole("button", { name: /cerrar sesión/i })
     ).toBeVisible();
   });
 
-  it("TA-Admin4: Muestra el correo del usuario administrador", () => {
+  it("TAD-Admin 4: Muestra el correo del usuario administrador", () => {
     renderAdmin();
     const email = screen.getByText(/admin@mail/i);
     expect(email).toBeInTheDocument();
     expect(email).toHaveClass("admin-user-email");
   });
 
-  it("TA-Admin5: El logo 'Mil Sabores' se muestra correctamente en el sidebar", () => {
+  it("TAD-Admin 5: El logo 'Mil Sabores' se muestra correctamente en el sidebar", () => {
     renderAdmin();
     const logo = screen.getByRole("img", { name: /logo mil sabores/i });
     expect(logo).toBeInTheDocument();
     expect(logo).toHaveAttribute("src", expect.stringContaining("icono"));
   });
 
-  it("TA-Admin6: El layout principal de administrador existe y contiene el sidebar", () => {
+  it("TAD-Admin 6: El layout principal de administrador existe y contiene el sidebar", () => {
     renderAdmin();
     const layout = document.querySelector(".admin-layout");
     expect(layout).toBeInTheDocument();
