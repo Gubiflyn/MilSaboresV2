@@ -11,7 +11,7 @@ export default function CarritoPage() {
       carrito={carrito}
       vaciarCarrito={clear}
       eliminarProducto={remove}
-      setCantidad={setQty}            // ⬅️ clave
+      setCantidad={setQty}            
       updateMensaje={updateMessage}
       irAlPago={() => navigate("/pago")}
     />

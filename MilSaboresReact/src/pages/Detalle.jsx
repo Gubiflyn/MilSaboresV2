@@ -1,4 +1,3 @@
-// src/pages/Detalle.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { loadFromLocalstorage } from '../utils/localstorageHelper';
@@ -15,17 +14,15 @@ const Detalle = () => {
   const [cantidad, setCantidad] = useState(1);
   const [mensaje, setMensaje] = useState('');
 
-  // --- Lee parámetros de oferta desde el query string ---
   const qs = new URLSearchParams(location.search);
   const isOferta = qs.get('oferta') === '1';
   const pctParam = parseFloat(qs.get('pct') || '0');
   const pct = Number.isFinite(pctParam)
-    ? Math.min(0.9, Math.max(0, pctParam)) // entre 0% y 90% por seguridad
+    ? Math.min(0.9, Math.max(0, pctParam)) 
     : 0;
   const ofertaTag = qs.get('tag') || null;
 
   useEffect(() => {
-    // Intentamos con varias claves de LS para compatibilidad hacia atrás
     const tortasLS =
       loadFromLocalstorage('tortas_v3') ||
       loadFromLocalstorage('tortas_v2') ||
@@ -41,14 +38,12 @@ const Detalle = () => {
     setMensaje('');
   }, [codigo]);
 
-  // ¿Es torta? (para habilitar el campo mensaje opcional)
   const esTorta = useMemo(() => {
     const n = (torta?.nombre || '').toLowerCase();
     const c = (torta?.categoria || '').toLowerCase();
     return n.includes('torta') || c.includes('torta');
   }, [torta]);
 
-  // Precios
   const precioBase = Number(torta?.precio || 0);
   const precioFinal = isOferta
     ? Math.max(0, Math.round(precioBase * (1 - pct)))
@@ -58,14 +53,10 @@ const Detalle = () => {
     if (cantidad > 0 && torta?.codigo) {
       add({
         ...torta,
-        // usamos el precio final (con o sin descuento)
         precio: precioFinal,
-        // guardamos el precio original si viene por oferta (para mostrar ahorro en Pago.jsx)
         ...(isOferta ? { precioOriginal: precioBase } : {}),
         cantidad,
-        // mensaje solo si es torta
         mensaje: esTorta ? (mensaje || '') : undefined,
-        // etiqueta informativa si viene con oferta
         ...(isOferta ? { etiquetaOferta: `OFERTA ${Math.round(pct * 100)}%` } : {})
       });
     }

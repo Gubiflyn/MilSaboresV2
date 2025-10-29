@@ -76,7 +76,6 @@ const Noticias = () => {
         </section>
       </main>
 
-      {/* Modal */}
       {activa && (
         <div
           className="modal-backdrop-custom"

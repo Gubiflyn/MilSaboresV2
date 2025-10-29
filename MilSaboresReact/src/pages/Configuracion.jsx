@@ -6,7 +6,6 @@ const DEFAULT_AVATAR = "/img/default-profile.png";
 export default function Configuracion() {
   const formRef = useRef(null);
 
-  // ✅ Combina los datos de "usuario" y "perfiles"
   const getUsuarioLS = () => {
     try {
       const auth = JSON.parse(localStorage.getItem("usuario")) || {};
@@ -25,7 +24,6 @@ export default function Configuracion() {
   const inicio = getUsuarioLS();
   const regiones = useMemo(() => regionesComunas.map((r) => r.region), []);
 
-  // separa nombre y apellido si vienen juntos
   const separarNombre = (nombreCompleto = "") => {
     const partes = nombreCompleto.trim().split(" ");
     const nombre = partes.slice(0, -1).join(" ") || partes[0] || "";
@@ -121,7 +119,6 @@ export default function Configuracion() {
       fotoPerfil: foto,
     };
 
-    // Actualiza tanto "usuario" como su entrada en "perfiles"
     localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
 
     const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");

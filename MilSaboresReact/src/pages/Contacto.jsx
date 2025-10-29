@@ -15,7 +15,6 @@ export default function Contacto() {
 
   return (
     <main className="contacto-page d-flex flex-column flex-grow-1">
-      {/* Hero */}
       <header className="contacto-hero py-5">
         <div className="container">
           <div className="row align-items-center g-4">
@@ -48,11 +47,9 @@ export default function Contacto() {
         </div>
       </header>
 
-      {/* Contenido */}
       <section className="py-5 flex-grow-1">
         <div className="container">
           <div className="row g-4">
-            {/* Columna: Formulario */}
             <div className="col-12 col-lg-7">
               <div className="card border-0 shadow-sm contacto-card">
                 <div className="card-body p-4 p-md-5">
@@ -61,7 +58,6 @@ export default function Contacto() {
                     Cuéntanos qué necesitas y nos pondremos en contacto contigo.
                   </p>
 
-                  {/* === AQUÍ VA TU FORMULARIO ORIGINAL === */}
                   <form className="mx-auto" style={{ maxWidth: 400 }} onSubmit={handleSubmit}>
                     <input
                       type="text"
@@ -93,12 +89,10 @@ export default function Contacto() {
                       Enviar
                     </button>
                   </form>
-                  {/* === FIN DE TU FORMULARIO === */}
                 </div>
               </div>
             </div>
 
-            {/* Columna: Info / Mapa / FAQ */}
             <div className="col-12 col-lg-5">
               <div className="card border-0 shadow-sm mb-4">
                 <div className="card-body p-4">

@@ -1,4 +1,3 @@
-// PagoError.jsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -8,7 +7,6 @@ export default function PagoError() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // Esperamos recibir en state: { orderId, attemptId, mensaje, customer, address, items, total }
   const orderId = state?.orderId || state?.attemptId || `#${(new Date()).toISOString().slice(0,10).replace(/-/g,"")}`;
   const mensaje = state?.mensaje || "No se pudo procesar tu pago.";
   const customer = state?.customer || { nombre: "", apellido: "", correo: "" };
@@ -43,7 +41,6 @@ export default function PagoError() {
 
           <hr />
 
-          {/* Datos comprador */}
           <div className="row g-3 mb-3">
             <div className="col-md-4">
               <label className="form-label small">Nombre</label>
@@ -59,7 +56,6 @@ export default function PagoError() {
             </div>
           </div>
 
-          {/* Dirección */}
           <div className="mb-3">
             <h6 className="mb-2">Dirección de entrega de los productos</h6>
             <div className="row g-3">
@@ -86,7 +82,6 @@ export default function PagoError() {
             </div>
           </div>
 
-          {/* Tabla resumen */}
           <div className="table-responsive mb-3">
             <table className="table table-sm align-middle">
               <thead>
@@ -126,7 +121,6 @@ export default function PagoError() {
             </table>
           </div>
 
-          {/* Mensaje de error y acciones */}
           <div className="mb-3">
             <div className="alert alert-warning p-2 mb-2">{mensaje}</div>
             <div className="d-flex gap-2">

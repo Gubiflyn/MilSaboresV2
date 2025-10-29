@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import tortasFallback from "../data/tortas.json";
@@ -83,7 +82,6 @@ export default function Home() {
 
   return (
     <main>
-      {/* HERO */}
       <section className="hero-section py-5" id="inicio">
         <div className="container py-5">
           <div className="row align-items-center">
@@ -107,12 +105,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* OFERTAS (3 productos con descuento) */}
       <section className="products-section py-5" id="productos">
         <div className="container">
           <div className="d-flex align-items-center justify-content-between mb-1">
             <h2 className="section-heading m-0">Ofertas de la Semana</h2>
-            {/* ✅ Botón para ver todas las ofertas */}
             <Link to="/ofertas" className="btn btn-sm btn-outline-primary">
               Ver todas las ofertas
             </Link>
@@ -183,7 +179,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ABOUT */}
       <section className="about-section py-5" id="nosotros">
         <div className="container">
           <h2 className="section-heading text-center mb-5">Sobre Nosotros</h2>

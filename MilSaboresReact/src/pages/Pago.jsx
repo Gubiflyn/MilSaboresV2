@@ -23,13 +23,11 @@ export default function Pago() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Subtotal real (ya considera precios con oferta por producto si el item.precio viene rebajado)
   const subtotalItems = useMemo(
     () => carrito.reduce((a, t) => a + (t.precio || 0) * (t.cantidad || 1), 0),
     [carrito]
   );
 
-  // Ahorro por ofertas de producto (comparando precioOriginal vs precio)
   const ahorroOfertas = useMemo(
     () =>
       carrito.reduce((acc, t) => {
@@ -41,13 +39,11 @@ export default function Pago() {
     [carrito]
   );
 
-  // “Subtotal normal estimado” (lo que costaría sin ofertas por producto)
   const subtotalNormalEstimado = useMemo(
     () => subtotalItems + ahorroOfertas,
     [subtotalItems, ahorroOfertas]
   );
 
-  // Rango de entrega
   const [dateLimits, setDateLimits] = useState({ min: "", max: "" });
   useEffect(() => {
     const hoy = new Date();
@@ -59,10 +55,8 @@ export default function Pago() {
     setDateLimits({ min: toISO(manana), max: toISO(max) });
   }, []);
 
-  // Método: tarjeta / paypal
   const [metodo, setMetodo] = useState("card");
 
-  // Form tarjeta
   const [form, setForm] = useState({
     nombre: "",
     numero: "",
@@ -73,7 +67,6 @@ export default function Pago() {
   });
   const [errors, setErrors] = useState({});
 
-  // Prefill desde usuario autenticado
   useEffect(() => {
     if (isAuthenticated && user) {
       setForm((prev) => ({
@@ -84,7 +77,6 @@ export default function Pago() {
     }
   }, [isAuthenticated, user]);
 
-  // 👇 Promos/cupones aplicadas AL MOMENTO (para mostrar en el resumen)
   const promoPreview = useMemo(
     () =>
       applyPromotions({
@@ -109,7 +101,6 @@ export default function Pago() {
     return Object.keys(e).length === 0;
   };
 
-  // Cierre común de orden (tarjeta/PayPal) aplicando promociones DEFINITIVAS
   const finalizarOrden = ({ orderId, receptorNombre, receptorEmail }) => {
     const promo = applyPromotions({
       items: carrito,
@@ -134,7 +125,6 @@ export default function Pago() {
         total: (t.precio || 0) * (t.cantidad || 1),
         mensaje: t.mensaje || "",
       })),
-      // Montos
       subtotal: promo.subtotal,
       descuento: promo.descuento,
       total: promo.total,
@@ -142,7 +132,6 @@ export default function Pago() {
       notasPromo: promo.breakdown || {},
     };
 
-    // Persistencia
     const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
     map[orderId] = receipt;
     localStorage.setItem("receipts_v1", JSON.stringify(map));
@@ -166,7 +155,6 @@ export default function Pago() {
     navigate(`/boleta/${orderId}`);
   };
 
-  // Submit tarjeta
   const onSubmitTarjeta = (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -191,7 +179,6 @@ export default function Pago() {
     <div className="container py-5">
       <h2 className="mb-4 text-center">Pago de tu Compra</h2>
 
-      {/* ======= RESUMEN con Ofertas + Promos ======= */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title mb-3">Resumen</h5>
@@ -233,7 +220,6 @@ export default function Pago() {
         </div>
       </div>
 
-      {/* ======= Método de pago ======= */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title mb-3">Selecciona tu método de pago</h5>
@@ -262,7 +248,6 @@ export default function Pago() {
         </div>
       </div>
 
-      {/* ======= Tarjeta ======= */}
       {metodo === "card" && (
         <form onSubmit={onSubmitTarjeta} noValidate>
           <h5 className="mb-3">Pago con Tarjeta</h5>
@@ -358,14 +343,13 @@ export default function Pago() {
         </form>
       )}
 
-      {/* ======= PayPal ======= */}
       {metodo === "paypal" && (
         <div className="my-4">
           <h5 className="mb-3">Pagar con PayPal</h5>
           <div className="d-flex justify-content-start">
             <div style={{ width: "320px" }}>
               <PayPalCheckout
-                customerEmail={(form.correo || user?.email || "").trim()}  // 👈 pasa el mail para promos
+                customerEmail={(form.correo || user?.email || "").trim()} 
                 onPaid={(details) => {
                   const orderId = details?.id || `PP-${Date.now()}`;
                   const payerName =

@@ -1,13 +1,12 @@
-// src/pages/Ofertas.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import tortasFallback from "../data/tortas.json";
 
 const LS_KEY = "tortas_v3";
 const DESCUENTOS = {
-  torta: 0.20,     // 20% para torta
-  postre: 0.15,    // 15% para Postres Individuales
-  sinAzucar: 0.10, // 10% para Productos Sin Azúcar
+  torta: 0.20,     
+  postre: 0.15,    
+  sinAzucar: 0.10, 
 };
 
 const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
@@ -27,11 +26,9 @@ export default function Ofertas() {
         setProductos(guardadas);
       }
     } catch {
-      // si falla el parse, mantenemos el fallback
     }
   }, []);
 
-  // 
   const ofertas = useMemo(() => {
     if (!Array.isArray(productos) || productos.length === 0) return [];
 
@@ -56,7 +53,6 @@ export default function Ofertas() {
       }
     }
 
-    // completar si faltan
     if (unique.length < 3) {
       for (const p of productos) {
         const key = p.codigo ?? p.nombre;
@@ -68,7 +64,6 @@ export default function Ofertas() {
       }
     }
 
-    // calcular descuento según el tipo (igual que en Home)
     return unique.slice(0, 3).map((p) => {
       let tipo = "torta";
       if ((p.categoria || "") === "Postres Individuales") tipo = "postre";

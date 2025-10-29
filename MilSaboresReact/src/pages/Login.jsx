@@ -20,7 +20,6 @@ export default function Login() {
       setErr(res.error || "Correo o contraseña incorrectos");
       return;
     }
-    // Redirección básica (si venía de una ruta protegida, vuelve allí)
     navigate(from, { replace: true });
   };
 

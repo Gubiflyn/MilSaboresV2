@@ -35,7 +35,6 @@ function Navbar({ carrito: carritoProp }) {
     setFallbackOpen((v) => !v);
   };
 
-  // cerrar fallback
   useEffect(() => {
     if (!fallbackOpen) return;
     const close = (ev) => {
@@ -76,7 +75,6 @@ function Navbar({ carrito: carritoProp }) {
               <li className="nav-item">
                 <Link className="nav-link header__menu-link" to="/ofertas">Ofertas</Link>
               </li>
-              {/* ✅ NUEVO LINK DE CATEGORÍAS */}
               <li className="nav-item">
                 <Link className="nav-link header__menu-link" to="/categorias">Categorías</Link>
               </li>
