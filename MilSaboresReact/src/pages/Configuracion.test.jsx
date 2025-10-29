@@ -20,24 +20,24 @@ describe("Configuracion (básico)", () => {
 
   it("TCF-Pages 13: Los campos de texto están en readonly inicialmente", () => {
     render(<Configuracion />);
-    const textboxes = screen.getAllByRole("textbox");
+    const textboxes = screen.getAllByRole("textbox"); 
     expect(textboxes.length).toBeGreaterThanOrEqual(4);
     textboxes.forEach((el) => {
       expect(el).toHaveAttribute("readonly");
     });
   });
 
-  it("TCF-Pages 14: Los selects de Región y Comuna están deshabilitados", () => {
-    render(<Configuracion />);
+it("TCF-Pages 14: Los selects de Región y Comuna están deshabilitados", () => {
+  render(<Configuracion />);
 
-    const combos = screen.getAllByRole("combobox");
-    expect(combos.length).toBeGreaterThanOrEqual(2);
+  const combos = screen.getAllByRole("combobox");
+  expect(combos.length).toBeGreaterThanOrEqual(2);
 
-    combos.forEach((c) => expect(c).toBeDisabled());
+  combos.forEach((c) => expect(c).toBeDisabled());
 
-    expect(screen.getByText(/selecciona una región/i)).toBeInTheDocument();
-    expect(screen.getByText(/primero elige una región/i)).toBeInTheDocument();
-  });
+  expect(screen.getByText(/selecciona una región/i)).toBeInTheDocument();
+  expect(screen.getByText(/primero elige una región/i)).toBeInTheDocument();
+});
 
   it("TCF-Pages 15: Existe el botón 'Editar' y está habilitado", () => {
     render(<Configuracion />);
