@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import FormularioTorta from "./FormularioTorta";
 
+/*-------------Prueba de Formulario adicional----------------*/ 
 describe("FormularioTorta", () => {
   //Renderiza campos principales y botón
   it("TFT-14: Muestra Nombre y Precio, y el botón de envío", () => {

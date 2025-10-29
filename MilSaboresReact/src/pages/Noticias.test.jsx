@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import Noticias from "./Noticias";
 
 describe("Noticias", () => {
-  it("TNC-Pages 24: Renderiza correctamente y muestra título o encabezado principal", () => {
+  it("TNC-Pages 26: Renderiza correctamente y muestra título o encabezado principal", () => {
     render(
       <MemoryRouter>
         <Noticias />

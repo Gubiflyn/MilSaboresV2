@@ -18,7 +18,7 @@ function renderPage() {
 }
 
 describe("Productos", () => {
-  it("TPTS-Pages 29: Muestra productos correctamente al cargar la página", async () => {
+  it("TPTS-Pages 28: Muestra productos correctamente al cargar la página", async () => {
     renderPage();
     expect(
       await screen.findByText("Torta Cuadrada de Chocolate")
@@ -26,7 +26,7 @@ describe("Productos", () => {
     expect(screen.getByText("Torta Cuadrada de Frutas")).toBeInTheDocument();
   });
 
-  it("TPTS-Pages 30: Redirecciona correctamente al hacer click en una torta", async () => {
+  it("TPTS-Pages 29: Redirecciona correctamente al hacer click en una torta", async () => {
     renderPage();
     const linkTorta = await screen.findByRole("link", {
       name: "Torta Cuadrada de Chocolate",
@@ -34,7 +34,7 @@ describe("Productos", () => {
     expect(linkTorta).toHaveAttribute("href", "/detalle/TC001");
   });
 
-  it("TPTS-Pages 31: Botón 'Agregar al carrito' está presente y visible", async () => {
+  it("TPTS-Pages 30: Botón 'Agregar al carrito' está presente y visible", async () => {
     renderPage();
     const tituloTorta = await screen.findByText("Torta Cuadrada de Chocolate");
     const cardTorta = tituloTorta.closest(".card") || tituloTorta.closest("*");
@@ -45,7 +45,7 @@ describe("Productos", () => {
     expect(botonAgregar).toBeVisible();
   });
 
-  it("TPTS-Pages 32: Filtra productos correctamente por categoría", async () => {
+  it("TPTS-Pages 31: Filtra productos correctamente por categoría", async () => {
     renderPage();
     const user = userEvent.setup();
 
@@ -62,7 +62,7 @@ describe("Productos", () => {
     ).toBeInTheDocument();
   });
 
-  it("TPTS-Pages 33: Muestra precios en formato correcto (CLP)", async () => {
+  it("TPTS-Pages 32: Muestra precios en formato correcto (CLP)", async () => {
     renderPage();
     const tituloTorta = await screen.findByText("Torta Cuadrada de Chocolate");
     const cardTorta = tituloTorta.closest(".card") || tituloTorta.closest("*");
