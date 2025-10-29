@@ -22,7 +22,6 @@ describe("Categorias", () => {
       </MemoryRouter>
     );
 
-    // Título tolerante: “Categorías”, “Lista de categorías”, etc.
     const heading =
       screen.queryByRole("heading", { name: /categor/i }) ||
       screen.queryByText(/categor/i);

@@ -13,14 +13,11 @@ describe("Reports", () => {
       </MemoryRouter>
     );
 
-    // Título principal
     expect(screen.getByText(/Reportes/i)).toBeInTheDocument();
 
-    // Hay una o más tablas
     const tables = screen.getAllByRole("table");
     expect(tables.length).toBeGreaterThan(0);
 
-    // Botón de exportación
     expect(
       screen.getByRole("button", { name: /Exportar órdenes \(CSV\)/i })
     ).toBeInTheDocument();

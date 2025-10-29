@@ -13,12 +13,10 @@ describe("Perfil", () => {
       </MemoryRouter>
     );
 
-    // título visible
     expect(
       screen.getByText(/Perfil del administrador/i)
     ).toBeInTheDocument();
 
-    // botón principal
     expect(
       screen.getByRole("button", { name: /Actualizar contraseña/i })
     ).toBeInTheDocument();

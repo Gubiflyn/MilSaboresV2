@@ -13,17 +13,14 @@ describe("UserEdit", () => {
       </MemoryRouter>
     );
 
-    // Título
     expect(
       screen.getByRole("heading", { name: /Editar usuario/i })
     ).toBeInTheDocument();
 
-    // Aviso de no encontrado
     expect(
       screen.getByText(/No se encontró el usuario/i)
     ).toBeInTheDocument();
 
-    // Enlace para volver
     expect(
       screen.getByRole("link", { name: /← Volver/i })
     ).toBeInTheDocument();

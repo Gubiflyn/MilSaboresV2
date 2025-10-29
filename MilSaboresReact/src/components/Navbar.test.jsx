@@ -23,7 +23,6 @@ vi.mock("../context/CartContext", () => ({
 }));
 
 describe("Navbar", () => {
-  //Renderiza el logo o título principal
   it("TNB-16: Muestra el logo o nombre 'Mil Sabores' en el Navbar", () => {
     render(
       <MemoryRouter>
@@ -37,7 +36,6 @@ describe("Navbar", () => {
     expect(brand).toBeInTheDocument();
   });
 
-  //Renderiza los enlaces principales de navegación
   it("TNB-17: Muestra los enlaces de navegación principales", () => {
     render(
       <MemoryRouter>

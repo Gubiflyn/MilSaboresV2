@@ -10,7 +10,7 @@
 .admin-sidebar {
   display: flex;
   flex-direction: column;
-  background: #8B4513; /* gris muy oscuro */
+  background: #8B4513; 
   color: #e5e7eb;
   padding: 16px;
   gap: 12px;

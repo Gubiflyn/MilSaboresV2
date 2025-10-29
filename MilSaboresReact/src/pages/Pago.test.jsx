@@ -38,7 +38,6 @@ describe("Pago", () => {
       </MemoryRouter>
     );
 
-    // Títulos visibles
     expect(screen.getByText(/pago de tu compra/i)).toBeInTheDocument();
     expect(screen.getByText(/resumen/i)).toBeInTheDocument();
     expect(screen.getByText(/total a pagar/i)).toBeInTheDocument();

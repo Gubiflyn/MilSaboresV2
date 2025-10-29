@@ -16,10 +16,8 @@ describe("Users", () => {
       </MemoryRouter>
     );
 
-    // Verifica que el título esté presente
     expect(screen.getByText(/Usuarios/i)).toBeInTheDocument();
 
-    // Verifica que haya al menos una tabla o estructura renderizada
     expect(screen.queryAllByRole("table").length >= 0).toBe(true);
   });
 });

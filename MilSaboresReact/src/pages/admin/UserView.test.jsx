@@ -13,13 +13,11 @@ describe("UserView", () => {
       </MemoryRouter>
     );
 
-    // El componente debe mostrar algún título o sección principal
     const title =
       screen.queryByText(/usuario/i) ||
       screen.queryByRole("heading") ||
       screen.queryByText(/detalle/i);
 
-    // Solo valida que algo se renderiza
     expect(title).toBeTruthy();
   });
 });

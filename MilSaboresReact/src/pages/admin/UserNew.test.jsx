@@ -13,10 +13,8 @@ describe("UserNew", () => {
       </MemoryRouter>
     );
 
-    // título principal
     expect(screen.getByRole("heading", { name: /Nuevo usuario/i })).toBeInTheDocument();
 
-    // botón de acción principal
     expect(screen.getByRole("button", { name: /Crear/i })).toBeInTheDocument();
   });
 });

@@ -143,7 +143,6 @@ function Navbar({ carrito: carritoProp }) {
               )}
             </ul>
 
-            {/* Carrito */}
             <button
               onClick={() => navigate("/carrito")}
               className="btn position-relative ms-4 header__cart-icon"
