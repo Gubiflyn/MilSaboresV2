@@ -46,7 +46,6 @@ export default function Boleta() {
       <div className="card shadow-sm">
         <div className="card-body">
 
-          {/* Encabezado */}
           <div className="d-flex flex-wrap justify-content-between align-items-center">
             <div className="mb-2">
               <h4 className="mb-0">Boleta electrónica</h4>
@@ -65,7 +64,6 @@ export default function Boleta() {
 
           <hr />
 
-          {/* Receptor */}
           <div className="row g-3 mb-3">
             <div className="col-md-6">
               <h6 className="mb-2">Datos del cliente</h6>
@@ -80,7 +78,6 @@ export default function Boleta() {
             </div>
           </div>
 
-          {/* Detalle */}
           <div className="table-responsive mb-3">
             <table className="table table-sm align-middle">
               <thead>
@@ -123,7 +120,6 @@ export default function Boleta() {
             </table>
           </div>
 
-          {/* Notas de promoción */}
           {receipt.notasPromo?.detalles?.length > 0 && (
             <div className="mb-3">
               <h6>Promociones aplicadas</h6>
@@ -135,7 +131,6 @@ export default function Boleta() {
             </div>
           )}
 
-          {/* Acciones */}
           <div className="d-flex gap-2 justify-content-end">
             <button className="btn btn-outline-secondary" onClick={handleVolver}>
               Volver al inicio

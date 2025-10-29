@@ -3,7 +3,7 @@ import Card from '../components/Card';
 import { saveLocalstorage, loadFromLocalstorage, deleteFromLocalstorage } from '../utils/localstorageHelper';
 import tortasJson from '../data/tortas.json';
 import { Modal, Toast } from 'bootstrap';
-import { useCart } from '../context/CartContext'; // 👈 nuevo import
+import { useCart } from '../context/CartContext'; 
 
 const categorias = [
   'Todas',
@@ -22,8 +22,7 @@ const LS_KEY = 'tortas_v3';
 const Productos = () => {
   const [tortas, setTortas] = useState([]);
   const [categoria, setCategoria] = useState('Todas');
-  const { add } = useCart(); // usamos el hook
-
+  const { add } = useCart(); 
   useEffect(() => {
   
   const guardadas = loadFromLocalstorage(LS_KEY);

@@ -4,14 +4,13 @@ import { useCart } from "../context/CartContext";
 import { useMemo, useState } from "react";
 import { applyPromotions } from "../utils/promotions";
 
-const CLP_PER_USD = 950; // ajustable
+const CLP_PER_USD = 950; 
 
 export default function PayPalCheckout({ onPaid, customerEmail = "" }) {
   const navigate = useNavigate();
   const { carrito } = useCart();
   const [loading, setLoading] = useState(false);
 
-  // Aplica promociones para calcular EXACTAMENTE lo que se cobra por PayPal
   const promo = useMemo(
     () =>
       applyPromotions({
@@ -41,7 +40,7 @@ export default function PayPalCheckout({ onPaid, customerEmail = "" }) {
                 description: "Compra Mil Sabores",
                 amount: {
                   currency_code: "USD",
-                  value: String(totalUSD), // 👈 total con promociones
+                  value: String(totalUSD), 
                 },
               },
             ],

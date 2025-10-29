@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -74,7 +73,6 @@ export default function Register() {
     const codigoRegistro = (form.codigoDescuento || "").trim().toUpperCase();
     const isDuoc = /@(duocuc|duoc)\.cl$/i.test(form.correo);
 
-    // === Calcular edad + validar fecha coherente ===
     let edad = 0;
     if (form.fechaNacimiento) {
       const d = new Date(form.fechaNacimiento);
@@ -88,7 +86,6 @@ export default function Register() {
       if (m < 0 || (m === 0 && now.getDate() < d.getDate())) edad--;
     }
 
-    // Prioridad de beneficios
     let beneficio = "Sin beneficio";
     if (edad >= 50) {
       beneficio = "50%";
@@ -195,7 +192,7 @@ export default function Register() {
                   type="date"
                   className="form-control"
                   value={form.fechaNacimiento}
-                  max={new Date().toISOString().split("T")[0]} // 🔒 no permite fechas futuras
+                  max={new Date().toISOString().split("T")[0]} 
                   onChange={(e) => setForm({ ...form, fechaNacimiento: e.target.value })}
                   required
                 />
