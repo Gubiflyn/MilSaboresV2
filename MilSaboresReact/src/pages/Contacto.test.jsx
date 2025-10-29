@@ -52,7 +52,6 @@ describe("Contacto", () => {
   it('TCT-Pages 19: Al enviar, muestra un alert de “gracias” (mockeado)', () => {
     render(<Contacto />);
 
-    // Rellenamos datos mínimos antes de enviar (por si el componente valida)
     const nombre = screen.getByPlaceholderText(/nombre/i);
     const correo = screen.getByPlaceholderText(/correo/i);
     const mensaje =
@@ -66,7 +65,6 @@ describe("Contacto", () => {
     const btnEnviar = screen.getByRole("button", { name: /enviar|enviar mensaje|enviar consulta/i });
     fireEvent.click(btnEnviar);
 
-    // Aceptamos distintas variantes comunes del mensaje de confirmación
     expect(window.alert).toHaveBeenCalled();
     const allCalls = window.alert.mock.calls.map((c) => String(c[0]).toLowerCase()).join(" ");
     expect(allCalls).toMatch(/gracias|enviado|recibido/);

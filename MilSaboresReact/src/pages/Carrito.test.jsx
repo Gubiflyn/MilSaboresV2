@@ -73,6 +73,6 @@ describe("Carrito", () => {
     renderCarrito();
     const payBtn = await screen.findByRole("button", { name: /ir al pago/i });
     expect(payBtn).toBeInTheDocument();
-    await userEvent.click(payBtn); // opcional: confirma que existe acción sin fallar
+    await userEvent.click(payBtn); 
   });
 });

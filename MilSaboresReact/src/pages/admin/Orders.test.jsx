@@ -39,14 +39,12 @@ describe("Admin - Orders", () => {
       </MemoryRouter>
     );
 
-    // Espera hasta que la tabla muestre contenido: o bien la orden mock, o el mensaje "Sin registros."
     await waitFor(() => {
       const hasOrder = !!screen.queryByText("ORD-001");
       const hasEmpty = !!screen.queryByText(/Sin registros/i);
       if (!hasOrder && !hasEmpty) throw new Error("Ni orden ni mensaje vacío aún");
     });
 
-    // Si la orden aparece, comprobamos filas; si no, comprobamos el mensaje vacío
     if (screen.queryByText("ORD-001")) {
       expect(screen.getByText("ORD-001")).toBeInTheDocument();
       const rows = container.querySelectorAll("tbody tr");
@@ -63,7 +61,6 @@ describe("Admin - Orders", () => {
       </MemoryRouter>
     );
 
-    // Espera breve para que la UI se actualice
     await waitFor(() => {
       const hasOrder = !!screen.queryByText("ORD-001");
       const hasEmpty = !!screen.queryByText(/Sin registros/i);
@@ -73,12 +70,10 @@ describe("Admin - Orders", () => {
     const link = screen.queryByRole("link", { name: /ORD-001/i });
     if (link) {
       expect(link).toHaveAttribute("href", "/admin/pedidos/O-1");
-      // comprobación que el click no lanza error
       const user = userEvent.setup();
       await user.click(link);
       expect(link).toBeInTheDocument();
     } else {
-      // No hay órdenes: marcamos que la app muestra el estado vacío (test válido)
       expect(screen.getByText(/Sin registros/i)).toBeInTheDocument();
     }
   });

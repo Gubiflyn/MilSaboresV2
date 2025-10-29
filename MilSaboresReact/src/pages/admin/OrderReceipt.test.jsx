@@ -37,10 +37,8 @@ describe("OrderReceipt", () => {
       </MemoryRouter>
     );
 
-    // Verifica el título principal
     expect(screen.getByText(/boleta \(admin\)/i)).toBeInTheDocument();
 
-    // Verifica que muestra mensaje de "no encontrada" mientras carga
     expect(screen.getByText(/boleta no encontrada/i)).toBeInTheDocument();
   });
 });

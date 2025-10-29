@@ -65,7 +65,6 @@ describe('Admin - Categories', () => {
     const btnEditar = within(row).getByRole('button', { name: /editar/i });
     expect(btnEditar).toBeInTheDocument();
 
-    // Botón para crear nueva categoría
     expect(screen.getByRole('button', { name: /nuevo\s*\+/i })).toBeInTheDocument();
   });
 });

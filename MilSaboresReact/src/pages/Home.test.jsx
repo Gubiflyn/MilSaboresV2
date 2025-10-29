@@ -31,7 +31,6 @@ describe("Home", () => {
       </MemoryRouter>
     );
 
-    // 1) Botón o link con texto típico
     const cta =
       screen.queryByRole("button", {
         name: /(ver|ir a|explorar|ver más).*(producto|tienda)/i,

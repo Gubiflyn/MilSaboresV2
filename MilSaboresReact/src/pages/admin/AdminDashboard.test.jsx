@@ -24,7 +24,6 @@ describe("Página Admin", () => {
       screen.getByRole("heading", { level: 1, name: /dashboard/i })
     ).toBeInTheDocument();
 
-    // También el subtítulo debajo
     expect(
       screen.getByText(/resumen de las actividades diarias/i)
     ).toBeInTheDocument();

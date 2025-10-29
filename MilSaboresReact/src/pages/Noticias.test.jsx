@@ -11,7 +11,6 @@ describe("Noticias", () => {
       </MemoryRouter>
     );
 
-    // Busca un encabezado o texto principal
     const heading =
       screen.queryByRole("heading", { name: /noticias/i }) ||
       screen.queryByText(/noticias/i);

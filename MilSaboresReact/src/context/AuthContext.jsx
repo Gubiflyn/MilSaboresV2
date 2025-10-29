@@ -1,13 +1,10 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import seedUsers from "../data/usuarios.json";
 
-/** Claves de almacenamiento */
 const LS_TOKEN = "token";
 const LS_USER = "usuario";
 const LS_PROFILES = "perfiles";
 
-/** Token simple con expiración (30 min) */
 function makeToken(payload) {
   const exp = Date.now() + 30 * 60 * 1000;
   return btoa(JSON.stringify({ ...payload, exp }));
@@ -20,15 +17,13 @@ function readToken(raw) {
   }
 }
 
-/** Contexto */
 const AuthCtx = createContext({});
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);   // usuario actual (sin password)
-  const [token, setToken] = useState(null); // token raw (string)
+  const [user, setUser] = useState(null);   
+  const [token, setToken] = useState(null); 
   const mountedRef = useRef(false);
 
-  /** 1) Semilla de usuarios fijos → se mezcla 1 sola vez con 'perfiles' */
   useEffect(() => {
     const perfiles = JSON.parse(localStorage.getItem(LS_PROFILES) || "[]");
     const merged = [...perfiles];
@@ -40,13 +35,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem(LS_PROFILES, JSON.stringify(merged));
   }, []);
 
-  /** Helpers */
   const hydrate = () => {
     const rawTk = localStorage.getItem(LS_TOKEN);
     const rawUser = localStorage.getItem(LS_USER);
 
     if (!rawTk || !rawUser) {
-      // No hay sesión persistida: limpia estado
       setToken(null);
       setUser(null);
       return;
@@ -54,7 +47,6 @@ export function AuthProvider({ children }) {
 
     const parsed = readToken(rawTk);
     if (!parsed || Date.now() > parsed.exp) {
-      // Token inválido/expirado: limpia todo
       localStorage.removeItem(LS_TOKEN);
       localStorage.removeItem(LS_USER);
       setToken(null);
@@ -62,7 +54,6 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Sesión válida: rehidrata
     setToken(rawTk);
     try {
       setUser(JSON.parse(rawUser));
@@ -71,13 +62,11 @@ export function AuthProvider({ children }) {
     }
   };
 
-  /** 2) Rehidratación inicial + escucha de cambios externos (DevTools/otras pestañas) */
   useEffect(() => {
     hydrate();
     mountedRef.current = true;
 
     const onStorage = (e) => {
-      // Si tocan estas llaves, rehidrata el contexto
       if (!e || !e.key) return;
       if ([LS_USER, LS_TOKEN, "authUser", "user", "currentUser"].includes(e.key)) {
         hydrate();
@@ -88,16 +77,13 @@ export function AuthProvider({ children }) {
       window.removeEventListener("storage", onStorage);
       mountedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** 3) Auto-logout por expiración (polling liviano cada 60s) */
   useEffect(() => {
     const id = setInterval(() => {
       const rawTk = localStorage.getItem(LS_TOKEN);
       const parsed = rawTk ? readToken(rawTk) : null;
       if (!parsed || Date.now() > (parsed?.exp || 0)) {
-        // Expirado o inválido → cierra sesión
         localStorage.removeItem(LS_TOKEN);
         localStorage.removeItem(LS_USER);
         if (mountedRef.current) {
@@ -109,11 +95,9 @@ export function AuthProvider({ children }) {
     return () => clearInterval(id);
   }, []);
 
-  /** 4) Login */
   const login = (email, password) => {
     const perfiles = JSON.parse(localStorage.getItem(LS_PROFILES) || "[]");
 
-    // Normaliza perfiles → asegura email/password y otros campos típicos
     const normalizedPerfiles = perfiles.map((u) => ({
       email: u.email || u.correo,
       password: u.password || u.contrasena,
@@ -128,11 +112,9 @@ export function AuthProvider({ children }) {
       comuna: u.comuna || "",
       telefono: u.telefono || "",
       fotoPerfil: u.fotoPerfil || "",
-      // conserva campos originales por si los necesitas
       _raw: u,
     }));
 
-    // Unifica seed + perfiles (evitando duplicados por email)
     const users = [
       ...seedUsers,
       ...normalizedPerfiles.filter(
@@ -143,7 +125,6 @@ export function AuthProvider({ children }) {
     const found = users.find((u) => u.email === email && u.password === password);
     if (!found) return { ok: false, error: "Correo o contraseña incorrectos" };
 
-    // Construye payload del token (ligero)
     const payload = {
       email: found.email,
       rol: found.rol,
@@ -152,8 +133,6 @@ export function AuthProvider({ children }) {
       beneficio: found.beneficio || null,
     };
 
-    // Construye el objeto 'usuario' para la app (sin password),
-    // enriquecido con dirección/region/comuna si existían en perfiles
     const profileExtra =
       normalizedPerfiles.find((p) => p.email === found.email) || {};
     const userView = {
@@ -175,11 +154,9 @@ export function AuthProvider({ children }) {
     setToken(tk);
     setUser(userView);
 
-    // console.debug("Auth.login ->", { user: userView });
     return { ok: true };
   };
 
-  /** 5) Logout */
   const logout = () => {
     try {
       localStorage.removeItem(LS_TOKEN);
@@ -188,11 +165,8 @@ export function AuthProvider({ children }) {
       setToken(null);
       setUser(null);
     }
-    // Si quieres ser tajante y limpiar cualquier estado residual de la SPA:
-    // window.location.assign("/login");
   };
 
-  /** 6) Derivados */
   const isAuthenticated = useMemo(() => {
     if (!user || !token) return false;
     const payload = readToken(token);
@@ -209,8 +183,6 @@ export function AuthProvider({ children }) {
       isAdmin,
       login,
       logout,
-      // opcionalmente podrías exponer hydrate para forzar relectura manual
-      // hydrate,
     }),
     [user, token, isAuthenticated, isAdmin]
   );
@@ -218,5 +190,4 @@ export function AuthProvider({ children }) {
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
-/** Hook */
 export const useAuth = () => useContext(AuthCtx);

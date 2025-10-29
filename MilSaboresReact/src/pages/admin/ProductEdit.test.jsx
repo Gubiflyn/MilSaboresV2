@@ -8,7 +8,6 @@ import "@testing-library/jest-dom";
 import ProductEdit from "./ProductEdit";
 import dataFallback from "../../data/tortas.json";
 
-// Mock de AuthContext: admin autenticado
 vi.mock("../../context/AuthContext", () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -17,7 +16,6 @@ vi.mock("../../context/AuthContext", () => ({
   }),
 }));
 
-// Helper para sembrar productos en localStorage
 const seedProducts = (items) => {
   try {
     localStorage.setItem("PRODUCTS", JSON.stringify(items));
@@ -41,11 +39,9 @@ describe("ProductEdit", () => {
       </MemoryRouter>
     );
 
-    // Título
     const heading = await screen.findByText(/editar|editar producto/i);
     expect(heading).toBeInTheDocument();
 
-    // Debe pre-cargar el nombre en algún input, aqui usamos el valor actual
     const nameInput = await screen.findByDisplayValue(new RegExp(sample.nombre, "i"));
     expect(nameInput).toBeInTheDocument();
   });
@@ -62,11 +58,9 @@ describe("ProductEdit", () => {
       </MemoryRouter>
     );
 
-    // Nombre del producto en input
     const nameInput = await screen.findByDisplayValue(new RegExp(sample.nombre, "i"));
     expect(nameInput).toBeInTheDocument();
 
-    // Precio y stock 
     const priceInput = await screen.findByDisplayValue(new RegExp(String(sample.precio)));
     expect(priceInput).toBeInTheDocument();
 
@@ -92,7 +86,6 @@ describe("ProductEdit", () => {
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "Nuevo Nombre de Producto");
 
-    // Confirma que el input refleja el nuevo valor
     expect(nameInput).toHaveValue("Nuevo Nombre de Producto");
   });
 

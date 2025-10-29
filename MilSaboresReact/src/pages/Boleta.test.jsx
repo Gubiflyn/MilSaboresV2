@@ -52,13 +52,11 @@ describe("Boleta", () => {
     const msg = await screen.findByText(/no se encontró la boleta/i);
     expect(msg).toBeInTheDocument();
 
-    // Intento de encontrar el id exacto como texto independiente
     const maybeCodeId = screen.queryByText(/^XYZ789$/);
-    // Aceptamos que exista o no (según implementación actual). Si existe, lo afirmamos.
     if (maybeCodeId) {
       expect(maybeCodeId).toBeInTheDocument();
     } else {
-      expect(true).toBe(true); // tolerante
+      expect(true).toBe(true); 
     }
   });
 
@@ -69,14 +67,12 @@ describe("Boleta", () => {
     expect(backBtn).toBeInTheDocument();
 
     await userEvent.click(backBtn);
-    // Debe renderear la ruta "/" que definimos arriba
     expect(await screen.findByText(/inicio/i)).toBeInTheDocument();
   });
 
   it("TPB-Pages 5 : La vista no encontrada no muestra items ni totales", async () => {
     renderAt("/boleta");
 
-    // Verificamos que NO aparece texto típico de detalle de compra
     expect(screen.queryByText(/total/i)).toBeNull();
     expect(screen.queryByText(/subtotal/i)).toBeNull();
     expect(screen.queryByText(/cantidad/i)).toBeNull();

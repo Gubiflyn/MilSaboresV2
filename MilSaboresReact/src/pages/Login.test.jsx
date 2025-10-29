@@ -11,17 +11,14 @@ describe("Login (básico)", () => {
       </MemoryRouter>
     );
 
-    // Email por placeholder
     const emailInput = screen.getByPlaceholderText(/alguien@duocuc\.cl/i);
     const passwordInput = container.querySelector('input[type="password"]');
     const submitBtn = screen.getByRole("button", { name: /iniciar/i });
 
-    // Asegura que existen
     expect(emailInput).toBeInTheDocument();
     expect(passwordInput).toBeInTheDocument();
     expect(submitBtn).toBeInTheDocument();
 
-    // Simula escritura
     fireEvent.change(emailInput, { target: { value: "test@duocuc.cl" } });
     fireEvent.change(passwordInput, { target: { value: "123456" } });
 

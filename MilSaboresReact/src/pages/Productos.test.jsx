@@ -49,17 +49,14 @@ describe("Productos", () => {
     renderPage();
     const user = userEvent.setup();
 
-    // Verificar producto inicial
     const productoInicial = await screen.findByRole("link", {
       name: "Torta Cuadrada de Chocolate",
     });
     expect(productoInicial).toBeInTheDocument();
 
-    // Filtrar por categoría
     const select = screen.getByLabelText(/filtrar por categor/i);
     await user.selectOptions(select, "Productos Vegana");
 
-    // Verificar que aparece el producto filtrado
     expect(
       await screen.findByRole("link", { name: "Torta Vegana de Chocolate" })
     ).toBeInTheDocument();

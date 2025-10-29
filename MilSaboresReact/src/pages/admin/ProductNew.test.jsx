@@ -28,13 +28,11 @@ describe("ProductNew", () => {
       </MemoryRouter>
     );
 
-    // Título tolerante 
     const title =
       (await screen.findByText(/nuevo producto|agregar producto|crear producto/i)) ||
       (await screen.findByText(/product new|add product/i));
     expect(title).toBeInTheDocument();
 
-    // Campos principales: nombre = (text), precio/stock = (number)
     const nameInput =
       screen.queryByRole("textbox", { name: /nombre/i }) ||
       screen.getAllByRole("textbox")[0];
@@ -53,12 +51,10 @@ describe("ProductNew", () => {
       </MemoryRouter>
     );
 
-    // Nombre
     const nameInput =
       screen.queryByRole("textbox", { name: /nombre/i }) ||
       screen.getAllByRole("textbox")[0];
 
-    // Precio/Stock
     const numberInputs = screen.getAllByRole("spinbutton");
     const priceInput =
       numberInputs.find((el) => /precio/i.test(el.getAttribute("aria-label") || "")) ||
