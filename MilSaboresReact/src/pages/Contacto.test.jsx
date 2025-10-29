@@ -8,13 +8,13 @@ describe("Contacto", () => {
     vi.spyOn(window, "alert").mockImplementation(() => {});
   });
 
-  it("TCT-Pages 17: Muestra el título principal de la página (Contacto / Contáctanos)", () => {
+  it("TCT-Pages 16: Muestra el título principal de la página (Contacto / Contáctanos)", () => {
     render(<Contacto />);
     const titulo = screen.getByRole("heading", { name: /contacto|contáctanos/i });
     expect(titulo).toBeInTheDocument();
   });
 
-  it("TCT-Pages 18: Renderiza campos básicos: Nombre, Correo, Mensaje y botón Enviar", () => {
+  it("TCT-Pages 17: Renderiza campos básicos: Nombre, Correo, Mensaje y botón Enviar", () => {
     render(<Contacto />);
 
     const nombre = screen.getByPlaceholderText(/nombre/i);
@@ -31,7 +31,7 @@ describe("Contacto", () => {
     expect(btnEnviar).toBeInTheDocument();
   });
 
-  it("TCT-Pages 19: Permite escribir en Nombre, Correo y Mensaje", () => {
+  it("TCT-Pages 18: Permite escribir en Nombre, Correo y Mensaje", () => {
     render(<Contacto />);
 
     const nombre = screen.getByPlaceholderText(/nombre/i);
@@ -49,7 +49,7 @@ describe("Contacto", () => {
     expect(mensaje).toHaveValue("Hola, consulta de prueba.");
   });
 
-  it('TCT-Pages 20: Al enviar, muestra un alert de “gracias” (mockeado)', () => {
+  it('TCT-Pages 19: Al enviar, muestra un alert de “gracias” (mockeado)', () => {
     render(<Contacto />);
 
     const nombre = screen.getByPlaceholderText(/nombre/i);

@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import Ofertas from "./Ofertas";
 
 describe("Ofertas", () => {
-  it("TO-Pages 27: Renderiza correctamente y muestra el título principal 'Ofertas'", () => {
+  it("TO-Pages 26: Renderiza correctamente y muestra el título principal 'Ofertas'", () => {
     render(
       <MemoryRouter>
         <Ofertas />
