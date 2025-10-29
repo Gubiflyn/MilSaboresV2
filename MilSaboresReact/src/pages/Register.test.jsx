@@ -118,7 +118,6 @@ describe("Register", () => {
         <Register />
       </MemoryRouter>
     );
-    // Si llega hasta aquí, significa que el componente se montó correctamente
     expect(true).toBe(true);
   });
 

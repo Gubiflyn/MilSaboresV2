@@ -11,7 +11,6 @@ describe("Ofertas", () => {
       </MemoryRouter>
     );
 
-    // Busca el título o encabezado que contenga la palabra "Ofertas"
     const title =
       screen.queryByRole("heading", { name: /ofertas/i }) ||
       screen.queryByText(/ofertas/i);

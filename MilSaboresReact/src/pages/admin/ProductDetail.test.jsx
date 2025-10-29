@@ -14,7 +14,6 @@ describe("ProductDetail", () => {
   beforeEach(() => {
     localStorage.clear();
 
-    // Semilla mínima en la misma fuente que usa el componente 
     const fakeProducts = [
       {
         id: "p1",
@@ -39,9 +38,7 @@ describe("ProductDetail", () => {
       </MemoryRouter>
     );
 
-    // Debe aparecer el nombre
     expect(await screen.findByText(/Torta Chocolate Test/i)).toBeInTheDocument();
-    // Y el precio formateado
     expect(screen.getByText(/\$ ?12\.345/)).toBeInTheDocument();
   });
 });

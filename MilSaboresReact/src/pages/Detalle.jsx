@@ -105,7 +105,6 @@ const Detalle = () => {
             {torta.descripcion}
           </p>
 
-          {/* Precio con y sin descuento */}
           {isOferta ? (
             <div className="mt-3">
               <div className="small text-decoration-line-through text-muted">
