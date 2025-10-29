@@ -1,15 +1,6 @@
 import React from "react";
 
-/**
- * Componente KPIStat
- * Muestra una métrica rápida con título, valor y (opcionalmente) un ícono o subtítulo.
- * Props:
- *  - label: nombre de la métrica (ej: "Ventas totales")
- *  - value: valor formateado (ej: "$1.500.000")
- *  - subLabel: texto inferior opcional (ej: "+5% vs mes anterior")
- *  - icon: componente React opcional (ej: <TrendingUp />)
- *  - color: "success" | "danger" | "warn" | "info" | "primary" | null
- */
+
 export default function KPIStat({ label, value, subLabel, icon, color }) {
   return (
     <div className={`kpi ${color ? `kpi-${color}` : ""}`}>

@@ -9,12 +9,11 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // vuelve a la tienda pública
+    navigate('/');
   };
 
   return (
     <div className="admin-layout">
-      {/* ===== Sidebar ===== */}
       <aside className="admin-sidebar">
         <div className="admin-brand">
           <img src="/img/icono.png" alt="Logo Mil Sabores" className="admin-logo" />
@@ -37,7 +36,6 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* ===== Content ===== */}
       <section className="admin-content">
         <header className="admin-topbar">
           <div>

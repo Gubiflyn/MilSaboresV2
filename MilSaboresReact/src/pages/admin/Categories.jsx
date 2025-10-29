@@ -8,14 +8,12 @@ export default function Categories() {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
 
-  // UI panel
   const [panelAbierto, setPanelAbierto] = useState(false);
-  const [modo, setModo] = useState("crear"); // crear | editar
+  const [modo, setModo] = useState("crear");
   const [valor, setValor] = useState("");
   const [catOriginal, setCatOriginal] = useState("");
   const [error, setError] = useState("");
 
-  // ===== carga inicial =====
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem(LS_TORTAS) || "null") || seed;
     setProductos(data);
@@ -31,7 +29,6 @@ export default function Categories() {
     }
   }, []);
 
-  // ===== helpers =====
   const normalizar = (s) => (s || "").trim();
   const normalizarLista = (arr) =>
     arr
@@ -44,7 +41,7 @@ export default function Categories() {
     setCategorias(next);
     try { 
       localStorage.setItem(LS_CATS, JSON.stringify(next)); 
-      window.dispatchEvent(new Event("categorias:updated")); // ➕ NUEVO: notificar cambio de categorías
+      window.dispatchEvent(new Event("categorias:updated")); 
     } catch {}
   };
   const persistProductos = (next) => {
@@ -52,7 +49,6 @@ export default function Categories() {
     try { localStorage.setItem(LS_TORTAS, JSON.stringify(next)); } catch {}
   };
 
-  // Conteo por categoría
   const conteo = useMemo(() => {
     const m = new Map();
     categorias.forEach(c => m.set(c, 0));
@@ -63,7 +59,6 @@ export default function Categories() {
     return m;
   }, [productos, categorias]);
 
-  // Validaciones
   const existeCat = (name) =>
     categorias.some(c => c.toLowerCase() === name.toLowerCase());
 
@@ -76,7 +71,6 @@ export default function Categories() {
     return "";
   };
 
-  // Acciones
   const abrirCrear = () => {
     setModo("crear"); setValor(""); setCatOriginal(""); setError(""); setPanelAbierto(true);
   };
@@ -95,22 +89,18 @@ export default function Categories() {
       const msg = validar(valor);
       if (msg) return setError(msg);
       const next = normalizarLista([...categorias, valor]);
-      persistCategorias(next);   // guarda estado + LS + notifica
+      persistCategorias(next);   
       cerrarPanel();
       return;
     }
 
-    // editar
     const msg = validar(valor, true, catOriginal);
     if (msg) return setError(msg);
 
     const nuevo = normalizar(valor);
 
-    // 1) renombrar en lista de categorías
     const nextCats = normalizarLista(categorias.map(c => (c === catOriginal ? nuevo : c)));
-    persistCategorias(nextCats); // guarda estado + LS + notifica
-
-    // 2) actualizar productos que tenían la categoría original
+    persistCategorias(nextCats); 
     const nextProds = productos.map(p => {
       const cat = normalizar(p.categoria || "Sin categoría");
       return (cat === catOriginal) ? { ...p, categoria: nuevo } : p;
@@ -122,7 +112,6 @@ export default function Categories() {
 
   return (
     <div className="container-fluid">
-      {/* header */}
       <div className="d-flex align-items-center justify-content-between mb-3">
         <h2 className="m-0">Categorías</h2>
         <button className="btn btn-primary" onClick={panelAbierto ? cerrarPanel : abrirCrear}>
@@ -130,7 +119,6 @@ export default function Categories() {
         </button>
       </div>
 
-      {/* panel al estilo ProductForm.jsx */}
       {panelAbierto && (
         <div className="card mb-3">
           <div className="card-header d-flex justify-content-between align-items-center">
@@ -143,7 +131,6 @@ export default function Categories() {
           <div className="card-body">
             <form onSubmit={onSubmit}>
               <div className="row g-3">
-                {/* SOLO nombre, para que sea simple y consistente */}
                 <div className="col-12 col-md-6">
                   <label className="form-label">Nombre</label>
                   <input
@@ -155,7 +142,6 @@ export default function Categories() {
                   />
                 </div>
 
-                {/* espacio para mantener el look de dos columnas */}
                 <div className="col-12 col-md-6 d-flex align-items-end">
                   {error ? (
                     <div className="text-danger small">{error}</div>
@@ -180,7 +166,6 @@ export default function Categories() {
         </div>
       )}
 
-      {/* tabla de categorías */}
       <div className="table-responsive">
         <table className="table align-middle">
           <thead>

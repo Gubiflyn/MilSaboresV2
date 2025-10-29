@@ -26,7 +26,6 @@ const FormularioTorta = ({ agregarTorta }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validación básica
     if (!form.nombre || !form.precio || !form.imagen) return alert("Complete todos los campos");
 
     if (Number(form.precio) <= 0) return alert("El precio debe ser mayor a 0");

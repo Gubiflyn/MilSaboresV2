@@ -17,9 +17,8 @@ function renderPage() {
   );
 }
 
-describe("Página Productos", () => {
-  // Test 1: Carga inicial de productos
-  it("Muestra productos correctamente al cargar la página", async () => {
+describe("Productos", () => {
+  it("TPTS-Pages 29: Muestra productos correctamente al cargar la página", async () => {
     renderPage();
     expect(
       await screen.findByText("Torta Cuadrada de Chocolate")
@@ -27,8 +26,7 @@ describe("Página Productos", () => {
     expect(screen.getByText("Torta Cuadrada de Frutas")).toBeInTheDocument();
   });
 
-  // Test 2: Navegación al detalle
-  it("Redirecciona correctamente al hacer click en una torta", async () => {
+  it("TPTS-Pages 30: Redirecciona correctamente al hacer click en una torta", async () => {
     renderPage();
     const linkTorta = await screen.findByRole("link", {
       name: "Torta Cuadrada de Chocolate",
@@ -36,8 +34,7 @@ describe("Página Productos", () => {
     expect(linkTorta).toHaveAttribute("href", "/detalle/TC001");
   });
 
-  // Test 3: Funcionalidad del botón agregar al carrito
-  it("Botón 'Agregar al carrito' está presente y visible", async () => {
+  it("TPTS-Pages 31: Botón 'Agregar al carrito' está presente y visible", async () => {
     renderPage();
     const tituloTorta = await screen.findByText("Torta Cuadrada de Chocolate");
     const cardTorta = tituloTorta.closest(".card") || tituloTorta.closest("*");
@@ -48,8 +45,7 @@ describe("Página Productos", () => {
     expect(botonAgregar).toBeVisible();
   });
 
-  // Test 4: Filtrado de categorías
-  it("Filtra productos correctamente por categoría", async () => {
+  it("TPTS-Pages 32: Filtra productos correctamente por categoría", async () => {
     renderPage();
     const user = userEvent.setup();
 
@@ -69,8 +65,7 @@ describe("Página Productos", () => {
     ).toBeInTheDocument();
   });
 
-  // Test 5: Verificación de precios
-  it("Muestra precios en formato correcto (CLP)", async () => {
+  it("TPTS-Pages 33: Muestra precios en formato correcto (CLP)", async () => {
     renderPage();
     const tituloTorta = await screen.findByText("Torta Cuadrada de Chocolate");
     const cardTorta = tituloTorta.closest(".card") || tituloTorta.closest("*");

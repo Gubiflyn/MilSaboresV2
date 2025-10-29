@@ -1,4 +1,3 @@
-// src/pages/admin/UserNew.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -23,7 +22,6 @@ export default function UserNew() {
   const onSubmit = (e) => {
     e.preventDefault();
     const lista = JSON.parse(localStorage.getItem(LS_USERS) || "[]");
-    // Evitar duplicados por email
     if (lista.some((u) => u.email === form.email)) {
       alert("Ya existe un usuario con ese email.");
       return;

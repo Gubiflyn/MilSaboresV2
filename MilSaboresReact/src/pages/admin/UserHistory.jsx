@@ -1,8 +1,7 @@
-// src/pages/admin/UserHistory.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { findUserByEmail } from "../../utils/usersRepo";
-import { getHistoryByEmail } from "../../utils/ordersRepo"; // ➕ ADD
+import { getHistoryByEmail } from "../../utils/ordersRepo"; 
 
 const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
@@ -14,7 +13,7 @@ export default function UserHistory() {
 
   useEffect(() => {
     setUser(findUserByEmail(email));
-    setOrders(getHistoryByEmail(email)); // 🔄 usa ordersRepo (ordenes_v1)
+    setOrders(getHistoryByEmail(email)); 
   }, [email]);
 
   const totalGastado = useMemo(

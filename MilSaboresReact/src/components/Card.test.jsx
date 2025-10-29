@@ -20,7 +20,7 @@ describe("Testing Card", () => {
     vi.clearAllMocks();
   });
 
-  it("CP-Card1: Muestra nombre, categoría y precio formateado", () => {
+  it("TCP-Card1: Muestra nombre, categoría y precio formateado", () => {
     render(
       <MemoryRouter>
         <Card torta={mockTorta} onAgregarCarrito={onAgregarCarrito} />
@@ -32,7 +32,7 @@ describe("Testing Card", () => {
     expect(screen.getByText(/\$12\.990\s*CLP/)).toBeInTheDocument();
   });
 
-  it("CP-Card2: Muestra imagen con alt correcto y link al detalle", () => {
+  it("TCP-Card2: Muestra imagen con alt correcto y link al detalle", () => {
     render(
       <MemoryRouter>
         <Card torta={mockTorta} onAgregarCarrito={onAgregarCarrito} />
@@ -46,7 +46,7 @@ describe("Testing Card", () => {
     expect(img).toBeInTheDocument();
   });
 
-  it('CP-Card3: Click en "Agregar al carrito" llama al handler con la torta', () => {
+  it('TCP-Card3: Click en "Agregar al carrito" llama al handler con la torta', () => {
     render(
       <MemoryRouter>
         <Card torta={mockTorta} onAgregarCarrito={onAgregarCarrito} />
@@ -60,7 +60,7 @@ describe("Testing Card", () => {
     expect(onAgregarCarrito).toHaveBeenCalledWith(mockTorta);
   });
 
-  it("CP-Card4: Si falta la imagen, el alt sigue siendo accesible y el src puede quedar vacío", () => {
+  it("TCP-Card4: Si falta la imagen, el alt sigue siendo accesible y el src puede quedar vacío", () => {
     render(
       <MemoryRouter>
         <Card
@@ -74,7 +74,7 @@ describe("Testing Card", () => {
     expect(img).toBeInTheDocument();
   });
 
-  it("CP-Card5: Renderiza el botón de agregar", () => {
+  it("TCP-Card5: Renderiza el botón de agregar", () => {
     render(
       <MemoryRouter>
         <Card torta={mockTorta} onAgregarCarrito={onAgregarCarrito} />

@@ -2,10 +2,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 const LS_PRIMARY = "usuarios_v1";
-const LS_FALLBACKS = ["perfiles", "usuarios", "USERS"]; // otras llaves que usaste en el proyecto
+const LS_FALLBACKS = ["perfiles", "usuarios", "USERS"]; 
 
 function readUsers() {
-  // intenta leer en orden: principal -> fallbacks
   const keys = [LS_PRIMARY, ...LS_FALLBACKS];
   for (const k of keys) {
     try {
@@ -14,7 +13,6 @@ function readUsers() {
       const arr = JSON.parse(raw);
       if (Array.isArray(arr)) return { key: k, list: arr };
     } catch {
-      // ignore parse errors
     }
   }
   return { key: LS_PRIMARY, list: [] };
@@ -27,7 +25,7 @@ function writeUsers(key, list) {
 }
 
 export default function UserEdit() {
-  const { id } = useParams(); // id = encodeURIComponent(email)
+  const { id } = useParams(); 
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -52,7 +50,6 @@ export default function UserEdit() {
     const { key, list } = readUsers();
     setStorageKey(key);
 
-    // busca por email con ambas comparaciones (codificada y directa)
     const found = list.find(
       (u) =>
         encodeURIComponent(String(u?.email || "")) === String(id) ||
@@ -82,7 +79,6 @@ export default function UserEdit() {
     e.preventDefault();
 
     const { key, list } = readUsers();
-    // busca índice por el email original de la URL (tolerante)
     const idx = list.findIndex(
       (u) =>
         encodeURIComponent(String(u?.email || "")) === String(id) ||
@@ -94,7 +90,6 @@ export default function UserEdit() {
       return;
     }
 
-    // Actualiza manteniendo la misma posición
     const updated = [...list];
     updated[idx] = {
       ...updated[idx],
@@ -216,8 +211,6 @@ export default function UserEdit() {
           </button>
         </div>
       </form>
-
-      
     </div>
   );
 }

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import dataFallback from "../../data/tortas.json";
 
-/* ===== Helpers de almacenamiento ===== */
 const STORAGE_KEYS = ["PRODUCTS", "productos", "productosMilSabores"];
 
 function readProducts() {
@@ -13,7 +12,6 @@ function readProducts() {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr)) return { key: k, items: arr };
       } catch {
-        /* ignore */
       }
     }
   }
@@ -51,7 +49,6 @@ export default function ProductEdit() {
   const [saving, setSaving] = useState(false);
   const [deleted, setDeleted] = useState(false);
 
-  /* Cargar producto */
   useEffect(() => {
     const { key, items } = readProducts();
     setStorageKey(key);
@@ -90,7 +87,6 @@ export default function ProductEdit() {
 
   const notFound = useMemo(() => initial === null, [initial]);
 
-  /* Handlers */
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({
@@ -147,7 +143,6 @@ export default function ProductEdit() {
       unidad: form.unidad || "kg",
       activo: !!form.activo,
       actualizadoEn: nowIso,
-      // conserva el creadoEn existente o crea uno si no hay
       creadoEn: items[idx].creadoEn ?? form.creadoEn ?? nowIso,
     };
 
@@ -218,7 +213,6 @@ export default function ProductEdit() {
         <div className="card-body">
           <form onSubmit={onSubmit}>
             <div className="form-grid">
-              {/* Columna izquierda */}
               <div className="form-col-6">
                 <label className="label" htmlFor="nombre">Nombre *</label>
                 <input
@@ -255,7 +249,6 @@ export default function ProductEdit() {
                 />
               </div>
 
-              {/* Columna derecha */}
               <div className="form-col-6">
                 <div className="form-grid">
                   <div className="form-col-6">
@@ -370,7 +363,6 @@ export default function ProductEdit() {
               </div>
             </div>
 
-            {/* Botonera inferior */}
             <div className="hr" />
             <div className="admin-actions" style={{ justifyContent: "flex-end" }}>
               <button type="button" className="btn-admin" onClick={() => navigate(-1)}>
@@ -387,7 +379,6 @@ export default function ProductEdit() {
         </div>
       </div>
 
-      {/* Accesos rápidos */}
       <div className="quick-tiles">
         <Link className="tile" to={`/admin/products/${initial.codigo ?? initial.id}`}>Ver detalle</Link>
         <Link className="tile" to="/admin/products">Volver al listado</Link>
