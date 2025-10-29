@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import Register from "./Register";
 
 describe("Register", () => {
-  it("TRG-Pages 33: Renderiza el formulario y el botón de registro (tolerante)", () => {
+  it("TRG-Pages 32: Renderiza el formulario y el botón de registro (tolerante)", () => {
     render(
       <MemoryRouter>
         <Register />
@@ -25,7 +25,7 @@ describe("Register", () => {
     expect(textboxes.length).toBeGreaterThan(0);
   });
 
-  it("TRG-Pages 34: Permite escribir datos en los campos principales y deja el botón listo para enviar", () => {
+  it("TRG-Pages 33: Permite escribir datos en los campos principales y deja el botón listo para enviar", () => {
     const { container } = render(
       <MemoryRouter>
         <Register />
@@ -58,7 +58,7 @@ describe("Register", () => {
     expect(submitBtn).toBeInTheDocument();
   });
 
-  it("TRG-Pages 35: Tiene al menos un campo de contraseña", () => {
+  it("TRG-Pages 34: Tiene al menos un campo de contraseña", () => {
     const { container } = render(
       <MemoryRouter>
         <Register />
@@ -68,7 +68,7 @@ describe("Register", () => {
     expect(pwdInputs.length).toBeGreaterThan(0);
   });
 
-  it("TRG-Pages 36: Tiene un campo de email (por name o por type=email)", () => {
+  it("TRG-Pages 35: Tiene un campo de email (por name o por type=email)", () => {
     const { container } = render(
       <MemoryRouter>
         <Register />
@@ -79,7 +79,7 @@ describe("Register", () => {
     expect(emailByRole || emailByType).toBeTruthy();
   });
 
-  it("TRG-Pages 37: Permite escribir y limpiar un campo de texto", () => {
+  it("TRG-Pages 36: Permite escribir y limpiar un campo de texto", () => {
     render(
       <MemoryRouter>
         <Register />
@@ -96,7 +96,7 @@ describe("Register", () => {
     }
   });
 
-  it("TRG-Pages 38: Click en enviar sin datos no rompe la vista", () => {
+  it("TRG-Pages 37: Click en enviar sin datos no rompe la vista", () => {
     render(
       <MemoryRouter>
         <Register />
@@ -112,7 +112,7 @@ describe("Register", () => {
     expect(heading).toBeInTheDocument();
   });
 
-    it("TRG-Pages 39: Renderiza sin errores el componente Register", () => {
+    it("TRG-Pages 38: Renderiza sin errores el componente Register", () => {
     render(
       <MemoryRouter>
         <Register />

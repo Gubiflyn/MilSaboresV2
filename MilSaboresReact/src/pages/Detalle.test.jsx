@@ -33,7 +33,7 @@ describe("Detalle", () => {
     mockAdd.mockClear();
   });
 
-  it("TDLL-Pages 21: Muestra el nombre y permite 'Agregar al carrito' cuando el producto existe", async () => {
+  it("TDLL-Pages 20: Muestra el nombre y permite 'Agregar al carrito' cuando el producto existe", async () => {
     render(
       <MemoryRouter initialEntries={["/detalle/T001"]}>
         <Routes>
@@ -54,7 +54,7 @@ describe("Detalle", () => {
     expect(mockAdd.mock.calls[0][0]).toMatchObject({ codigo: "T001" });
   });
 
-  it("TDLL-Pages 22: Muestra 'Producto no encontrado' si el código no existe", async () => {
+  it("TDLL-Pages 21: Muestra 'Producto no encontrado' si el código no existe", async () => {
     render(
       <MemoryRouter initialEntries={["/detalle/NO-EXISTE"]}>
         <Routes>

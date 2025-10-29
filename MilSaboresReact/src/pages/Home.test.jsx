@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import Home from "./Home";
 
 describe("Home", () => {
-  it("THM-Pages 23: Renderiza y muestra marca o título principal", () => {
+  it("THM-Pages 22: Renderiza y muestra marca o título principal", () => {
     render(
       <MemoryRouter>
         <Home />
@@ -24,7 +24,7 @@ describe("Home", () => {
     }
   });
 
-  it("THM-Pages 24: Muestra un CTA hacia Productos (botón o link)", () => {
+  it("THM-Pages 23: Muestra un CTA hacia Productos (botón o link)", () => {
     render(
       <MemoryRouter>
         <Home />

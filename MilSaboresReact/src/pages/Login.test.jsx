@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import Login from "./Login";
 
 describe("Login (básico)", () => {
-  it("TLG-Pages 25: Renderiza y permite ingresar email y contraseña", () => {
+  it("TLG-Pages 24: Renderiza y permite ingresar email y contraseña", () => {
     const { container } = render(
       <MemoryRouter>
         <Login />
