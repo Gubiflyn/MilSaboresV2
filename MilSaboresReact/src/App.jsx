@@ -22,7 +22,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PagoError from "./pages/PagoError";
 import Ofertas from "./pages/Ofertas";
-import Categorias from "./pages/Categorias"; // ✅ NUEVA IMPORTACIÓN
+import Categorias from "./pages/Categorias"; 
 
 // ADMIN
 import AdminLayout from "./pages/admin/AdminLayout";

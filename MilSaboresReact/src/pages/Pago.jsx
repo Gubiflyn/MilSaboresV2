@@ -158,7 +158,23 @@ export default function Pago() {
   const onSubmitTarjeta = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const orderId = "ORD-" + new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+
+    // Simulación de error: si la tarjeta comienza con 0000 → redirige a PagoError
+    if (form.numero.startsWith("0000")) {
+      navigate("/pago/error", {
+        state: {
+          mensaje: "Transacción rechazada: número de tarjeta inválido (0000).",
+          customer: { nombre: form.nombre, correo: form.correo },
+          items: carrito,
+          total: promoPreview?.total ?? subtotalItems,
+        },
+      });
+      return;
+    }
+
+
+    const orderId =
+      "ORD-" + new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
     finalizarOrden({
       orderId,
       receptorNombre: form.nombre.trim(),
@@ -220,14 +236,19 @@ export default function Pago() {
         </div>
       </div>
 
+      {/* Métodos de pago */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title mb-3">Selecciona tu método de pago</h5>
           <div className="d-flex gap-3">
             <div className="form-check">
               <input
-                className="form-check-input" type="radio" id="metodo-card"
-                name="metodo" value="card" checked={metodo === "card"}
+                className="form-check-input"
+                type="radio"
+                id="metodo-card"
+                name="metodo"
+                value="card"
+                checked={metodo === "card"}
                 onChange={() => setMetodo("card")}
               />
               <label className="form-check-label" htmlFor="metodo-card">
@@ -236,8 +257,12 @@ export default function Pago() {
             </div>
             <div className="form-check">
               <input
-                className="form-check-input" type="radio" id="metodo-paypal"
-                name="metodo" value="paypal" checked={metodo === "paypal"}
+                className="form-check-input"
+                type="radio"
+                id="metodo-paypal"
+                name="metodo"
+                value="paypal"
+                checked={metodo === "paypal"}
                 onChange={() => setMetodo("paypal")}
               />
               <label className="form-check-label" htmlFor="metodo-paypal">
@@ -251,7 +276,7 @@ export default function Pago() {
       {metodo === "card" && (
         <form onSubmit={onSubmitTarjeta} noValidate>
           <h5 className="mb-3">Pago con Tarjeta</h5>
-
+          {/* Campos del formulario */}
           <div className="mb-3">
             <label className="form-label">Nombre en la tarjeta</label>
             <input
@@ -274,7 +299,10 @@ export default function Pago() {
                   numero: e.target.value.replace(/\D/g, "").slice(0, 16),
                 })
               }
-              placeholder="16 dígitos" inputMode="numeric" maxLength={16} required
+              placeholder="16 dígitos"
+              inputMode="numeric"
+              maxLength={16}
+              required
             />
             {errors.numero && <div className="invalid-feedback">{errors.numero}</div>}
           </div>
@@ -286,7 +314,8 @@ export default function Pago() {
                 className={`form-control ${errors.expiracion ? "is-invalid" : ""}`}
                 value={form.expiracion}
                 onChange={(e) => setForm({ ...form, expiracion: e.target.value })}
-                placeholder="MM/AA" required
+                placeholder="MM/AA"
+                required
               />
               {errors.expiracion && (
                 <div className="invalid-feedback d-block">{errors.expiracion}</div>
@@ -303,7 +332,10 @@ export default function Pago() {
                     cvv: e.target.value.replace(/\D/g, "").slice(0, 4),
                   })
                 }
-                placeholder="3 o 4 dígitos" inputMode="numeric" maxLength={4} required
+                placeholder="3 o 4 dígitos"
+                inputMode="numeric"
+                maxLength={4}
+                required
               />
               {errors.cvv && (
                 <div className="invalid-feedback d-block">{errors.cvv}</div>
@@ -318,7 +350,9 @@ export default function Pago() {
               className={`form-control ${errors.fechaEntrega ? "is-invalid" : ""}`}
               value={form.fechaEntrega}
               onChange={(e) => setForm({ ...form, fechaEntrega: e.target.value })}
-              min={dateLimits.min} max={dateLimits.max} required
+              min={dateLimits.min}
+              max={dateLimits.max}
+              required
             />
             {errors.fechaEntrega && (
               <div className="invalid-feedback">{errors.fechaEntrega}</div>
@@ -349,7 +383,7 @@ export default function Pago() {
           <div className="d-flex justify-content-start">
             <div style={{ width: "320px" }}>
               <PayPalCheckout
-                customerEmail={(form.correo || user?.email || "").trim()} 
+                customerEmail={(form.correo || user?.email || "").trim()}
                 onPaid={(details) => {
                   const orderId = details?.id || `PP-${Date.now()}`;
                   const payerName =
