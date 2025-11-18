@@ -1,32 +1,49 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import tortasFallback from "../data/tortas.json";
+import { getPasteles } from "../services/api";
 
 const LS_KEY = "tortas_v3";
 const DESCUENTOS = {
-  torta: 0.20,     
-  postre: 0.15,    
-  sinAzucar: 0.10, 
+  torta: 0.20,
+  postre: 0.15,
+  sinAzucar: 0.10,
 };
 
 const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
 const precioConDescuento = (precio, pct) =>
   Math.max(0, Math.round((Number(precio) || 0) * (1 - pct)));
 
-
-
 export default function Ofertas() {
-  
-  const [productos, setProductos] = useState(Array.isArray(tortasFallback) ? tortasFallback : []);
+  const [productos, setProductos] = useState([]);
 
   useEffect(() => {
-    try {
-      const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-      if (Array.isArray(guardadas) && guardadas.length) {
-        setProductos(guardadas);
+    const cargar = async () => {
+      let data = [];
+      try {
+        const apiData = await getPasteles();
+        if (Array.isArray(apiData) && apiData.length) {
+          data = apiData;
+          localStorage.setItem(LS_KEY, JSON.stringify(apiData));
+        }
+      } catch (err) {
+        console.error("Error al cargar productos en Ofertas:", err);
       }
-    } catch {
-    }
+
+      if (!data.length) {
+        try {
+          const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+          if (Array.isArray(guardadas) && guardadas.length) {
+            data = guardadas;
+          }
+        } catch {
+          data = [];
+        }
+      }
+
+      setProductos(Array.isArray(data) ? data : []);
+    };
+
+    cargar();
   }, []);
 
   const ofertas = useMemo(() => {
@@ -88,7 +105,9 @@ export default function Ofertas() {
     <div className="container py-5">
       <div className="d-flex align-items-center justify-content-between mb-1">
         <h1 className="h4 m-0">Ofertas</h1>
-        <Link to="/productos" className="btn btn-sm btn-outline-primary">Ver todos los productos</Link>
+        <Link to="/productos" className="btn btn-sm btn-outline-primary">
+          Ver todos los productos
+        </Link>
       </div>
       <p className="text-muted mb-4">
         Nuestra selección destacada de torta, un postre individual y una opción sin azúcar.
@@ -115,7 +134,9 @@ export default function Ofertas() {
                     <div className="position-relative">
                       <img
                         src={imgSrc}
-                        onError={(e) => { e.currentTarget.src = "/img/placeholder.png"; }}
+                        onError={(e) => {
+                          e.currentTarget.src = "/img/placeholder.png";
+                        }}
                         className="card-img-top product-card__image"
                         alt={t.nombre || "Producto"}
                         style={{ objectFit: "cover", height: 220 }}

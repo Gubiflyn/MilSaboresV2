@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import tortasFallback from "../data/tortas.json";
+import { getPasteles } from "../services/api";
 
 const LS_KEY = "tortas_v3";
 const DESCUENTOS = {
@@ -14,15 +14,36 @@ const precioConDescuento = (precio, pct) =>
   Math.max(0, Math.round((Number(precio) || 0) * (1 - pct)));
 
 export default function Home() {
-  const [productos, setProductos] = useState(Array.isArray(tortasFallback) ? tortasFallback : []);
+  const [productos, setProductos] = useState([]);
 
   useEffect(() => {
-    try {
-      const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-      if (Array.isArray(guardadas) && guardadas.length) {
-        setProductos(guardadas);
+    const cargar = async () => {
+      let data = [];
+      try {
+        const apiData = await getPasteles();
+        if (Array.isArray(apiData) && apiData.length) {
+          data = apiData;
+          localStorage.setItem(LS_KEY, JSON.stringify(apiData));
+        }
+      } catch (err) {
+        console.error("Error al cargar productos en Home:", err);
       }
-    } catch {}
+
+      if (!data.length) {
+        try {
+          const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+          if (Array.isArray(guardadas) && guardadas.length) {
+            data = guardadas;
+          }
+        } catch {
+          data = [];
+        }
+      }
+
+      setProductos(Array.isArray(data) ? data : []);
+    };
+
+    cargar();
   }, []);
 
   const ofertas = useMemo(() => {

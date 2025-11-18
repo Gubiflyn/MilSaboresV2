@@ -1,193 +1,130 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import seedUsers from "../data/usuarios.json";
+// src/context/AuthContext.jsx
+import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  getAdministradores,
+  getClientes,
+  createCliente,
+} from "../services/api";
 
-const LS_TOKEN = "token";
-const LS_USER = "usuario";
-const LS_PROFILES = "perfiles";
-
-function makeToken(payload) {
-  const exp = Date.now() + 30 * 60 * 1000;
-  return btoa(JSON.stringify({ ...payload, exp }));
-}
-function readToken(raw) {
-  try {
-    return JSON.parse(atob(raw));
-  } catch {
-    return null;
-  }
-}
-
-const AuthCtx = createContext({});
+const AuthContext = createContext(null);
+const LS_USER_KEY = "ms_user";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);   
-  const [token, setToken] = useState(null); 
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    const perfiles = JSON.parse(localStorage.getItem(LS_PROFILES) || "[]");
-    const merged = [...perfiles];
-    seedUsers.forEach((fijo) => {
-      if (!merged.some((p) => (p.email || p.correo) === fijo.email)) {
-        merged.push(fijo);
-      }
-    });
-    localStorage.setItem(LS_PROFILES, JSON.stringify(merged));
-  }, []);
-
-  const hydrate = () => {
-    const rawTk = localStorage.getItem(LS_TOKEN);
-    const rawUser = localStorage.getItem(LS_USER);
-
-    if (!rawTk || !rawUser) {
-      setToken(null);
-      setUser(null);
-      return;
-    }
-
-    const parsed = readToken(rawTk);
-    if (!parsed || Date.now() > parsed.exp) {
-      localStorage.removeItem(LS_TOKEN);
-      localStorage.removeItem(LS_USER);
-      setToken(null);
-      setUser(null);
-      return;
-    }
-
-    setToken(rawTk);
+  const [user, setUser] = useState(() => {
     try {
-      setUser(JSON.parse(rawUser));
+      const raw = localStorage.getItem(LS_USER_KEY);
+      return raw ? JSON.parse(raw) : null;
     } catch {
-      setUser(null);
+      return null;
     }
-  };
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    hydrate();
-    mountedRef.current = true;
-
-    const onStorage = (e) => {
-      if (!e || !e.key) return;
-      if ([LS_USER, LS_TOKEN, "authUser", "user", "currentUser"].includes(e.key)) {
-        hydrate();
+    try {
+      if (user) {
+        localStorage.setItem(LS_USER_KEY, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(LS_USER_KEY);
       }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      mountedRef.current = false;
-    };
-  }, []);
+    } catch {
+      // ignore
+    }
+  }, [user]);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      const rawTk = localStorage.getItem(LS_TOKEN);
-      const parsed = rawTk ? readToken(rawTk) : null;
-      if (!parsed || Date.now() > (parsed?.exp || 0)) {
-        localStorage.removeItem(LS_TOKEN);
-        localStorage.removeItem(LS_USER);
-        if (mountedRef.current) {
-          setToken(null);
-          setUser(null);
+  const login = async (correo, contrasena) => {
+    setLoading(true);
+    try {
+      // 1) Intentar ADMIN
+      let admins = [];
+      try {
+        admins = await getAdministradores();
+      } catch (e) {
+        console.warn("No se pudieron cargar administradores:", e);
+      }
+
+      if (Array.isArray(admins) && admins.length) {
+        const adminMatch = admins.find(
+          (a) =>
+            String(a.correo).toLowerCase() ===
+              String(correo).toLowerCase().trim() &&
+            String(a.contrasena) === String(contrasena) &&
+            (a.activo === undefined || a.activo === true)
+        );
+        if (adminMatch) {
+          const authUser = {
+            id: adminMatch.id,
+            nombre: adminMatch.nombre,
+            correo: adminMatch.correo,
+            rol: "ADMIN",
+            tipo: "ADMIN",
+          };
+          setUser(authUser);
+          return authUser;
         }
       }
-    }, 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
 
-  const login = (email, password) => {
-    const perfiles = JSON.parse(localStorage.getItem(LS_PROFILES) || "[]");
+      // 2) Intentar CLIENTE
+      let clientes = [];
+      try {
+        clientes = await getClientes();
+      } catch (e) {
+        console.warn("No se pudieron cargar clientes:", e);
+      }
 
-    const normalizedPerfiles = perfiles.map((u) => ({
-      email: u.email || u.correo,
-      password: u.password || u.contrasena,
-      rol: u.rol || "cliente",
-      nombre:
-        u.nombre ||
-        (u.nombres ? `${u.nombres} ${u.apellidos || ""}`.trim() : "Cliente"),
-      fechaNacimiento: u.fechaNacimiento || null,
-      beneficio: u.beneficio || null,
-      direccion: u.direccion || "",
-      region: u.region || "",
-      comuna: u.comuna || "",
-      telefono: u.telefono || "",
-      fotoPerfil: u.fotoPerfil || "",
-      _raw: u,
-    }));
+      if (Array.isArray(clientes) && clientes.length) {
+        const clienteMatch = clientes.find(
+          (c) =>
+            String(c.correo).toLowerCase() ===
+              String(correo).toLowerCase().trim() &&
+            String(c.contrasena) === String(contrasena) &&
+            (c.activo === undefined || c.activo === true)
+        );
+        if (clienteMatch) {
+          const authUser = {
+            id: clienteMatch.id,
+            nombre: clienteMatch.nombre,
+            correo: clienteMatch.correo,
+            rol: "CLIENTE",
+            tipo: "CLIENTE",
+          };
+          setUser(authUser);
+          return authUser;
+        }
+      }
 
-    const users = [
-      ...seedUsers,
-      ...normalizedPerfiles.filter(
-        (u) => !seedUsers.some((f) => f.email === u.email)
-      ),
-    ];
-
-    const found = users.find((u) => u.email === email && u.password === password);
-    if (!found) return { ok: false, error: "Correo o contraseña incorrectos" };
-
-    const payload = {
-      email: found.email,
-      rol: found.rol,
-      nombre: found.nombre,
-      fechaNacimiento: found.fechaNacimiento || null,
-      beneficio: found.beneficio || null,
-    };
-
-    const profileExtra =
-      normalizedPerfiles.find((p) => p.email === found.email) || {};
-    const userView = {
-      email: found.email,
-      rol: found.rol,
-      nombre: found.nombre,
-      fechaNacimiento: found.fechaNacimiento || null,
-      beneficio: found.beneficio || null,
-      direccion: profileExtra.direccion || "",
-      region: profileExtra.region || "",
-      comuna: profileExtra.comuna || "",
-      telefono: profileExtra.telefono || "",
-      fotoPerfil: profileExtra.fotoPerfil || "",
-    };
-
-    const tk = makeToken(payload);
-    localStorage.setItem(LS_TOKEN, tk);
-    localStorage.setItem(LS_USER, JSON.stringify(userView));
-    setToken(tk);
-    setUser(userView);
-
-    return { ok: true };
+      throw new Error("Correo o contraseña incorrectos.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem(LS_TOKEN);
-      localStorage.removeItem(LS_USER);
-    } finally {
-      setToken(null);
-      setUser(null);
-    }
+    setUser(null);
   };
 
-  const isAuthenticated = useMemo(() => {
-    if (!user || !token) return false;
-    const payload = readToken(token);
-    return !!payload && Date.now() <= payload.exp;
-  }, [user, token]);
+  const register = async (clienteData) => {
+    // aquí asumo que el formulario ya pide nombre, rut, apellido, correo, contrasena, comuna, region
+    const nuevoCliente = await createCliente({
+      ...clienteData,
+      activo: true,
+    });
+    return nuevoCliente;
+  };
 
-  const isAdmin = user?.rol === "admin";
+  const value = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    isAdmin: user?.rol === "ADMIN" || user?.tipo === "ADMIN",
+    login,
+    logout,
+    register,
+  };
 
-  const value = useMemo(
-    () => ({
-      user,
-      token,
-      isAuthenticated,
-      isAdmin,
-      login,
-      logout,
-    }),
-    [user, token, isAuthenticated, isAdmin]
-  );
-
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthCtx);
+export function useAuth() {
+  return useContext(AuthContext);
+}

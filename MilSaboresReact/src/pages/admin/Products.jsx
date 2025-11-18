@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import seed from "../../data/tortas.json";
+import {
+  getPasteles,
+  createPastel,
+  updatePastel,
+  deletePastel,
+} from "../../services/api";
 
 const LS_TORTAS = "tortas_v3";
-const LS_CATS = "categorias_v1"; 
+const LS_CATS = "categorias_v1";
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function Products() {
@@ -12,6 +17,7 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false);
   const [editIdx, setEditIdx] = useState(-1);
   const [form, setForm] = useState({
+    id: null,
     codigo: "",
     nombre: "",
     categoria: "",
@@ -21,23 +27,48 @@ export default function Products() {
     descripcion: "",
   });
 
-  const [catsLS, setCatsLS] = useState([]); 
-  const navigate = useNavigate(); 
+  const [catsLS, setCatsLS] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
+  // =========================
+  //  CARGAR LISTA DESDE API
+  // =========================
   useEffect(() => {
-    let data = null;
-    try {
-      const raw = localStorage.getItem(LS_TORTAS);
-      data = raw ? JSON.parse(raw) : null;
-    } catch {
-      data = null;
-    }
-    if (!Array.isArray(data) || data.length === 0) {
-      data = seed;
-    }
-    setList(data.map((p) => ({ ...p, stock: p?.stock ?? 0 })));
+    const cargar = async () => {
+      setLoading(true);
+      let data = [];
+      try {
+        const apiData = await getPasteles();
+        if (Array.isArray(apiData) && apiData.length) {
+          data = apiData;
+          localStorage.setItem(LS_TORTAS, JSON.stringify(apiData));
+        }
+      } catch (err) {
+        console.error("Error al cargar productos en Admin/Products:", err);
+      }
+
+      if (!data.length) {
+        try {
+          const raw = localStorage.getItem(LS_TORTAS);
+          const lsData = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(lsData)) {
+            data = lsData;
+          }
+        } catch {
+          data = [];
+        }
+      }
+
+      setList((Array.isArray(data) ? data : []).map((p) => ({ ...p, stock: p?.stock ?? 0 })));
+      setLoading(false);
+    };
+
+    cargar();
   }, []);
 
+  // Guardar lista en LS como respaldo
   useEffect(() => {
     try {
       if (Array.isArray(list) && list.length > 0) {
@@ -46,6 +77,9 @@ export default function Products() {
     } catch {}
   }, [list]);
 
+  // ====================
+  //  CATEGORÍAS (LS)
+  // ====================
   const loadCatsLS = () => {
     try {
       const raw = localStorage.getItem(LS_CATS);
@@ -60,19 +94,22 @@ export default function Products() {
   };
 
   useEffect(() => {
-    loadCatsLS(); 
+    loadCatsLS();
   }, []);
 
   useEffect(() => {
-    if (showForm) loadCatsLS(); 
+    if (showForm) loadCatsLS();
   }, [showForm]);
 
   useEffect(() => {
     const h = () => loadCatsLS();
-    window.addEventListener("categorias:updated", h); 
+    window.addEventListener("categorias:updated", h);
     return () => window.removeEventListener("categorias:updated", h);
   }, []);
 
+  // ====================
+  //  FILTRO / SEARCH
+  // ====================
   const filtered = useMemo(() => {
     const term = q.toLowerCase().trim();
     if (!term) return list;
@@ -98,11 +135,15 @@ export default function Products() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
   }, [catsLS, categoriasDerivadas]);
 
+  // ====================
+  //  FORM / CRUD
+  // ====================
   const resetForm = () => {
     setForm({
+      id: null,
       codigo: "",
       nombre: "",
-      categoria: categorias[0] || "", 
+      categoria: categorias[0] || "",
       precio: 0,
       stock: 0,
       imagen: "",
@@ -111,27 +152,64 @@ export default function Products() {
     setEditIdx(-1);
   };
 
-  const handleSave = () => {
-    if (editIdx === -1) {
-      setList((prev) => [...prev, form]);
-    } else {
-      setList((prev) =>
-        prev.map((p, i) => (i === editIdx ? { ...form } : p))
-      );
+  const handleSave = async () => {
+    // Validación mínima
+    if (!form.codigo || !form.nombre || !form.categoria) {
+      alert("Código, nombre y categoría son obligatorios.");
+      return;
     }
-    setShowForm(false);
-    resetForm();
+
+    setSaving(true);
+    try {
+      let saved;
+      if (form.id) {
+        // EDITAR → PUT /pasteles/{id}
+        saved = await updatePastel(form.id, form);
+        setList((prev) =>
+          prev.map((p, i) => (i === editIdx ? saved : p))
+        );
+      } else {
+        // NUEVO → POST /pasteles
+        saved = await createPastel(form);
+        setList((prev) => [...prev, saved]);
+      }
+
+      setShowForm(false);
+      resetForm();
+    } catch (err) {
+      console.error("Error al guardar producto:", err);
+      alert("Ocurrió un error al guardar el producto. Revisa la consola.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (idx) => {
+    // form incluye el id que viene de la API
     setForm(list[idx]);
     setEditIdx(idx);
     setShowForm(true);
   };
 
-  const handleDelete = (idx) => {
-    if (window.confirm("¿Eliminar producto?")) {
+  const handleDelete = async (idx) => {
+    const producto = list[idx];
+    if (!producto) return;
+
+    if (!window.confirm(`¿Eliminar el producto "${producto.nombre}"?`)) {
+      return;
+    }
+
+    try {
+      if (producto.id) {
+        await deletePastel(producto.id);
+      } else {
+        console.warn("Producto sin id, sólo se eliminará en el estado local.");
+      }
+
       setList((prev) => prev.filter((_, i) => i !== idx));
+    } catch (err) {
+      console.error("Error al eliminar producto:", err);
+      alert("No se pudo eliminar el producto. Revisa la consola.");
     }
   };
 
@@ -145,7 +223,9 @@ export default function Products() {
     navigate(`/admin/productos/${encodeURIComponent(String(code))}`);
   };
 
-
+  // ====================
+  //  RENDER
+  // ====================
   return (
     <div className="container-fluid">
       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -169,6 +249,10 @@ export default function Products() {
         </div>
       </div>
 
+      {loading && (
+        <p className="text-muted">Cargando productos desde el servidor...</p>
+      )}
+
       {showForm && (
         <div className="card mb-3">
           <div className="card-header d-flex justify-content-between align-items-center">
@@ -185,6 +269,9 @@ export default function Products() {
 
           <div className="card-body">
             <div className="row g-3">
+              {/* id oculto, por si acaso */}
+              <input type="hidden" value={form.id || ""} readOnly />
+
               <div className="col-md-3">
                 <label className="form-label">Código</label>
                 <input
@@ -280,13 +367,15 @@ export default function Products() {
                   className="btn btn-primary"
                   onClick={handleSave}
                   type="button"
+                  disabled={saving}
                 >
-                  Guardar
+                  {saving ? "Guardando..." : "Guardar"}
                 </button>
                 <button
                   className="btn btn-outline-secondary"
                   type="button"
                   onClick={resetForm}
+                  disabled={saving}
                 >
                   Limpiar
                 </button>
@@ -310,7 +399,7 @@ export default function Products() {
           </thead>
           <tbody>
             {filtered.map((p, i) => (
-              <tr key={i}>
+              <tr key={p.id ?? i}>
                 <td>{p.codigo}</td>
                 <td>{p.nombre}</td>
                 <td>{p.categoria}</td>
@@ -339,7 +428,7 @@ export default function Products() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !loading && (
               <tr>
                 <td colSpan={6} className="text-center text-muted">
                   No hay productos que coincidan.
