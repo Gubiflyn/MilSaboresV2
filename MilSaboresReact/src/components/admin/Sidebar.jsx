@@ -24,31 +24,12 @@ export default function Sidebar() {
       />
 
       <nav className="admin__menu">
-        {/* Dashboard: SOLO ADMIN */}
-        {isAdmin && (
-          <NavLink end to="/admin" className="admin__link">
-            Dashboard
-          </NavLink>
-        )}
-
-        {/* Órdenes: ADMIN y VENDEDOR */}
-        {(isAdmin || isSeller) && (
-          <NavLink to="/admin/pedidos" className="admin__link">
-            Órdenes
-            </NavLink>
-
-        )}
-
-        {/* Productos: ADMIN y VENDEDOR */}
-        {(isAdmin || isSeller) && (
-          <NavLink to="/admin/products" className="admin__link">
-            Productos
-          </NavLink>
-        )}
-
-        {/* Categorías, Usuarios, Reportes: SOLO ADMIN */}
+        {/* Admin mantiene TODO lo que ya tenía */}
         {isAdmin && (
           <>
+            <NavLink end to="/admin" className="admin__link">
+              Dashboard
+            </NavLink>
             <NavLink to="/admin/categories" className="admin__link">
               Categorías
             </NavLink>
@@ -60,6 +41,18 @@ export default function Sidebar() {
             </NavLink>
           </>
         )}
+
+        {/* Admin y Vendedor pueden ver SOLO estos dos */}
+        {(isAdmin || isSeller) && (
+          <>
+            <NavLink to="/admin/pedidos" className="admin__link">
+              Órdenes
+            </NavLink>
+            <NavLink to="/admin/productos" className="admin__link">
+              Productos
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="admin__menu mt-auto">
@@ -67,10 +60,7 @@ export default function Sidebar() {
         <Link to="/" className="admin__link">
           Tienda
         </Link>
-        <button
-          onClick={handleLogout}
-          className="btn btn-danger w-100 mt-2"
-        >
+        <button onClick={handleLogout} className="btn btn-danger w-100 mt-2">
           Cerrar Sesión
         </button>
         <div className="admin__user small mt-3 text-muted">
