@@ -22,7 +22,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PagoError from "./pages/PagoError";
 import Ofertas from "./pages/Ofertas";
-import Categorias from "./pages/Categorias"; 
+import Categorias from "./pages/Categorias";
 
 // ADMIN
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -47,15 +47,28 @@ import { useAuth } from "./context/AuthContext";
 
 /* ======== Guards ======== */
 function AdminRoute({ children }) {
-  const { isAuthenticated, user } = useAuth();
-  const isAdmin = isAuthenticated && user?.rol === "admin";
-  if (!isAdmin) return <Navigate to="/login" replace />;
+  const { isAuthenticated, isAdmin, isSeller } = useAuth();
+
+  // Solo pueden entrar al área /admin los ADMIN o VENDEDORES
+  if (!isAuthenticated || (!isAdmin && !isSeller)) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 }
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+}
+
+// SOLO ADMIN (dentro del área /admin)
+function AdminOnlyRoute({ children }) {
+  const { isAuthenticated, isAdmin } = useAuth();
+  if (!isAuthenticated || !isAdmin) {
+    return <Navigate to="/login" replace />;
+  }
   return children;
 }
 
@@ -85,7 +98,7 @@ const App = () => {
             path="/productos"
             element={<Productos agregarAlCarrito={agregarAlCarrito} />}
           />
-          <Route path="/categorias" element={<Categorias />} /> {/* ✅ NUEVA RUTA */}
+          <Route path="/categorias" element={<Categorias />} />
           <Route
             path="/detalle/:codigo"
             element={<Detalle agregarAlCarrito={agregarAlCarrito} />}
@@ -135,23 +148,132 @@ const App = () => {
               </AdminRoute>
             }
           >
-            <Route index element={<DashboardAdmin />} />
-            <Route path="dashboard" element={<DashboardAdmin />} />
+            {/* Dashboard: SOLO ADMIN */}
+            <Route
+              index
+              element={
+                <AdminOnlyRoute>
+                  <DashboardAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="dashboard"
+              element={
+                <AdminOnlyRoute>
+                  <DashboardAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+
+            {/* Productos: ADMIN y VENDEDOR (lista + detalle) */}
             <Route path="productos" element={<ProductsAdmin />} />
-            <Route path="productos/nuevo" element={<ProductNew />} />
             <Route path="productos/:id" element={<ProductDetail />} />
-            <Route path="productos/:id/editar" element={<ProductEdit />} />
-            <Route path="categorias" element={<CategoriesAdmin />} />
+
+            {/* Crear / editar producto: SOLO ADMIN */}
+            <Route
+              path="productos/nuevo"
+              element={
+                <AdminOnlyRoute>
+                  <ProductNew />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="productos/:id/editar"
+              element={
+                <AdminOnlyRoute>
+                  <ProductEdit />
+                </AdminOnlyRoute>
+              }
+            />
+
+            {/* Categorías: SOLO ADMIN */}
+            <Route
+              path="categorias"
+              element={
+                <AdminOnlyRoute>
+                  <CategoriesAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+
+            {/* Pedidos / Órdenes: ADMIN y VENDEDOR (lista + boleta) */}
             <Route path="pedidos" element={<OrdersAdmin />} />
-            <Route path="pedidos/:orderId/boleta" element={<OrderReceipt />} />
-            <Route path="usuarios" element={<UsersAdmin />} />
-            <Route path="usuarios/nuevo" element={<UserNew />} />
-            <Route path="usuarios/:id" element={<UserView />} />
-            <Route path="usuarios/:id/editar" element={<UserEdit />} />
-            <Route path="usuarios/:id/historial" element={<UserHistory />} />
-            <Route path="perfil" element={<ProfileAdmin />} />
-            <Route path="reportes" element={<ReportsAdmin />} />
-            <Route path="criticos" element={<Navigate to="productos" replace />} />
+            <Route
+              path="pedidos/:orderId/boleta"
+              element={<OrderReceipt />}
+            />
+
+            {/* Usuarios: SOLO ADMIN */}
+            <Route
+              path="usuarios"
+              element={
+                <AdminOnlyRoute>
+                  <UsersAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="usuarios/nuevo"
+              element={
+                <AdminOnlyRoute>
+                  <UserNew />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id"
+              element={
+                <AdminOnlyRoute>
+                  <UserView />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id/editar"
+              element={
+                <AdminOnlyRoute>
+                  <UserEdit />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id/historial"
+              element={
+                <AdminOnlyRoute>
+                  <UserHistory />
+                </AdminOnlyRoute>
+              }
+            />
+
+            {/* Perfil y reportes: SOLO ADMIN */}
+            <Route
+              path="perfil"
+              element={
+                <AdminOnlyRoute>
+                  <ProfileAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+            <Route
+              path="reportes"
+              element={
+                <AdminOnlyRoute>
+                  <ReportsAdmin />
+                </AdminOnlyRoute>
+              }
+            />
+
+            {/* Redirección criticos: SOLO ADMIN */}
+            <Route
+              path="criticos"
+              element={
+                <AdminOnlyRoute>
+                  <Navigate to="productos" replace />
+                </AdminOnlyRoute>
+              }
+            />
           </Route>
         </Routes>
       </main>
