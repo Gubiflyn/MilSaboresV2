@@ -1,6 +1,5 @@
 import React from "react";
 
-
 export default function KPIStat({ label, value, subLabel, icon, color }) {
   return (
     <div className={`kpi ${color ? `kpi-${color}` : ""}`}>

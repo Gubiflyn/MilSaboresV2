@@ -151,12 +151,62 @@
   .quick-tiles { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 720px) {
-  .admin-layout { grid-template-columns: 1fr; }
-  .admin-sidebar { position: fixed; inset: 0 auto 0 0; width: 80vw; z-index: 20; }
-  .admin-content { grid-template-rows: 56px 1fr; }
-  .kpi-grid { grid-template-columns: 1fr; }
-  .quick-tiles { grid-template-columns: 1fr; }
+  .admin-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;            
+    flex-direction: row;         
+    align-items: center;
+    padding: 8px 12px;
+    gap: 12px;
+    overflow-x: auto;             
+    width: 100%;
+  }
+
+  .admin-brand {
+    flex: 0 0 auto;
+  }
+
+  .admin-nav {
+    flex-direction: row;           
+    gap: 8px;
+    margin-top: 0;
+    flex: 1;
+  }
+
+  .admin-link {
+    white-space: nowrap;           
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .admin-logout {
+    flex: 0 0 auto;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .admin-content {
+    grid-template-rows: auto 1fr;
+  }
+
+  .admin-topbar {
+    padding: 8px 12px;
+  }
+
+  .admin-title {
+    font-size: 22px;
+  }
+
+  .kpi-grid,
+  .quick-tiles {
+    grid-template-columns: 1fr;
+  }
 }
+
 
 .admin-section {
   padding: 1rem;
