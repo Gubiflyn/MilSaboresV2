@@ -6,6 +6,7 @@ import {
   updatePastel,
   deletePastel,
 } from "../../services/api";
+import { useAuth } from "../../context/AuthContext"; // 👈 NUEVO
 
 const LS_TORTAS = "tortas_v3";
 const LS_CATS = "categorias_v1";
@@ -31,6 +32,11 @@ export default function Products() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth(); // 👈 para saber si puede editar
+
+  const showPermissionError = () => {
+    alert("Acción no disponible: permisos insuficientes.");
+  };
 
   // =========================
   //  CARGAR LISTA DESDE API
@@ -61,7 +67,12 @@ export default function Products() {
         }
       }
 
-      setList((Array.isArray(data) ? data : []).map((p) => ({ ...p, stock: p?.stock ?? 0 })));
+      setList(
+        (Array.isArray(data) ? data : []).map((p) => ({
+          ...p,
+          stock: p?.stock ?? 0,
+        }))
+      );
       setLoading(false);
     };
 
@@ -153,6 +164,12 @@ export default function Products() {
   };
 
   const handleSave = async () => {
+    // 🔒 Bloquear a vendedor
+    if (!isAdmin) {
+      showPermissionError();
+      return;
+    }
+
     // Validación mínima
     if (!form.codigo || !form.nombre || !form.categoria) {
       alert("Código, nombre y categoría son obligatorios.");
@@ -184,7 +201,20 @@ export default function Products() {
     }
   };
 
+  const handleNewClick = () => {
+    if (!isAdmin) {
+      showPermissionError();
+      return;
+    }
+    resetForm();
+    setShowForm(true);
+  };
+
   const handleEdit = (idx) => {
+    if (!isAdmin) {
+      showPermissionError();
+      return;
+    }
     // form incluye el id que viene de la API
     setForm(list[idx]);
     setEditIdx(idx);
@@ -192,6 +222,11 @@ export default function Products() {
   };
 
   const handleDelete = async (idx) => {
+    if (!isAdmin) {
+      showPermissionError();
+      return;
+    }
+
     const producto = list[idx];
     if (!producto) return;
 
@@ -203,7 +238,9 @@ export default function Products() {
       if (producto.id) {
         await deletePastel(producto.id);
       } else {
-        console.warn("Producto sin id, sólo se eliminará en el estado local.");
+        console.warn(
+          "Producto sin id, sólo se eliminará en el estado local."
+        );
       }
 
       setList((prev) => prev.filter((_, i) => i !== idx));
@@ -239,10 +276,7 @@ export default function Products() {
           />
           <button
             className="btn btn-primary"
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
+            onClick={handleNewClick} // 👈 antes hacía todo inline
           >
             + Nuevo producto
           </button>

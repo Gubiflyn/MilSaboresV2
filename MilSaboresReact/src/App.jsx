@@ -46,10 +46,11 @@ import { useCart } from "./context/CartContext";
 import { useAuth } from "./context/AuthContext";
 
 /* ======== Guards ======== */
+
+// Área /admin en general: solo autenticados que sean ADMIN o VENDEDOR
 function AdminRoute({ children }) {
   const { isAuthenticated, isAdmin, isSeller } = useAuth();
 
-  // Solo pueden entrar al área /admin los ADMIN o VENDEDORES
   if (!isAuthenticated || (!isAdmin && !isSeller)) {
     return <Navigate to="/login" replace />;
   }
@@ -63,12 +64,19 @@ function PrivateRoute({ children }) {
   return children;
 }
 
-// SOLO ADMIN (dentro del área /admin)
+// SOLO ADMIN (dentro de /admin)
+// Si es vendedor e intenta entrar a algo solo-admin, lo mandamos a /admin/productos
 function AdminOnlyRoute({ children }) {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, isSeller } = useAuth();
+
+  if (isAuthenticated && isSeller) {
+    return <Navigate to="/admin/productos" replace />;
+  }
+
   if (!isAuthenticated || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 }
 
@@ -265,7 +273,7 @@ const App = () => {
               }
             />
 
-            {/* Redirección criticos: SOLO ADMIN */}
+            {/* Redirección críticos: SOLO ADMIN */}
             <Route
               path="criticos"
               element={

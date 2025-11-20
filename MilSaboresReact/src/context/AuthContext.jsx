@@ -21,10 +21,13 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Derivamos el rol a partir del usuario guardado
-  const role = user?.tipo || user?.rol || "CLIENTE";
+  // 🔹 Normalizamos el rol siempre en MAYÚSCULAS
+  const rawRole = user?.tipo || user?.rol || "CLIENTE";
+  const role = String(rawRole).toUpperCase();
+
   const isAdmin = role === "ADMIN";
   const isSeller = role === "VENDEDOR";
+  const isCliente = role === "CLIENTE";
 
   useEffect(() => {
     try {
@@ -106,7 +109,7 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // 3) Intentar usuarios locales de src/data/usuarios.json (semilla)
+      // 3) Usuarios locales de src/data/usuarios.json (semilla)
       if (Array.isArray(usuariosSeed) && usuariosSeed.length) {
         const localMatch = usuariosSeed.find(
           (u) =>
@@ -133,7 +136,7 @@ export function AuthProvider({ children }) {
             setUser(authUser);
             return authUser;
           } else {
-            // Cliente local (para compatibilidad con tu JSON)
+            // Cliente local
             const authUser = {
               id: localMatch.id ?? null,
               nombre: localMatch.nombre,
@@ -168,10 +171,11 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    role,
+    role,          // rol ya normalizado en mayúsculas
     isAuthenticated: !!user,
     isAdmin,
     isSeller,
+    isCliente,
     login,
     logout,
     register,

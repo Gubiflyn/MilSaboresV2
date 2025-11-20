@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import './admin.css';
 
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin, isSeller } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -21,29 +21,78 @@ export default function AdminLayout() {
         </div>
 
         <nav className="admin-nav">
-          <NavLink end to="/admin" className="admin-link">Dashboard</NavLink>
-          <NavLink to="/admin/pedidos" className="admin-link">Órdenes</NavLink>
-          <NavLink to="/admin/productos" className="admin-link">Productos</NavLink>
-          <NavLink to="/admin/categorias" className="admin-link">Categorías</NavLink>
-          <NavLink to="/admin/usuarios" className="admin-link">Usuarios</NavLink>
-          <NavLink to="/admin/reportes" className="admin-link">Reportes</NavLink>
+          {/* 🔹 ADMIN: ve todo el menú */}
+          {isAdmin && (
+            <>
+              <NavLink end to="/admin" className="admin-link">
+                Dashboard
+              </NavLink>
+              <NavLink to="/admin/pedidos" className="admin-link">
+                Órdenes
+              </NavLink>
+              <NavLink to="/admin/productos" className="admin-link">
+                Productos
+              </NavLink>
+              <NavLink to="/admin/categorias" className="admin-link">
+                Categorías
+              </NavLink>
+              <NavLink to="/admin/usuarios" className="admin-link">
+                Usuarios
+              </NavLink>
+              <NavLink to="/admin/reportes" className="admin-link">
+                Reportes
+              </NavLink>
+            </>
+          )}
+
+          {/* 🔹 VENDEDOR: solo Órdenes y Productos */}
+          {isSeller && (
+            <>
+              <NavLink to="/admin/pedidos" className="admin-link">
+                Órdenes
+              </NavLink>
+              <NavLink to="/admin/productos" className="admin-link">
+                Productos
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="admin-secondary">
-          <NavLink to="/admin/perfil" className="admin-link muted">Perfil</NavLink>
-          <NavLink to="/" className="admin-link muted">Tienda</NavLink>
-          <button className="admin-logout" onClick={handleLogout}>Cerrar Sesión</button>
+          {/* Perfil y Tienda solo para ADMIN */}
+          {isAdmin && (
+            <>
+              <NavLink to="/admin/perfil" className="admin-link muted">
+                Perfil
+              </NavLink>
+              <NavLink to="/" className="admin-link muted">
+                Tienda
+              </NavLink>
+            </>
+          )}
+
+          <button className="admin-logout" onClick={handleLogout}>
+            Cerrar Sesión
+          </button>
         </div>
       </aside>
 
       <section className="admin-content">
         <header className="admin-topbar">
           <div>
-            <h1 className="admin-title">Dashboard</h1>
-            <div className="admin-subtitle">Resumen de las actividades diarias</div>
+            <h1 className="admin-title">
+              {isAdmin ? 'Dashboard' : 'Panel vendedor'}
+            </h1>
+            <div className="admin-subtitle">
+              {isAdmin
+                ? 'Resumen de las actividades diarias'
+                : 'Consulta de productos y órdenes'}
+            </div>
           </div>
           <div className="admin-user">
-            <span className="admin-user-email">{user?.email || 'admin@mail'}</span>
+            <span className="admin-user-email">
+              {user?.correo || user?.email || 'admin@mail'}
+            </span>
           </div>
         </header>
 

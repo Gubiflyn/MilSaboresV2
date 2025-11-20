@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 
 function Navbar({ carrito: carritoProp }) {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isSeller, logout } = useAuth(); // 👈 AÑADIDO isSeller
   const { carrito: carritoCtx } = useCart();
   const carrito = Array.isArray(carritoProp) ? carritoProp : carritoCtx || [];
   const cantidadTotal = carrito.reduce((sum, t) => sum + (t.cantidad || 1), 0);
@@ -91,10 +91,20 @@ function Navbar({ carrito: carritoProp }) {
                 <Link className="nav-link header__menu-link" to="/contacto">Contacto</Link>
               </li>
 
+              {/* 🔥 ADMIN ve botón Admin */}
               {isAdmin && (
                 <li className="nav-item">
                   <Link className="nav-link header__menu-link text-warning fw-semibold" to="/admin">
                     Admin
+                  </Link>
+                </li>
+              )}
+
+              {/* 🔥 VENDEDOR ve botón Vendedor */}
+              {isSeller && (
+                <li className="nav-item">
+                  <Link className="nav-link header__menu-link text-info fw-semibold" to="/admin">
+                    Vendedor
                   </Link>
                 </li>
               )}
@@ -128,11 +138,13 @@ function Navbar({ carrito: carritoProp }) {
                       <span className="dropdown-item-text small text-muted">{user?.email}</span>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
+
                     <li>
                       <Link className="dropdown-item" to="/configuracion" onClick={closeDropdown}>
                         <i className="fas fa-user-cog me-2"></i> Configuración
                       </Link>
                     </li>
+
                     <li>
                       <button className="dropdown-item text-danger" onClick={handleLogout}>
                         <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
