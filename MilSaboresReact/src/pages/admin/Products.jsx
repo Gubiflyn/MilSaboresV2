@@ -6,7 +6,7 @@ import {
   updatePastel,
   deletePastel,
 } from "../../services/api";
-import { useAuth } from "../../context/AuthContext"; // 👈 NUEVO
+import { useAuth } from "../../context/AuthContext";
 
 const LS_TORTAS = "tortas_v3";
 const LS_CATS = "categorias_v1";
@@ -32,7 +32,7 @@ export default function Products() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth(); // 👈 para saber si puede editar
+  const { isAdmin } = useAuth();
 
   const showPermissionError = () => {
     alert("Acción no disponible: permisos insuficientes.");
@@ -71,6 +71,12 @@ export default function Products() {
         (Array.isArray(data) ? data : []).map((p) => ({
           ...p,
           stock: p?.stock ?? 0,
+          // igual que en Productos.jsx:
+          // si viene objeto categoria, lo convertimos a string nombre
+          categoria:
+            typeof p.categoria === "string"
+              ? p.categoria
+              : p.categoria?.nombre || "",
         }))
       );
       setLoading(false);
@@ -97,7 +103,8 @@ export default function Products() {
       const arr = raw ? JSON.parse(raw) : [];
       const clean = Array.from(
         new Set((arr || []).map((s) => (s || "").trim()).filter(Boolean))
-      ).sort((a, b) => a.localeCompare(b, "es"));
+      )
+        .sort((a, b) => a.localeCompare(b, "es"));
       setCatsLS(clean);
     } catch {
       setCatsLS([]);
@@ -164,13 +171,11 @@ export default function Products() {
   };
 
   const handleSave = async () => {
-    // 🔒 Bloquear a vendedor
     if (!isAdmin) {
       showPermissionError();
       return;
     }
 
-    // Validación mínima
     if (!form.codigo || !form.nombre || !form.categoria) {
       alert("Código, nombre y categoría son obligatorios.");
       return;
@@ -180,13 +185,11 @@ export default function Products() {
     try {
       let saved;
       if (form.id) {
-        // EDITAR → PUT /pasteles/{id}
-        saved = await updatePastel(form.id, form);
-        setList((prev) =>
-          prev.map((p, i) => (i === editIdx ? saved : p))
-        );
+        // EDITAR
+        saved = await updatePastel(form); // ← importante: pasamos el objeto
+        setList((prev) => prev.map((p, i) => (i === editIdx ? saved : p)));
       } else {
-        // NUEVO → POST /pasteles
+        // NUEVO
         saved = await createPastel(form);
         setList((prev) => [...prev, saved]);
       }
@@ -215,7 +218,6 @@ export default function Products() {
       showPermissionError();
       return;
     }
-    // form incluye el id que viene de la API
     setForm(list[idx]);
     setEditIdx(idx);
     setShowForm(true);
@@ -274,10 +276,7 @@ export default function Products() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button
-            className="btn btn-primary"
-            onClick={handleNewClick} // 👈 antes hacía todo inline
-          >
+          <button className="btn btn-primary" onClick={handleNewClick}>
             + Nuevo producto
           </button>
         </div>
@@ -303,7 +302,6 @@ export default function Products() {
 
           <div className="card-body">
             <div className="row g-3">
-              {/* id oculto, por si acaso */}
               <input type="hidden" value={form.id || ""} readOnly />
 
               <div className="col-md-3">

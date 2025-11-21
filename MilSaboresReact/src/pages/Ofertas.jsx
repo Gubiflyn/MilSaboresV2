@@ -4,14 +4,25 @@ import { getPasteles } from "../services/api";
 
 const LS_KEY = "tortas_v3";
 const DESCUENTOS = {
-  torta: 0.20,
+  torta: 0.2,
   postre: 0.15,
-  sinAzucar: 0.10,
+  sinAzucar: 0.1,
 };
 
 const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
 const precioConDescuento = (precio, pct) =>
   Math.max(0, Math.round((Number(precio) || 0) * (1 - pct)));
+
+const normalizeList = (arr) =>
+  Array.isArray(arr)
+    ? arr.map((p) => ({
+        ...p,
+        categoria:
+          typeof p.categoria === "string"
+            ? p.categoria
+            : p.categoria?.nombre || "",
+      }))
+    : [];
 
 export default function Ofertas() {
   const [productos, setProductos] = useState([]);
@@ -22,8 +33,8 @@ export default function Ofertas() {
       try {
         const apiData = await getPasteles();
         if (Array.isArray(apiData) && apiData.length) {
-          data = apiData;
-          localStorage.setItem(LS_KEY, JSON.stringify(apiData));
+          data = normalizeList(apiData);
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
         }
       } catch (err) {
         console.error("Error al cargar productos en Ofertas:", err);
@@ -33,7 +44,7 @@ export default function Ofertas() {
         try {
           const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
           if (Array.isArray(guardadas) && guardadas.length) {
-            data = guardadas;
+            data = normalizeList(guardadas);
           }
         } catch {
           data = [];
@@ -55,8 +66,12 @@ export default function Ofertas() {
       pick((p) => (p.categoria || "").toLowerCase().startsWith("tortas ")) ||
       productos.find((p) => (p.nombre || "").toLowerCase().includes("torta"));
 
-    const postre = pick((p) => (p.categoria || "") === "Postres Individuales");
-    const sinAzucar = pick((p) => (p.categoria || "") === "Productos Sin Azúcar");
+    const postre = pick(
+      (p) => (p.categoria || "") === "Postres Individuales"
+    );
+    const sinAzucar = pick(
+      (p) => (p.categoria || "") === "Productos Sin Azúcar"
+    );
 
     const base = [torta, postre, sinAzucar].filter(Boolean);
     const unique = [];
@@ -110,7 +125,8 @@ export default function Ofertas() {
         </Link>
       </div>
       <p className="text-muted mb-4">
-        Nuestra selección destacada de torta, un postre individual y una opción sin azúcar.
+        Nuestra selección destacada de torta, un postre individual y una opción
+        sin azúcar.
       </p>
 
       <div className="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
@@ -125,9 +141,9 @@ export default function Ofertas() {
             return (
               <div className="col" key={t.codigo ?? t.nombre}>
                 <Link
-                  to={`/detalle/${t.codigo ?? ""}?oferta=1&pct=${t._pct || 0}&tag=${encodeURIComponent(
-                    t._tipoOferta || ""
-                  )}`}
+                  to={`/detalle/${t.codigo ?? ""}?oferta=1&pct=${
+                    t._pct || 0
+                  }&tag=${encodeURIComponent(t._tipoOferta || "")}`}
                   className="text-decoration-none text-reset"
                 >
                   <div className="card product-card h-100 shadow-sm">
@@ -150,7 +166,9 @@ export default function Ofertas() {
                     </div>
 
                     <div className="card-body text-center">
-                      <h5 className="card-title mb-1">{t.nombre || "Producto"}</h5>
+                      <h5 className="card-title mb-1">
+                        {t.nombre || "Producto"}
+                      </h5>
                       {t.precio != null && (
                         <>
                           <div className="small text-decoration-line-through text-muted">
@@ -162,7 +180,7 @@ export default function Ofertas() {
                         </>
                       )}
                       <div className="small text-muted mt-1">
-                        {(t.categoria || "").length ? t.categoria : "\u00A0"}
+                        {(t.categoria || "").length ? t.categoria : "\u00a0"}
                       </div>
                     </div>
                   </div>

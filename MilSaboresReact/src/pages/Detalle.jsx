@@ -5,6 +5,15 @@ import { useCart } from "../context/CartContext";
 import { publicUrl } from "../utils/publicUrl";
 import { getPastelByCodigo } from "../services/api";
 
+const normalizePastel = (p) => {
+  if (!p) return p;
+  const categoria =
+    typeof p.categoria === "string"
+      ? p.categoria
+      : p.categoria?.nombre || "";
+  return { ...p, categoria };
+};
+
 const Detalle = () => {
   const { codigo } = useParams();
   const location = useLocation();
@@ -27,7 +36,8 @@ const Detalle = () => {
       try {
         const data = await getPastelByCodigo(codigo);
         if (data) {
-          setTorta(data);
+          const normalizado = normalizePastel(data);
+          setTorta(normalizado);
           setCantidad(1);
           setMensaje("");
           return;
@@ -47,7 +57,7 @@ const Detalle = () => {
         ? tortasLS.find((t) => String(t.codigo) === String(codigo))
         : null;
 
-      setTorta(encontrada || {});
+      setTorta(normalizePastel(encontrada) || {});
       setCantidad(1);
       setMensaje("");
     };
@@ -103,7 +113,9 @@ const Detalle = () => {
               </p>
               <p className="fs-4 fw-bold text-danger">
                 ${precioOferta.toLocaleString("es-CL")} CLP
-                {ofertaTag ? <span className="ms-2 badge bg-danger">{ofertaTag}</span> : null}
+                {ofertaTag ? (
+                  <span className="ms-2 badge bg-danger">{ofertaTag}</span>
+                ) : null}
               </p>
             </>
           ) : (
@@ -138,7 +150,12 @@ const Detalle = () => {
               max={torta.stock || 99}
               value={cantidad}
               onChange={(e) =>
-                setCantidad(Math.max(1, Math.min(torta.stock || 99, Number(e.target.value) || 1)))
+                setCantidad(
+                  Math.max(
+                    1,
+                    Math.min(torta.stock || 99, Number(e.target.value) || 1)
+                  )
+                )
               }
             />
           </div>

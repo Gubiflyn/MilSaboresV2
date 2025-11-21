@@ -5,7 +5,6 @@ import {
   getClientes,
   createCliente,
 } from "../services/api";
-import usuariosSeed from "../data/usuarios.json";
 
 const AuthContext = createContext(null);
 const LS_USER_KEY = "ms_user";
@@ -19,9 +18,10 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Normalizamos el rol siempre en MAYÚSCULAS
+  // Normalizar rol en MAYÚSCULAS
   const rawRole = user?.tipo || user?.rol || "CLIENTE";
   const role = String(rawRole).toUpperCase();
 
@@ -29,33 +29,28 @@ export function AuthProvider({ children }) {
   const isSeller = role === "VENDEDOR";
   const isCliente = role === "CLIENTE";
 
+  // Guardar sesión en localStorage
   useEffect(() => {
-    try {
-      if (user) {
-        localStorage.setItem(LS_USER_KEY, JSON.stringify(user));
-      } else {
-        localStorage.removeItem(LS_USER_KEY);
-      }
-    } catch {
-      // ignore
-    }
+    if (user) localStorage.setItem(LS_USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(LS_USER_KEY);
   }, [user]);
 
+  // LOGIN contra BD
   const login = async (correo, contrasena) => {
     setLoading(true);
     try {
       const emailNorm = String(correo).toLowerCase().trim();
       const passNorm = String(contrasena);
 
-      // 1) Intentar usuario de BACKOFFICE vía API (ADMIN o VENDEDOR)
+      // 1) Admin / Vendedor
       let admins = [];
       try {
         admins = await getAdministradores();
-      } catch (e) {
-        console.warn("No se pudieron cargar administradores:", e);
+      } catch (err) {
+        console.warn("No se pudieron cargar administradores:", err);
       }
 
-      if (Array.isArray(admins) && admins.length) {
+      if (Array.isArray(admins)) {
         const adminMatch = admins.find(
           (a) =>
             String(a.correo).toLowerCase() === emailNorm &&
@@ -66,36 +61,38 @@ export function AuthProvider({ children }) {
         if (adminMatch) {
           const rawRole = adminMatch.tipo || adminMatch.rol || "ADMIN";
           const upperRole = String(rawRole).toUpperCase();
-          const normalizedRole =
+          const normalized =
             upperRole === "VENDEDOR" ? "VENDEDOR" : "ADMIN";
 
           const authUser = {
             id: adminMatch.id,
             nombre: adminMatch.nombre,
             correo: adminMatch.correo,
-            rol: normalizedRole,
-            tipo: normalizedRole,
+            rol: normalized,
+            tipo: normalized,
           };
+
           setUser(authUser);
           return authUser;
         }
       }
 
-      // 2) Intentar CLIENTE vía API
+      // 2) Cliente
       let clientes = [];
       try {
         clientes = await getClientes();
-      } catch (e) {
-        console.warn("No se pudieron cargar clientes:", e);
+      } catch (err) {
+        console.warn("No se pudieron cargar clientes:", err);
       }
 
-      if (Array.isArray(clientes) && clientes.length) {
+      if (Array.isArray(clientes)) {
         const clienteMatch = clientes.find(
           (c) =>
             String(c.correo).toLowerCase() === emailNorm &&
             String(c.contrasena) === passNorm &&
             (c.activo === undefined || c.activo === true)
         );
+
         if (clienteMatch) {
           const authUser = {
             id: clienteMatch.id,
@@ -109,47 +106,6 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // 3) Usuarios locales de src/data/usuarios.json (semilla)
-      if (Array.isArray(usuariosSeed) && usuariosSeed.length) {
-        const localMatch = usuariosSeed.find(
-          (u) =>
-            String(u.email).toLowerCase() === emailNorm &&
-            String(u.password) === passNorm
-        );
-
-        if (localMatch) {
-          const rawRole = localMatch.rol || localMatch.tipo || "cliente";
-          const upperRole = String(rawRole).toUpperCase();
-
-          if (upperRole === "ADMIN" || upperRole === "VENDEDOR") {
-            // Backoffice local: ADMIN o VENDEDOR
-            const normalizedRole =
-              upperRole === "VENDEDOR" ? "VENDEDOR" : "ADMIN";
-
-            const authUser = {
-              id: localMatch.id ?? null,
-              nombre: localMatch.nombre,
-              correo: localMatch.email,
-              rol: normalizedRole,
-              tipo: normalizedRole,
-            };
-            setUser(authUser);
-            return authUser;
-          } else {
-            // Cliente local
-            const authUser = {
-              id: localMatch.id ?? null,
-              nombre: localMatch.nombre,
-              correo: localMatch.email,
-              rol: "CLIENTE",
-              tipo: "CLIENTE",
-            };
-            setUser(authUser);
-            return authUser;
-          }
-        }
-      }
-
       throw new Error("Correo o contraseña incorrectos.");
     } finally {
       setLoading(false);
@@ -160,28 +116,33 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // REGISTRO en BD
   const register = async (clienteData) => {
-    const nuevoCliente = await createCliente({
+    const nuevo = await createCliente({
       ...clienteData,
       activo: true,
     });
-    return nuevoCliente;
+    return nuevo;
   };
 
-  const value = {
-    user,
-    loading,
-    role,          // rol ya normalizado en mayúsculas
-    isAuthenticated: !!user,
-    isAdmin,
-    isSeller,
-    isCliente,
-    login,
-    logout,
-    register,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        role,
+        isAuthenticated: !!user,
+        isAdmin,
+        isSeller,
+        isCliente,
+        login,
+        logout,
+        register,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

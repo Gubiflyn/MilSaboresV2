@@ -39,6 +39,13 @@ const Productos = () => {
           ? data.map((t) => ({
               ...t,
               stock: t?.stock ?? 0,
+              // ⚠️ IMPORTANTE:
+              // si viene categoria como objeto {id, nombre, descripcion},
+              // la convertimos a string con el nombre
+              categoria:
+                typeof t.categoria === "string"
+                  ? t.categoria
+                  : t.categoria?.nombre || "",
             }))
           : [];
 

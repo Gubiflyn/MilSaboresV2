@@ -1,22 +1,53 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
 import { useCart } from "../context/CartContext";
-import tortasJson from "../data/tortas.json";
+import { getPasteles } from "../services/api";
 
 const LS_KEY = "tortas_v3";
+
+const normalizeList = (arr) =>
+  Array.isArray(arr)
+    ? arr.map((t) => ({
+        ...t,
+        categoria:
+          typeof t.categoria === "string"
+            ? t.categoria
+            : t.categoria?.nombre || "",
+      }))
+    : [];
 
 export default function Categorias() {
   const [tortas, setTortas] = useState([]);
   const { add } = useCart();
 
   useEffect(() => {
-    const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-    if (guardadas === null) {
-      localStorage.setItem(LS_KEY, JSON.stringify(tortasJson));
-      setTortas(tortasJson);
-    } else {
-      setTortas(guardadas);
-    }
+    const cargar = async () => {
+      let data = [];
+      try {
+        const apiData = await getPasteles();
+        if (Array.isArray(apiData) && apiData.length) {
+          data = normalizeList(apiData);
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error("Error al cargar productos en Categorias:", err);
+      }
+
+      if (!data.length) {
+        try {
+          const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+          if (Array.isArray(guardadas) && guardadas.length) {
+            data = normalizeList(guardadas);
+          }
+        } catch {
+          data = [];
+        }
+      }
+
+      setTortas(Array.isArray(data) ? data : []);
+    };
+
+    cargar();
   }, []);
 
   const categorias = useMemo(() => {

@@ -1,88 +1,98 @@
 // src/services/api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8094";
+const API_BASE = "http://localhost:8094";
 
-async function handleResponse(response) {
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(text || `Error HTTP ${response.status}`);
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!res.ok) {
+    let msg = `Error HTTP ${res.status}`;
+    try {
+      const text = await res.text();
+      if (text) msg = text;
+    } catch {}
+    throw new Error(msg);
   }
-  if (response.status === 204) return null;
-  return response.json();
+
+  if (res.status === 204) return null;
+  return res.json();
 }
 
-// =====================
-//  PASTELES / PRODUCTOS
-// =====================
+/* -----------------------------
+   PASTELES (PASTEL-CONTROLLER)
+------------------------------ */
 
-export async function getPasteles() {
-  const resp = await fetch(`${API_BASE_URL}/pasteles`);
-  return handleResponse(resp);
+// GET /api/pasteles/listPasteles
+export function getPasteles() {
+  return apiFetch("/api/pasteles/listPasteles");
 }
 
-export async function getPastelByCodigo(codigo) {
-  const resp = await fetch(
-    `${API_BASE_URL}/pasteles/codigo/${encodeURIComponent(codigo)}`
+// GET /api/pasteles/getPastelByCodigo/{codigo}
+export function getPastelByCodigo(codigo) {
+  return apiFetch(
+    `/api/pasteles/getPastelByCodigo/${encodeURIComponent(codigo)}`
   );
-  return handleResponse(resp);
 }
 
-export async function createPastel(pastel) {
-  const resp = await fetch(`${API_BASE_URL}/pasteles`, {
+// POST /api/pasteles/savePastel
+export function createPastel(data) {
+  return apiFetch("/api/pasteles/savePastel", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pastel),
+    body: JSON.stringify(data),
   });
-  return handleResponse(resp);
 }
 
-export async function updatePastel(id, pastel) {
-  const resp = await fetch(`${API_BASE_URL}/pasteles/${id}`, {
+// PUT /api/pasteles/updatePastel
+export function updatePastel(data) {
+  return apiFetch("/api/pasteles/updatePastel", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pastel),
+    body: JSON.stringify(data),
   });
-  return handleResponse(resp);
 }
 
-export async function deletePastel(id) {
-  const resp = await fetch(`${API_BASE_URL}/pasteles/${id}`, {
+// DELETE /api/pasteles/deletePastelById/{id}
+export function deletePastel(id) {
+  return apiFetch(`/api/pasteles/deletePastelById/${id}`, {
     method: "DELETE",
   });
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(text || `Error HTTP ${resp.status}`);
-  }
-  return true;
 }
 
-// =====================
-//  CLIENTES
-// =====================
+/* -----------------------------
+   ADMINISTRADORES
+------------------------------ */
 
-export async function getClientes() {
-  const resp = await fetch(`${API_BASE_URL}/clientes`);
-  return handleResponse(resp);
+// GET /administradores/activos
+export function getAdministradores() {
+  return apiFetch("/administradores/activos");
 }
 
-export async function createCliente(cliente) {
-  const resp = await fetch(`${API_BASE_URL}/clientes`, {
+/* -----------------------------
+   VENDEDORES
+------------------------------ */
+
+// GET /api/vendedores/listVendedores
+export function getVendedores() {
+  return apiFetch("/api/vendedores/listVendedores");
+}
+
+/* -----------------------------
+   CLIENTES
+------------------------------ */
+
+// GET /clientes/activos
+export function getClientes() {
+  return apiFetch("/clientes/activos");
+}
+
+// POST /clientes
+export function createCliente(data) {
+  return apiFetch("/clientes", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(cliente),
+    body: JSON.stringify(data),
   });
-  return handleResponse(resp);
-}
-
-// =====================
-//  ADMINISTRADORES
-// =====================
-
-export async function getAdministradores() {
-  const resp = await fetch(`${API_BASE_URL}/administradores`, {
-    headers: {
-      // si protegiste estos endpoints con API KEY:
-      //"X-API-KEY": "CLAVE_SUPER_SECRETA_123",
-    },
-  });
-  return handleResponse(resp);
 }

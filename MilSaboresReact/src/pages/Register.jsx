@@ -5,7 +5,7 @@ import regionesComunas from "../data/chile-regiones-comunas.json";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
 
   const regiones = useMemo(() => regionesComunas.map((r) => r.region), []);
 
@@ -53,6 +53,7 @@ export default function Register() {
       "comuna",
       "telefono",
     ];
+
     for (const k of oblig) {
       if (!String(form[k] || "").trim()) {
         setErr("Por favor completa los campos obligatorios (*).");
@@ -87,56 +88,46 @@ export default function Register() {
     }
 
     let beneficio = "Sin beneficio";
-    if (edad >= 50) {
-      beneficio = "50%";
-    } else if (codigoRegistro === "FELICES50") {
-      beneficio = "FELICES50";
-    } else if (isDuoc) {
-      beneficio = "TORTA GRATIS";
-    }
+    if (edad >= 50) beneficio = "50%";
+    else if (codigoRegistro === "FELICES50") beneficio = "FELICES50";
+    else if (isDuoc) beneficio = "TORTA GRATIS";
 
-    const usuario = {
+    const clientePayload = {
       nombre: `${form.nombres} ${form.apellidos}`.trim(),
-      email: form.correo,
-      password: form.contrasena,
+      correo: form.correo,
       contrasena: form.contrasena,
-      rol: "cliente",
-      beneficio,
-      fechaNacimiento: form.fechaNacimiento,
       telefono: form.telefono,
       direccion: form.direccion,
       region: form.region,
       comuna: form.comuna,
+      beneficio,
+      fechaNacimiento: form.fechaNacimiento,
       codigoRegistro,
-      nombres: form.nombres,
-      apellidos: form.apellidos,
+      puntos: 0,
+      activo: true,
     };
 
-    const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
-    const emailLC = form.correo.toLowerCase();
-    const idx = perfiles.findIndex(
-      (p) => (p.email || p.correo || "").toLowerCase() === emailLC
-    );
-    if (idx >= 0) {
-      perfiles[idx] = { ...perfiles[idx], ...usuario };
-    } else {
-      perfiles.push(usuario);
+    try {
+      // 1) Registrar en BD
+      await register(clientePayload);
+
+      // 2) Iniciar sesión real
+      await login(form.correo, form.contrasena);
+
+      // 3) Mensaje de beneficio
+      let msg = "Sin beneficio";
+      if (beneficio === "50%") msg = "50% de descuento en todos los productos";
+      else if (beneficio === "FELICES50") msg = "10% de descuento de por vida";
+      else if (beneficio === "TORTA GRATIS")
+        msg = "Torta gratis en tu cumpleaños (correo DUOC)";
+
+      alert(`Registro exitoso.\nBeneficio asignado: ${msg}`);
+      navigate("/");
+
+    } catch (e) {
+      console.error(e);
+      setErr(e.message || "No se pudo registrar el usuario.");
     }
-    localStorage.setItem("perfiles", JSON.stringify(perfiles));
-
-    const res = await login(form.correo, form.contrasena);
-    if (!res?.ok) {
-      navigate("/login");
-      return;
-    }
-
-    let msg = "Sin beneficio";
-    if (beneficio === "50%") msg = "50% de descuento en todos los productos";
-    else if (beneficio === "FELICES50") msg = "10% de descuento de por vida";
-    else if (beneficio === "TORTA GRATIS") msg = "Torta gratis en tu cumpleaños (correo DUOC)";
-
-    alert(`Registro exitoso.\nBeneficio asignado: ${msg}`);
-    navigate("/");
   };
 
   return (
@@ -144,6 +135,7 @@ export default function Register() {
       <div className="card">
         <div className="card-body">
           <h2 className="mb-4 text-center">Registro de Usuario</h2>
+
           <form onSubmit={onSubmit} noValidate>
             <div className="row g-3">
               <div className="col-md-6">
@@ -151,16 +143,21 @@ export default function Register() {
                 <input
                   className="form-control"
                   value={form.nombres}
-                  onChange={(e) => setForm({ ...form, nombres: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, nombres: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Apellidos *</label>
                 <input
                   className="form-control"
                   value={form.apellidos}
-                  onChange={(e) => setForm({ ...form, apellidos: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, apellidos: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -171,17 +168,22 @@ export default function Register() {
                   type="email"
                   className="form-control"
                   value={form.correo}
-                  onChange={(e) => setForm({ ...form, correo: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, correo: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Contraseña *</label>
                 <input
                   type="password"
                   className="form-control"
                   value={form.contrasena}
-                  onChange={(e) => setForm({ ...form, contrasena: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, contrasena: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -192,17 +194,22 @@ export default function Register() {
                   type="date"
                   className="form-control"
                   value={form.fechaNacimiento}
-                  max={new Date().toISOString().split("T")[0]} 
-                  onChange={(e) => setForm({ ...form, fechaNacimiento: e.target.value })}
+                  max={new Date().toISOString().split("T")[0]}
+                  onChange={(e) =>
+                    setForm({ ...form, fechaNacimiento: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label">Código de descuento (opcional)</label>
                 <input
                   className="form-control"
                   value={form.codigoDescuento}
-                  onChange={(e) => setForm({ ...form, codigoDescuento: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, codigoDescuento: e.target.value })
+                  }
                   placeholder="FELICES50"
                 />
               </div>
@@ -212,16 +219,21 @@ export default function Register() {
                 <input
                   className="form-control"
                   value={form.direccion}
-                  onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, direccion: e.target.value })
+                  }
                   required
                 />
               </div>
+
               <div className="col-md-4">
                 <label className="form-label">Teléfono *</label>
                 <input
                   className="form-control"
                   value={form.telefono}
-                  onChange={(e) => setForm({ ...form, telefono: enforcePhone(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, telefono: enforcePhone(e.target.value) })
+                  }
                   placeholder="+569XXXXXXXX"
                   inputMode="tel"
                   required
@@ -233,16 +245,14 @@ export default function Register() {
                 <select
                   className="form-select"
                   value={form.region}
-                  onChange={(e) => setForm({ ...form, region: e.target.value, comuna: "" })}
+                  onChange={(e) =>
+                    setForm({ ...form, region: e.target.value, comuna: "" })
+                  }
                   required
                 >
-                  <option value="" disabled>
-                    Selecciona una región
-                  </option>
+                  <option value="" disabled>Selecciona una región</option>
                   {regiones.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
+                    <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
               </div>
@@ -252,7 +262,9 @@ export default function Register() {
                 <select
                   className="form-select"
                   value={form.comuna}
-                  onChange={(e) => setForm({ ...form, comuna: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, comuna: e.target.value })
+                  }
                   disabled={!form.region}
                   required
                 >
@@ -260,9 +272,7 @@ export default function Register() {
                     {form.region ? "Selecciona una comuna" : "Primero elige una región"}
                   </option>
                   {comunasDeRegion.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>

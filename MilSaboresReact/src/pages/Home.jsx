@@ -3,11 +3,24 @@ import { Link } from "react-router-dom";
 import { getPasteles } from "../services/api";
 
 const LS_KEY = "tortas_v3";
+
 const DESCUENTOS = {
   torta: 0.20,
   postre: 0.15,
   sinAzucar: 0.10,
 };
+
+// ------- NORMALIZADOR DE CATEGORIA ---------
+const normalizeList = (arr) =>
+  Array.isArray(arr)
+    ? arr.map((p) => ({
+        ...p,
+        categoria:
+          typeof p.categoria === "string"
+            ? p.categoria
+            : p.categoria?.nombre || "",
+      }))
+    : [];
 
 const CLP = (n) => Number(n || 0).toLocaleString("es-CL");
 const precioConDescuento = (precio, pct) =>
@@ -19,11 +32,12 @@ export default function Home() {
   useEffect(() => {
     const cargar = async () => {
       let data = [];
+
       try {
         const apiData = await getPasteles();
         if (Array.isArray(apiData) && apiData.length) {
-          data = apiData;
-          localStorage.setItem(LS_KEY, JSON.stringify(apiData));
+          data = normalizeList(apiData);
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
         }
       } catch (err) {
         console.error("Error al cargar productos en Home:", err);
@@ -33,7 +47,7 @@ export default function Home() {
         try {
           const guardadas = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
           if (Array.isArray(guardadas) && guardadas.length) {
-            data = guardadas;
+            data = normalizeList(guardadas);
           }
         } catch {
           data = [];
@@ -46,6 +60,7 @@ export default function Home() {
     cargar();
   }, []);
 
+  // ---------- OFERTAS ---------
   const ofertas = useMemo(() => {
     if (!Array.isArray(productos) || productos.length === 0) return [];
 
@@ -59,11 +74,12 @@ export default function Home() {
     const sinAzucar = pick((p) => (p.categoria || "") === "Productos Sin Azúcar");
 
     const base = [torta, postre, sinAzucar].filter(Boolean);
+
     const unique = [];
     const seen = new Set();
 
     for (const p of base) {
-      const key = p.codigo ?? p.nombre;
+      const key = p.codigo;
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(p);
@@ -72,7 +88,7 @@ export default function Home() {
 
     if (unique.length < 3) {
       for (const p of productos) {
-        const key = p.codigo ?? p.nombre;
+        const key = p.codigo;
         if (!seen.has(key)) {
           seen.add(key);
           unique.push(p);
@@ -83,8 +99,8 @@ export default function Home() {
 
     return unique.slice(0, 3).map((p) => {
       let tipo = "torta";
-      if ((p.categoria || "") === "Postres Individuales") tipo = "postre";
-      if ((p.categoria || "") === "Productos Sin Azúcar") tipo = "sinAzucar";
+      if (p.categoria === "Postres Individuales") tipo = "postre";
+      if (p.categoria === "Productos Sin Azúcar") tipo = "sinAzucar";
       const pct = DESCUENTOS[tipo] ?? 0.1;
       return {
         ...p,
@@ -103,13 +119,17 @@ export default function Home() {
 
   return (
     <main>
+      {/* HERO */}
       <section className="hero-section py-5" id="inicio">
         <div className="container py-5">
           <div className="row align-items-center">
             <div className="col-md-7 text-and-button">
-              <h1 className="hero-section__title display-4 fw-bold mb-3">Mil Sabores</h1>
+              <h1 className="hero-section__title display-4 fw-bold mb-3">
+                Mil Sabores
+              </h1>
               <p className="hero-section__text fs-5 mb-4">
-                Pastelería artesanal: tortas, postres y sabores hechos con cariño. Pide online o visita nuestra tienda.
+                Pastelería artesanal: tortas, postres y sabores hechos con cariño.
+                Pide online o visita nuestra tienda.
               </p>
               <Link to="/productos" className="btn btn--primary">
                 Ver Productos
@@ -126,6 +146,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* OFERTAS */}
       <section className="products-section py-5" id="productos">
         <div className="container">
           <div className="d-flex align-items-center justify-content-between mb-1">
@@ -147,10 +168,11 @@ export default function Home() {
               ofertas.map((t) => {
                 const imgSrc = resolveImg(t.imagen);
                 const pctLabel = `-${Math.round((t._pct || 0) * 100)}%`;
+
                 return (
-                  <div className="col" key={t.codigo ?? t.nombre}>
+                  <div className="col" key={t.codigo}>
                     <Link
-                      to={`/detalle/${t.codigo ?? ""}?oferta=1&pct=${t._pct || 0}&tag=${encodeURIComponent(
+                      to={`/detalle/${t.codigo}?oferta=1&pct=${t._pct}&tag=${encodeURIComponent(
                         t._tipoOferta || ""
                       )}`}
                       className="text-decoration-none text-reset"
@@ -163,7 +185,7 @@ export default function Home() {
                               e.currentTarget.src = "/img/placeholder.png";
                             }}
                             className="card-img-top product-card__image"
-                            alt={t.nombre || "Producto"}
+                            alt={t.nombre}
                             style={{ objectFit: "cover", height: 220 }}
                           />
                           <span
@@ -175,20 +197,16 @@ export default function Home() {
                         </div>
 
                         <div className="card-body text-center">
-                          <h5 className="card-title mb-1">{t.nombre || "Producto"}</h5>
-                          {t.precio != null && (
-                            <>
-                              <div className="small text-decoration-line-through text-muted">
-                                ${CLP(t.precio)} CLP
-                              </div>
-                              <div className="product-card__price fw-semibold fs-5">
-                                ${CLP(t._precioOferta)} CLP
-                              </div>
-                            </>
-                          )}
-                          <div className="small text-muted mt-1">
-                            {(t.categoria || "").length ? t.categoria : "\u00A0"}
-                          </div>
+                          <h5 className="card-title mb-1">{t.nombre}</h5>
+                          <>
+                            <div className="small text-decoration-line-through text-muted">
+                              ${CLP(t.precio)} CLP
+                            </div>
+                            <div className="product-card__price fw-semibold fs-5">
+                              ${CLP(t._precioOferta)} CLP
+                            </div>
+                          </>
+                          <div className="small text-muted mt-1">{t.categoria}</div>
                         </div>
                       </div>
                     </Link>
@@ -200,16 +218,19 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SOBRE NOSOTROS */}
       <section className="about-section py-5" id="nosotros">
         <div className="container">
           <h2 className="section-heading text-center mb-5">Sobre Nosotros</h2>
           <div className="row align-items-center">
             <div className="col-md-6">
               <p className="fs-5">
-                Mil Sabores nació con la pasión de crear postres que no solo son deliciosos, sino una experiencia memorable.
+                Mil Sabores nació con la pasión de crear postres que no solo son
+                deliciosos, sino una experiencia memorable.
               </p>
               <p className="fs-5">
-                Ingredientes de la más alta calidad y recetas tradicionales con un toque moderno.
+                Ingredientes de la más alta calidad y recetas tradicionales con un
+                toque moderno.
               </p>
             </div>
             <div className="col-md-6 text-center">
