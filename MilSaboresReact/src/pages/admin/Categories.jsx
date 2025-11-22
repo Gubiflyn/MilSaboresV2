@@ -1,201 +1,250 @@
 import { useEffect, useMemo, useState } from "react";
-import seed from "../../data/tortas.json";
-
-const LS_TORTAS = "tortas_v3";
-const LS_CATS   = "categorias_v1";
+import {
+  getCategorias,
+  createCategoria,
+  updateCategoria,
+  deleteCategoria,
+  getPasteles,
+} from "../../services/api";
 
 export default function Categories() {
-  const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-
+  const [productos, setProductos] = useState([]);
   const [panelAbierto, setPanelAbierto] = useState(false);
-  const [modo, setModo] = useState("crear");
+  const [modo, setModo] = useState("crear"); // "crear" | "editar"
   const [valor, setValor] = useState("");
-  const [catOriginal, setCatOriginal] = useState("");
+  const [catSeleccionada, setCatSeleccionada] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
+  const normalizar = (v) => (v || "").trim();
+
+  // Cargar categorías desde la API
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem(LS_TORTAS) || "null") || seed;
-    setProductos(data);
-
-    const catsLS = JSON.parse(localStorage.getItem(LS_CATS) || "null");
-    if (Array.isArray(catsLS) && catsLS.length) {
-      setCategorias(normalizarLista(catsLS));
-    } else {
-      const deducidas = Array.from(new Set(data.map(p => (p.categoria || "Sin categoría").trim())))
-        .sort((a,b) => a.localeCompare(b));
-      setCategorias(deducidas);
-      try { localStorage.setItem(LS_CATS, JSON.stringify(deducidas)); } catch {}
-    }
+    const cargar = async () => {
+      setLoading(true);
+      try {
+        const data = await getCategorias();
+        setCategorias(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Error cargando categorías:", e);
+        alert("No se pudieron cargar las categorías desde la API.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargar();
   }, []);
 
-  const normalizar = (s) => (s || "").trim();
-  const normalizarLista = (arr) =>
-    arr
-      .map(normalizar)
-      .filter(Boolean)
-      .filter((v,i,a) => a.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i)
-      .sort((a,b) => a.localeCompare(b));
+  // Cargar productos para conteo por categoría
+  useEffect(() => {
+    const cargarProductos = async () => {
+      try {
+        const data = await getPasteles();
+        const list = Array.isArray(data)
+          ? data.map((p) => ({
+              ...p,
+              categoria:
+                typeof p.categoria === "string"
+                  ? p.categoria
+                  : p.categoria?.nombre || "",
+            }))
+          : [];
+        setProductos(list);
+      } catch (e) {
+        console.error("Error cargando productos para conteo:", e);
+      }
+    };
+    cargarProductos();
+  }, []);
 
-  const persistCategorias = (next) => {
-    setCategorias(next);
-    try { 
-      localStorage.setItem(LS_CATS, JSON.stringify(next)); 
-      window.dispatchEvent(new Event("categorias:updated")); 
-    } catch {}
-  };
-  const persistProductos = (next) => {
-    setProductos(next);
-    try { localStorage.setItem(LS_TORTAS, JSON.stringify(next)); } catch {}
-  };
+  const categoriasOrdenadas = useMemo(
+    () =>
+      [...categorias].sort((a, b) =>
+        normalizar(a.nombre).localeCompare(normalizar(b.nombre), "es")
+      ),
+    [categorias]
+  );
 
   const conteo = useMemo(() => {
     const m = new Map();
-    categorias.forEach(c => m.set(c, 0));
-    productos.forEach(p => {
-      const c = normalizar(p.categoria || "Sin categoría");
-      m.set(c, (m.get(c) || 0) + 1);
+    categoriasOrdenadas.forEach((c) => m.set(c.id, 0));
+    productos.forEach((p) => {
+      const nombreCat =
+        typeof p.categoria === "string"
+          ? p.categoria
+          : p.categoria?.nombre || "";
+      const cat = categoriasOrdenadas.find(
+        (c) => normalizar(c.nombre) === normalizar(nombreCat)
+      );
+      if (cat) m.set(cat.id, (m.get(cat.id) || 0) + 1);
     });
     return m;
-  }, [productos, categorias]);
-
-  const existeCat = (name) =>
-    categorias.some(c => c.toLowerCase() === name.toLowerCase());
-
-  const validar = (name, esEdicion=false, original="") => {
-    const n = normalizar(name);
-    if (!n) return "La categoría no puede estar vacía.";
-    if (n.length > 40) return "Máximo 40 caracteres.";
-    if (esEdicion && n.toLowerCase() === original.toLowerCase()) return "";
-    if (existeCat(n)) return "Ya existe una categoría con ese nombre.";
-    return "";
-  };
+  }, [categoriasOrdenadas, productos]);
 
   const abrirCrear = () => {
-    setModo("crear"); setValor(""); setCatOriginal(""); setError(""); setPanelAbierto(true);
+    setModo("crear");
+    setValor("");
+    setCatSeleccionada(null);
+    setError("");
+    setPanelAbierto(true);
   };
+
   const abrirEditar = (cat) => {
-    setModo("editar"); setValor(cat); setCatOriginal(cat); setError(""); setPanelAbierto(true);
+    setModo("editar");
+    setValor(cat.nombre || "");
+    setCatSeleccionada(cat);
+    setError("");
+    setPanelAbierto(true);
   };
+
   const cerrarPanel = () => {
-    setPanelAbierto(false); setError(""); setValor(""); setCatOriginal("");
+    setPanelAbierto(false);
+    setValor("");
+    setCatSeleccionada(null);
+    setError("");
   };
-  const resetForm = () => { setValor(""); setError(""); };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-
-    if (modo === "crear") {
-      const msg = validar(valor);
-      if (msg) return setError(msg);
-      const next = normalizarLista([...categorias, valor]);
-      persistCategorias(next);   
-      cerrarPanel();
-      return;
+  const validar = () => {
+    const v = normalizar(valor);
+    if (!v) {
+      setError("La categoría no puede estar vacía.");
+      return false;
     }
+    const existe = categorias.some(
+      (c) =>
+        normalizar(c.nombre) === v &&
+        (!catSeleccionada || c.id !== catSeleccionada.id)
+    );
+    if (existe) {
+      setError("Ya existe una categoría con ese nombre.");
+      return false;
+    }
+    setError("");
+    return true;
+  };
 
-    const msg = validar(valor, true, catOriginal);
-    if (msg) return setError(msg);
+  const guardar = async () => {
+    if (!validar()) return;
 
-    const nuevo = normalizar(valor);
+    setSaving(true);
+    try {
+      if (modo === "crear") {
+        const nueva = await createCategoria({ nombre: normalizar(valor) });
+        setCategorias((prev) => [...prev, nueva]);
+      } else if (modo === "editar" && catSeleccionada) {
+        const actualizada = await updateCategoria({
+          ...catSeleccionada,
+          nombre: normalizar(valor),
+        });
+        setCategorias((prev) =>
+          prev.map((c) => (c.id === actualizada.id ? actualizada : c))
+        );
+      }
+      cerrarPanel();
+    } catch (e) {
+      console.error("Error guardando categoría:", e);
+      alert("No se pudo guardar la categoría.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const nextCats = normalizarLista(categorias.map(c => (c === catOriginal ? nuevo : c)));
-    persistCategorias(nextCats); 
-    const nextProds = productos.map(p => {
-      const cat = normalizar(p.categoria || "Sin categoría");
-      return (cat === catOriginal) ? { ...p, categoria: nuevo } : p;
-    });
-    persistProductos(nextProds);
+  const eliminar = async (cat) => {
+    if (
+      !window.confirm(
+        `¿Eliminar la categoría "${cat.nombre}"?\nLos productos seguirán existiendo, pero podrían quedar sin categoría.`
+      )
+    )
+      return;
 
-    cerrarPanel();
+    try {
+      await deleteCategoria(cat.id);
+      setCategorias((prev) => prev.filter((c) => c.id !== cat.id));
+    } catch (e) {
+      console.error("Error eliminando categoría:", e);
+      alert("No se pudo eliminar la categoría.");
+    }
   };
 
   return (
-    <div className="container-fluid">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2 className="m-0">Categorías</h2>
-        <button className="btn btn-primary" onClick={panelAbierto ? cerrarPanel : abrirCrear}>
-          {panelAbierto ? "Cerrar" : "Nuevo +"}
+    <div className="admin-page">
+      <div className="admin-header">
+        <h1>Categorías</h1>
+        <button className="btn btn-primary" onClick={abrirCrear}>
+          Nueva categoría
         </button>
       </div>
 
-      {panelAbierto && (
-        <div className="card mb-3">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <strong>{modo === "crear" ? "Nueva categoría" : "Editar categoría"}</strong>
-            <button className="btn btn-link text-decoration-none p-0" onClick={cerrarPanel}>
-              Cerrar
-            </button>
-          </div>
+      <div className="admin-body">
+        {loading && (
+          <div className="alert alert-info">Cargando categorías desde la API...</div>
+        )}
 
-          <div className="card-body">
-            <form onSubmit={onSubmit}>
-              <div className="row g-3">
-                <div className="col-12 col-md-6">
-                  <label className="form-label">Nombre</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej: Pastelería Tradicional"
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                  />
-                </div>
-
-                <div className="col-12 col-md-6 d-flex align-items-end">
-                  {error ? (
-                    <div className="text-danger small">{error}</div>
-                  ) : (
-                    <div className="text-muted small">
-                      Usa un nombre único (máx. 40 caracteres).
-                    </div>
-                  )}
-                </div>
-
-                <div className="col-12 d-flex gap-2">
-                  <button type="submit" className="btn btn-primary">
-                    {modo === "crear" ? "Crear categoría" : "Actualizar"}
-                  </button>
-                  <button type="button" className="btn btn-outline-secondary" onClick={resetForm}>
-                    Reestablecer
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="table-responsive">
-        <table className="table align-middle">
+        <table className="table table-striped align-middle">
           <thead>
             <tr>
-              <th style={{width: 56}}>#</th>
-              <th>Categoría</th>
-              <th style={{width: 140}}>Productos</th>
-              <th style={{width: 140}}>Acciones</th>
+              <th>Nombre</th>
+              <th className="text-end">Productos asociados</th>
+              <th className="text-end">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {categorias.map((c, i) => (
-              <tr key={c}>
-                <td>{i + 1}</td>
-                <td>{c}</td>
-                <td>{conteo.get(c) || 0}</td>
-                <td>
-                  <button className="btn btn-sm btn-outline-primary" onClick={() => abrirEditar(c)}>
-                     Editar
+            {categoriasOrdenadas.length === 0 && !loading && (
+              <tr>
+                <td colSpan={3} className="text-center text-muted">
+                  No hay categorías registradas.
+                </td>
+              </tr>
+            )}
+            {categoriasOrdenadas.map((c) => (
+              <tr key={c.id}>
+                <td>{c.nombre}</td>
+                <td className="text-end">{conteo.get(c.id) || 0}</td>
+                <td className="text-end">
+                  <button
+                    className="btn btn-sm btn-outline-primary me-2"
+                    onClick={() => abrirEditar(c)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => eliminar(c)}
+                  >
+                    Eliminar
                   </button>
                 </td>
               </tr>
             ))}
-            {categorias.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center text-muted">No hay categorías aún.</td>
-              </tr>
-            )}
           </tbody>
         </table>
+
+        {panelAbierto && (
+          <div className="admin-modal-backdrop">
+            <div className="admin-modal">
+              <h2>{modo === "crear" ? "Nueva categoría" : "Editar categoría"}</h2>
+              <div className="mb-3">
+                <label className="form-label">Nombre de la categoría</label>
+                <input
+                  className="form-control"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                />
+                {error && <div className="text-danger mt-1">{error}</div>}
+              </div>
+              <div className="d-flex justify-content-end gap-2">
+                <button className="btn btn-secondary" onClick={cerrarPanel} disabled={saving}>
+                  Cancelar
+                </button>
+                <button className="btn btn-primary" onClick={guardar} disabled={saving}>
+                  {saving ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

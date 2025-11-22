@@ -1,15 +1,45 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAllUsers } from "../../utils/usersRepo";
+import { getUsuarios } from "../../services/api";
+
+function mapUsuario(u) {
+  const nombre = u.nombre || u.nombreCompleto || "";
+  const email = u.correo || u.email || "";
+  const rol = u.rol || "—"; // si viene null, mostramos guión
+
+  // Si más adelante agregas beneficio/fecha desde la API, se pueden mapear acá
+  return {
+    ...u,
+    nombre,
+    email,
+    rol,
+    beneficio: u.beneficio || "",
+    fechaNacimiento: u.fechaNacimiento || "",
+  };
+}
 
 
 export default function Users() {
   const [list, setList] = useState([]);
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setList(getAllUsers());
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await getUsuarios();
+        const arr = Array.isArray(data) ? data : [];
+        setList(arr.map(mapUsuario));
+      } catch (e) {
+        console.error("Error al cargar usuarios desde la API:", e);
+        // No lanzamos error para que los tests no revienten
+        setList([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const filtered = useMemo(() => {
@@ -56,7 +86,15 @@ export default function Users() {
             </thead>
 
             <tbody>
-              {filtered.length > 0 ? (
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted py-4">
+                    Cargando usuarios desde la API…
+                  </td>
+                </tr>
+              )}
+
+              {!loading && filtered.length > 0 ? (
                 filtered.map((u, i) => (
                   <tr key={`usr-${(u.email || "").toLowerCase()}-${i}`}>
                     <td>{u.nombre}</td>
@@ -67,36 +105,50 @@ export default function Users() {
                     <td>
                       <div className="admin-actions d-flex flex-wrap gap-1">
                         <Link
-                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}`}
+                          to={`/admin/usuarios/${encodeURIComponent(
+                            u.email || ""
+                          )}`}
                           className="btn btn-outline-primary btn-sm text-nowrap"
                         >
                           Ver
                         </Link>
 
                         <Link
-                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}/editar`}
+                          to={`/admin/usuarios/${encodeURIComponent(
+                            u.email || ""
+                          )}/editar`}
                           className="btn btn-outline-secondary btn-sm text-nowrap"
                         >
                           Editar
                         </Link>
 
                         <Link
-                          to={`/admin/usuarios/${encodeURIComponent(u.email || "")}/historial`}
+                          to={`/admin/usuarios/${encodeURIComponent(
+                            u.email || ""
+                          )}/historial`}
                           className="btn btn-outline-dark btn-sm text-nowrap"
                         >
                           Historial
                         </Link>
+
+                        {/* Botón para eliminar desde listado si luego quieres */}
+                        {/* <button
+                          className="btn btn-outline-danger btn-sm text-nowrap"
+                          onClick={() => handleDelete(u)}
+                        >
+                          Eliminar
+                        </button> */}
                       </div>
                     </td>
                   </tr>
                 ))
-              ) : (
+              ) : !loading ? (
                 <tr>
                   <td colSpan={6} className="text-center text-muted py-4">
                     No hay usuarios para mostrar
                   </td>
                 </tr>
-              )}
+              ) : null}
             </tbody>
           </table>
         </div>

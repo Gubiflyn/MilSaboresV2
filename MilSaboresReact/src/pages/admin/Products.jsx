@@ -5,11 +5,10 @@ import {
   createPastel,
   updatePastel,
   deletePastel,
+  getCategorias,
 } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-const LS_TORTAS = "tortas_v3";
-const LS_CATS = "categorias_v1";
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function Products() {
@@ -27,102 +26,66 @@ export default function Products() {
     imagen: "",
     descripcion: "",
   });
-
-  const [catsLS, setCatsLS] = useState([]);
+  const [categoriasApi, setCategoriasApi] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
   const showPermissionError = () => {
-    alert("Acción no disponible: permisos insuficientes.");
+    alert("Acción no disponible: sólo los administradores pueden gestionar productos.");
   };
 
-  // =========================
-  //  CARGAR LISTA DESDE API
-  // =========================
+  // ====================
+  //  CARGA INICIAL (API)
+  // ====================
   useEffect(() => {
     const cargar = async () => {
       setLoading(true);
-      let data = [];
       try {
-        const apiData = await getPasteles();
-        if (Array.isArray(apiData) && apiData.length) {
-          data = apiData;
-          localStorage.setItem(LS_TORTAS, JSON.stringify(apiData));
-        }
+        const data = await getPasteles();
+        setList(
+          (Array.isArray(data) ? data : []).map((p) => ({
+            ...p,
+            stock: p?.stock ?? 0,
+            categoria:
+              typeof p.categoria === "string"
+                ? p.categoria
+                : p.categoria?.nombre || "",
+          }))
+        );
       } catch (err) {
         console.error("Error al cargar productos en Admin/Products:", err);
+        alert("No se pudieron cargar los productos desde la API.");
+      } finally {
+        setLoading(false);
       }
-
-      if (!data.length) {
-        try {
-          const raw = localStorage.getItem(LS_TORTAS);
-          const lsData = raw ? JSON.parse(raw) : [];
-          if (Array.isArray(lsData)) {
-            data = lsData;
-          }
-        } catch {
-          data = [];
-        }
-      }
-
-      setList(
-        (Array.isArray(data) ? data : []).map((p) => ({
-          ...p,
-          stock: p?.stock ?? 0,
-          // igual que en Productos.jsx:
-          // si viene objeto categoria, lo convertimos a string nombre
-          categoria:
-            typeof p.categoria === "string"
-              ? p.categoria
-              : p.categoria?.nombre || "",
-        }))
-      );
-      setLoading(false);
     };
 
     cargar();
   }, []);
 
-  // Guardar lista en LS como respaldo
+  // ====================
+  //  CARGA CATEGORÍAS (API)
+  // ====================
   useEffect(() => {
-    try {
-      if (Array.isArray(list) && list.length > 0) {
-        localStorage.setItem(LS_TORTAS, JSON.stringify(list));
+    const cargarCategorias = async () => {
+      try {
+        const data = await getCategorias();
+        const names = Array.from(
+          new Set(
+            (data || [])
+              .map((c) => (c.nombre || "").trim())
+              .filter(Boolean)
+          )
+        ).sort((a, b) => a.localeCompare(b, "es"));
+        setCategoriasApi(names);
+      } catch (err) {
+        console.error("Error al cargar categorías:", err);
       }
-    } catch {}
-  }, [list]);
-
-  // ====================
-  //  CATEGORÍAS (LS)
-  // ====================
-  const loadCatsLS = () => {
-    try {
-      const raw = localStorage.getItem(LS_CATS);
-      const arr = raw ? JSON.parse(raw) : [];
-      const clean = Array.from(
-        new Set((arr || []).map((s) => (s || "").trim()).filter(Boolean))
-      )
-        .sort((a, b) => a.localeCompare(b, "es"));
-      setCatsLS(clean);
-    } catch {
-      setCatsLS([]);
-    }
-  };
-
-  useEffect(() => {
-    loadCatsLS();
-  }, []);
-
-  useEffect(() => {
-    if (showForm) loadCatsLS();
-  }, [showForm]);
-
-  useEffect(() => {
-    const h = () => loadCatsLS();
-    window.addEventListener("categorias:updated", h);
-    return () => window.removeEventListener("categorias:updated", h);
+    };
+    cargarCategorias();
   }, []);
 
   // ====================
@@ -148,27 +111,25 @@ export default function Products() {
 
   const categorias = useMemo(() => {
     const set = new Set(
-      [...(catsLS || []), ...(categoriasDerivadas || [])].filter(Boolean)
+      [...(categoriasApi || []), ...(categoriasDerivadas || [])].filter(Boolean)
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
-  }, [catsLS, categoriasDerivadas]);
+  }, [categoriasApi, categoriasDerivadas]);
 
   // ====================
   //  FORM / CRUD
   // ====================
-  const resetForm = () => {
+  const resetForm = () =>
     setForm({
       id: null,
       codigo: "",
       nombre: "",
-      categoria: categorias[0] || "",
+      categoria: "",
       precio: 0,
       stock: 0,
       imagen: "",
       descripcion: "",
     });
-    setEditIdx(-1);
-  };
 
   const handleSave = async () => {
     if (!isAdmin) {
@@ -186,7 +147,7 @@ export default function Products() {
       let saved;
       if (form.id) {
         // EDITAR
-        saved = await updatePastel(form); // ← importante: pasamos el objeto
+        saved = await updatePastel(form);
         setList((prev) => prev.map((p, i) => (i === editIdx ? saved : p)));
       } else {
         // NUEVO
@@ -210,6 +171,7 @@ export default function Products() {
       return;
     }
     resetForm();
+    setEditIdx(-1);
     setShowForm(true);
   };
 
@@ -229,22 +191,16 @@ export default function Products() {
       return;
     }
 
-    const producto = list[idx];
-    if (!producto) return;
-
-    if (!window.confirm(`¿Eliminar el producto "${producto.nombre}"?`)) {
+    const p = list[idx];
+    if (
+      !window.confirm(
+        `¿Eliminar el producto "${p.nombre}"?\nEsta acción no se puede deshacer.`
+      )
+    )
       return;
-    }
 
     try {
-      if (producto.id) {
-        await deletePastel(producto.id);
-      } else {
-        console.warn(
-          "Producto sin id, sólo se eliminará en el estado local."
-        );
-      }
-
+      await deletePastel(p.id);
       setList((prev) => prev.filter((_, i) => i !== idx));
     } catch (err) {
       console.error("Error al eliminar producto:", err);
@@ -259,207 +215,49 @@ export default function Products() {
       alert("Este producto no tiene identificador para ver el detalle.");
       return;
     }
-    navigate(`/admin/productos/${encodeURIComponent(String(code))}`);
+    navigate(`/admin/products/${code}`);
   };
 
   // ====================
   //  RENDER
   // ====================
   return (
-    <div className="container-fluid">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2 className="m-0">Productos</h2>
+    <div className="admin-page">
+      <div className="admin-header">
+        <h1>Productos</h1>
         <div className="d-flex gap-2">
           <input
+            type="search"
             className="form-control"
-            placeholder="Buscar por nombre, código o categoría…"
+            placeholder="Buscar por código, nombre o categoría..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           <button className="btn btn-primary" onClick={handleNewClick}>
-            + Nuevo producto
+            Nuevo producto
           </button>
         </div>
       </div>
 
-      {loading && (
-        <p className="text-muted">Cargando productos desde el servidor...</p>
-      )}
-
-      {showForm && (
-        <div className="card mb-3">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <strong>
-              {editIdx === -1 ? "Nuevo producto" : "Editar producto"}
-            </strong>
-            <button
-              className="btn btn-link text-decoration-none p-0"
-              onClick={() => setShowForm(false)}
-            >
-              Cerrar
-            </button>
+      <div className="admin-body">
+        {loading && (
+          <div className="alert alert-info my-2">
+            Cargando productos desde la API...
           </div>
+        )}
 
-          <div className="card-body">
-            <div className="row g-3">
-              <input type="hidden" value={form.id || ""} readOnly />
-
-              <div className="col-md-3">
-                <label className="form-label">Código</label>
-                <input
-                  className="form-control"
-                  value={form.codigo}
-                  onChange={(e) =>
-                    setForm({ ...form, codigo: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-md-5">
-                <label className="form-label">Nombre</label>
-                <input
-                  className="form-control"
-                  value={form.nombre}
-                  onChange={(e) =>
-                    setForm({ ...form, nombre: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Categoría</label>
-                <select
-                  className="form-select"
-                  value={form.categoria}
-                  onChange={(e) =>
-                    setForm({ ...form, categoria: e.target.value })
-                  }
-                  onFocus={loadCatsLS}
-                >
-                  <option value="" disabled>
-                    Selecciona una categoría
-                  </option>
-                  {categorias.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-2">
-                <label className="form-label">Precio</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={form.precio}
-                  onChange={(e) =>
-                    setForm({ ...form, precio: Number(e.target.value) })
-                  }
-                />
-              </div>
-
-              <div className="col-md-2">
-                <label className="form-label">Stock</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={form.stock}
-                  onChange={(e) =>
-                    setForm({ ...form, stock: Number(e.target.value) })
-                  }
-                />
-              </div>
-
-              <div className="col-md-8">
-                <label className="form-label">Imagen (URL)</label>
-                <input
-                  className="form-control"
-                  value={form.imagen}
-                  onChange={(e) =>
-                    setForm({ ...form, imagen: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">Descripción</label>
-                <textarea
-                  className="form-control"
-                  rows={3}
-                  value={form.descripcion}
-                  onChange={(e) =>
-                    setForm({ ...form, descripcion: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="col-12 d-flex gap-2 mt-3">
-                <button
-                  className="btn btn-primary"
-                  onClick={handleSave}
-                  type="button"
-                  disabled={saving}
-                >
-                  {saving ? "Guardando..." : "Guardar"}
-                </button>
-                <button
-                  className="btn btn-outline-secondary"
-                  type="button"
-                  onClick={resetForm}
-                  disabled={saving}
-                >
-                  Limpiar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="table-responsive">
-        <table className="table align-middle">
+        <table className="table table-striped table-hover align-middle">
           <thead>
             <tr>
               <th>Código</th>
               <th>Nombre</th>
               <th>Categoría</th>
-              <th>Precio</th>
-              <th>Stock</th>
-              <th style={{ width: 210 }}>Acciones</th>
+              <th className="text-end">Precio</th>
+              <th className="text-end">Stock</th>
+              <th className="text-end">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, i) => (
-              <tr key={p.id ?? i}>
-                <td>{p.codigo}</td>
-                <td>{p.nombre}</td>
-                <td>{p.categoria}</td>
-                <td>{CLP(p.precio)}</td>
-                <td>{p.stock}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-info me-1"
-                    onClick={() => handleView(p)}
-                  >
-                    Detalle
-                  </button>
-
-                  <button
-                    className="btn btn-sm btn-outline-primary me-1"
-                    onClick={() => handleEdit(i)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleDelete(i)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))}
             {filtered.length === 0 && !loading && (
               <tr>
                 <td colSpan={6} className="text-center text-muted">
@@ -467,8 +265,153 @@ export default function Products() {
                 </td>
               </tr>
             )}
+            {filtered.map((p, idx) => (
+              <tr key={p.id ?? p.codigo ?? idx}>
+                <td>{p.codigo}</td>
+                <td>{p.nombre}</td>
+                <td>{p.categoria}</td>
+                <td className="text-end">{CLP(p.precio)}</td>
+                <td className="text-end">{p.stock}</td>
+                <td className="text-end">
+                  <button
+                    className="btn btn-sm btn-outline-secondary me-2"
+                    onClick={() => handleView(p)}
+                  >
+                    Ver
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-primary me-2"
+                    onClick={() => handleEdit(idx)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => handleDelete(idx)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
+
+        {showForm && (
+          <div className="admin-modal-backdrop">
+            <div className="admin-modal">
+              <h2>{form.id ? "Editar producto" : "Nuevo producto"}</h2>
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <label className="form-label">Código</label>
+                  <input
+                    className="form-control"
+                    value={form.codigo}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, codigo: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="col-md-8">
+                  <label className="form-label">Nombre</label>
+                  <input
+                    className="form-control"
+                    value={form.nombre}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, nombre: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Categoría</label>
+                  <select
+                    className="form-select"
+                    value={form.categoria}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, categoria: e.target.value }))
+                    }
+                  >
+                    <option value="">Seleccione...</option>
+                    {categorias.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label">Precio</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={form.precio}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        precio: Number(e.target.value || 0),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label">Stock</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={form.stock}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        stock: Number(e.target.value || 0),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label">Imagen (URL)</label>
+                  <input
+                    className="form-control"
+                    value={form.imagen}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, imagen: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label">Descripción</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={form.descripcion}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, descripcion: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 d-flex justify-content-end gap-2">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowForm(false);
+                    resetForm();
+                  }}
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

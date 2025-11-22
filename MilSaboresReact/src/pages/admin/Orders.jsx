@@ -1,76 +1,135 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getBoletas } from "../../services/api";
 
-const LS_RCPTS = "receipts_v1";
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
+
+function mapBoleta(b) {
+  const fecha =
+    b.fechaEmision || b.fecha || b.fechaBoleta || b.createdAt || null;
+
+  const numeroBoleta = b.numeroBoleta || b.numero || b.idBoleta || b.id;
+
+  const receptorNombre =
+    b.receptor?.nombre ||
+    b.cliente?.nombre ||
+    b.usuario?.nombre ||
+    b.nombreCliente ||
+    "—";
+
+  const items =
+    b.items || b.detalles || b.detallesBoleta || [];
+
+  const total = b.total || b.montoTotal || b.totalBoleta || 0;
+
+  const id = b.id || b.idBoleta || b.orderId || numeroBoleta;
+
+  return {
+    raw: b,
+    orderId: id,
+    fecha,
+    numeroBoleta,
+    receptorNombre,
+    items,
+    total,
+  };
+}
 
 export default function Orders() {
   const [q, setQ] = useState("");
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const load = () =>
-      setOrders(Object.values(JSON.parse(localStorage.getItem(LS_RCPTS) || "{}")));
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await getBoletas();
+        const mapped = Array.isArray(data) ? data.map(mapBoleta) : [];
+        setOrders(mapped);
+      } catch (e) {
+        console.error("Error cargando boletas:", e);
+        alert("No se pudieron cargar las boletas desde la API.");
+      } finally {
+        setLoading(false);
+      }
+    };
     load();
-    const t = setInterval(load, 2000);
-    return () => clearInterval(t);
   }, []);
 
-  const filtered = orders
-    .filter((o) => {
-      const s = q.toLowerCase();
-      return (
-        (o.numeroBoleta || "").toLowerCase().includes(s) ||
-        (o.receptor?.nombre || "").toLowerCase().includes(s)
-      );
-    })
-    .sort((a, b) => new Date(b.fechaEmision) - new Date(a.fechaEmision));
+  const filtered = useMemo(() => {
+    const term = q.toLowerCase().trim();
+    if (!term) return orders;
+
+    return orders.filter((o) => {
+      const num = String(o.numeroBoleta ?? "").toLowerCase();
+      const nombre = String(o.receptorNombre ?? "").toLowerCase();
+      return num.includes(term) || nombre.includes(term);
+    });
+  }, [q, orders]);
 
   return (
-    <div className="card">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <span>Órdenes</span>
+    <div className="admin-page">
+      <div className="admin-header">
+        <h1>Boletas / Órdenes</h1>
         <input
-          className="form-control w-auto"
-          placeholder="Buscar…"
+          type="search"
+          className="form-control"
+          placeholder="Buscar por número o cliente..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
       </div>
-      <div className="table-responsive">
-        <table className="table table-hover mb-0">
+
+      <div className="admin-body">
+        {loading && (
+          <div className="alert alert-info">
+            Cargando boletas desde la API...
+          </div>
+        )}
+
+        <table className="table table-striped table-hover align-middle">
           <thead>
             <tr>
               <th>Fecha</th>
-              <th>Boleta</th>
+              <th>N° boleta</th>
               <th>Cliente</th>
-              <th>Ítems</th>
-              <th>Total</th>
-              <th></th>
+              <th className="text-end">Items</th>
+              <th className="text-end">Total</th>
+              <th className="text-end">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !loading && (
               <tr>
                 <td colSpan={6} className="text-center text-muted py-4">
                   Sin registros.
                 </td>
               </tr>
             )}
-            {filtered.map((o) => (
-              <tr key={o.orderId}>
-                <td>{new Date(o.fechaEmision).toLocaleString()}</td>
-                <td>{o.numeroBoleta}</td>
-                <td>{o.receptor?.nombre || "—"}</td>
-                <td>{o.items?.reduce((a, i) => a + (i.qty || 0), 0)}</td>
-                <td>{CLP(o.total)}</td>
+            {filtered.map((o, idx) => (
+              <tr key={o.orderId ?? idx}>
+                <td>
+                  {o.fecha ? new Date(o.fecha).toLocaleString() : "—"}
+                </td>
+                <td>{o.numeroBoleta || "—"}</td>
+                <td>{o.receptorNombre}</td>
                 <td className="text-end">
-                  <Link
-                    className="btn btn-sm btn-outline-primary"
-                    to={`/boleta/${o.orderId}`}
-                  >
-                    Ver
-                  </Link>
+                  {o.items?.reduce(
+                    (a, i) => a + (i.qty || i.cantidad || i.cant || 0),
+                    0
+                  )}
+                </td>
+                <td className="text-end">{CLP(o.total)}</td>
+                <td className="text-end">
+                  {o.orderId && (
+                    <Link
+                      className="btn btn-sm btn-outline-primary"
+                      to={`/boleta/${o.orderId}`}
+                    >
+                      Ver
+                    </Link>
+                  )}
                 </td>
               </tr>
             ))}

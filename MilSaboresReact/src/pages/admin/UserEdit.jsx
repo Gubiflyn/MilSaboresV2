@@ -1,42 +1,28 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { getUsuarios, updateUsuario, deleteUsuario } from "../../services/api";
 
-const LS_PRIMARY = "usuarios_v1";
-const LS_FALLBACKS = ["perfiles", "usuarios", "USERS"]; 
-
-function readUsers() {
-  const keys = [LS_PRIMARY, ...LS_FALLBACKS];
-  for (const k of keys) {
-    try {
-      const raw = localStorage.getItem(k);
-      if (!raw) continue;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) return { key: k, list: arr };
-    } catch {
-    }
-  }
-  return { key: LS_PRIMARY, list: [] };
-}
-
-function writeUsers(key, list) {
-  try {
-    localStorage.setItem(key, JSON.stringify(list));
-  } catch {}
-}
+const ROLES = [
+  { value: "ADMIN", label: "ADMIN" },
+  { value: "VENDEDOR", label: "VENDEDOR" },
+  { value: "CLIENTE", label: "CLIENTE" },
+];
 
 export default function UserEdit() {
-  const { id } = useParams(); 
+  const { id } = useParams(); // viene como correo encodeURIComponent
   const navigate = useNavigate();
 
+  const [original, setOriginal] = useState(null);
   const [form, setForm] = useState({
     nombre: "",
     email: "",
-    rol: "cliente",
+    rol: "CLIENTE",
     beneficio: "",
     fechaNacimiento: "",
   });
-  const [storageKey, setStorageKey] = useState(LS_PRIMARY);
   const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const idDecoded = useMemo(() => {
     try {
@@ -47,27 +33,52 @@ export default function UserEdit() {
   }, [id]);
 
   useEffect(() => {
-    const { key, list } = readUsers();
-    setStorageKey(key);
-
-    const found = list.find(
-      (u) =>
-        encodeURIComponent(String(u?.email || "")) === String(id) ||
-        String(u?.email || "") === idDecoded
-    );
-
-    if (found) {
-      setForm({
-        nombre: found.nombre || "",
-        email: found.email || "",
-        rol: found.rol || "cliente",
-        beneficio: found.beneficio || "",
-        fechaNacimiento: found.fechaNacimiento || "",
-      });
+    const load = async () => {
+      setLoading(true);
       setNotFound(false);
-    } else {
-      setNotFound(true);
-    }
+      try {
+        const data = await getUsuarios();
+        const list = Array.isArray(data) ? data : [];
+
+        const found = list.find((u) => {
+          const correoApi = u.correo || u.email || "";
+          const encoded = encodeURIComponent(String(correoApi || ""));
+          return (
+            encoded === String(id) ||
+            String(correoApi || "").toLowerCase() ===
+              String(idDecoded || "").toLowerCase()
+          );
+        });
+
+        if (!found) {
+          setNotFound(true);
+          return;
+        }
+
+        setOriginal(found);
+
+        const nombre = found.nombre || "";
+        const correo = found.correo || "";
+
+        // si ROL viene nulo, asumimos CLIENTE por defecto
+        const rol = (found.rol || "CLIENTE").toUpperCase();
+
+        setForm({
+          nombre,
+          email: correo,
+          rol,
+          beneficio: "", // sigue siendo sólo visual
+          fechaNacimiento: "",
+        });
+      } catch (e) {
+        console.error("Error al cargar usuario desde API:", e);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, [id, idDecoded]);
 
   const handleChange = (e) => {
@@ -75,30 +86,70 @@ export default function UserEdit() {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const { key, list } = readUsers();
-    const idx = list.findIndex(
-      (u) =>
-        encodeURIComponent(String(u?.email || "")) === String(id) ||
-        String(u?.email || "") === idDecoded
-    );
-
-    if (idx === -1) {
-      alert("No se encontró el usuario a editar. Vuelve al listado e inténtalo nuevamente.");
+    if (!form.email || !form.nombre) {
+      alert("Nombre y correo son obligatorios.");
+      return;
+    }
+    if (!original) {
+      alert("No se pudo determinar el usuario original.");
       return;
     }
 
-    const updated = [...list];
-    updated[idx] = {
-      ...updated[idx],
-      ...form,
-    };
+    setSaving(true);
+    try {
+      // DTO que espera el backend
+      const payload = {
+        id: original.id,
+        nombre: form.nombre,
+        correo: form.email,
+        rol: (form.rol || "CLIENTE").toUpperCase(),
+      };
 
-    writeUsers(key, updated);
-    navigate("/admin/usuarios");
+      await updateUsuario(payload);
+      alert("Usuario actualizado correctamente.");
+      navigate("/admin/usuarios");
+    } catch (e) {
+      console.error("Error al actualizar usuario:", e);
+      alert("No se pudo actualizar el usuario.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleDelete = async () => {
+    if (!original) {
+      alert("No se encontró el usuario a eliminar.");
+      return;
+    }
+    if (!window.confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      await deleteUsuario(original.id);
+      alert("Usuario eliminado.");
+      navigate("/admin/usuarios");
+    } catch (e) {
+      console.error("Error al eliminar usuario:", e);
+      alert("No se pudo eliminar el usuario.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="card shadow-sm">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Editar usuario</h5>
+          <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
+            ← Volver
+          </Link>
+        </div>
+        <div className="card-body text-muted">Cargando usuario…</div>
+      </div>
+    );
+  }
 
   if (notFound) {
     return (
@@ -110,15 +161,8 @@ export default function UserEdit() {
           </Link>
         </div>
         <div className="card-body">
-          <div className="alert alert-warning">
-            No se encontró el usuario con id <code>{id}</code>
-            {id !== idDecoded ? (
-              <>
-                {" "}
-                (email decodificado: <code>{idDecoded}</code>)
-              </>
-            ) : null}
-            . Revisa el listado e intenta nuevamente.
+          <div className="alert alert-warning mb-0">
+            No se encontró el usuario con identificador <code>{id}</code>.
           </div>
         </div>
       </div>
@@ -138,7 +182,7 @@ export default function UserEdit() {
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-6">
-              <label className="form-label">Nombre completo</label>
+              <label className="form-label">Nombre</label>
               <input
                 type="text"
                 name="nombre"
@@ -169,13 +213,16 @@ export default function UserEdit() {
                 value={form.rol}
                 onChange={handleChange}
               >
-                <option value="cliente">Cliente</option>
-                <option value="admin">Administrador</option>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="col-md-4">
-              <label className="form-label">Beneficio</label>
+              <label className="form-label">Beneficio (solo visual)</label>
               <input
                 type="text"
                 name="beneficio"
@@ -186,7 +233,7 @@ export default function UserEdit() {
             </div>
 
             <div className="col-md-4">
-              <label className="form-label">Fecha de nacimiento</label>
+              <label className="form-label">Fecha de nacimiento (solo visual)</label>
               <input
                 type="date"
                 name="fechaNacimiento"
@@ -198,17 +245,27 @@ export default function UserEdit() {
           </div>
         </div>
 
-        <div className="card-footer d-flex justify-content-end gap-2">
+        <div className="card-footer d-flex justify-content-between gap-2">
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => navigate("/admin/usuarios")}
+            className="btn btn-outline-danger btn-sm"
+            onClick={handleDelete}
           >
-            Cancelar
+            Eliminar usuario
           </button>
-          <button type="submit" className="btn btn-primary btn-sm">
-            Guardar cambios
-          </button>
+
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => navigate("/admin/usuarios")}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
         </div>
       </form>
     </div>
