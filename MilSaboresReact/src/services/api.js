@@ -1,13 +1,16 @@
 // src/services/api.js
 const API_BASE = "http://localhost:8094";
 
+/**
+ * Wrapper genérico para fetch contra el backend
+ */
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   if (!res.ok) {
@@ -15,12 +18,25 @@ async function apiFetch(path, options = {}) {
     try {
       const text = await res.text();
       if (text) msg = text;
-    } catch {}
+    } catch {
+      // ignorar
+    }
     throw new Error(msg);
   }
 
+  // 204 No Content
   if (res.status === 204) return null;
+
   return res.json();
+}
+
+/* -----------------------------
+   USUARIOS (LOGIN)
+------------------------------ */
+
+// GET /usuarios
+export function getUsuarios() {
+  return apiFetch("/usuarios");
 }
 
 /* -----------------------------
@@ -64,6 +80,7 @@ export function deletePastel(id) {
 
 /* -----------------------------
    ADMINISTRADORES
+   (los dejo por si los usas en el admin)
 ------------------------------ */
 
 // GET /administradores/activos

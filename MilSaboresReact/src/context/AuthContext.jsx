@@ -1,10 +1,6 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  getAdministradores,
-  getClientes,
-  createCliente,
-} from "../services/api";
+import { getUsuarios, createCliente } from "../services/api";
 
 const AuthContext = createContext(null);
 const LS_USER_KEY = "ms_user";
@@ -35,78 +31,63 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem(LS_USER_KEY);
   }, [user]);
 
-  // LOGIN contra BD
+  // LOGIN contra /usuarios
   const login = async (correo, contrasena) => {
     setLoading(true);
     try {
       const emailNorm = String(correo).toLowerCase().trim();
       const passNorm = String(contrasena);
 
-      // 1) Admin / Vendedor
-      let admins = [];
+      let usuarios = [];
       try {
-        admins = await getAdministradores();
+        usuarios = await getUsuarios();
       } catch (err) {
-        console.warn("No se pudieron cargar administradores:", err);
+        console.warn("No se pudieron cargar usuarios:", err);
       }
 
-      if (Array.isArray(admins)) {
-        const adminMatch = admins.find(
-          (a) =>
-            String(a.correo).toLowerCase() === emailNorm &&
-            String(a.contrasena) === passNorm &&
-            (a.activo === undefined || a.activo === true)
-        );
-
-        if (adminMatch) {
-          const rawRole = adminMatch.tipo || adminMatch.rol || "ADMIN";
-          const upperRole = String(rawRole).toUpperCase();
-          const normalized =
-            upperRole === "VENDEDOR" ? "VENDEDOR" : "ADMIN";
-
-          const authUser = {
-            id: adminMatch.id,
-            nombre: adminMatch.nombre,
-            correo: adminMatch.correo,
-            rol: normalized,
-            tipo: normalized,
-          };
-
-          setUser(authUser);
-          return authUser;
-        }
+      if (!Array.isArray(usuarios) || !usuarios.length) {
+        throw new Error("No se encontraron usuarios en el sistema.");
       }
 
-      // 2) Cliente
-      let clientes = [];
-      try {
-        clientes = await getClientes();
-      } catch (err) {
-        console.warn("No se pudieron cargar clientes:", err);
+      const match = usuarios.find(
+        (u) =>
+          String(u.correo).toLowerCase() === emailNorm &&
+          String(u.contrasena) === passNorm &&
+          (u.activo === undefined || u.activo === true)
+      );
+
+      if (!match) {
+        throw new Error("Correo o contraseña incorrectos.");
       }
 
-      if (Array.isArray(clientes)) {
-        const clienteMatch = clientes.find(
-          (c) =>
-            String(c.correo).toLowerCase() === emailNorm &&
-            String(c.contrasena) === passNorm &&
-            (c.activo === undefined || c.activo === true)
-        );
+      // Detectar rol
+      let detectedRole =
+        match.rol ||
+        match.tipoUsuario ||
+        match.tipo_usuario ||
+        match.tipo ||
+        match.perfil;
 
-        if (clienteMatch) {
-          const authUser = {
-            id: clienteMatch.id,
-            nombre: clienteMatch.nombre,
-            correo: clienteMatch.correo,
-            rol: "CLIENTE",
-            tipo: "CLIENTE",
-          };
-          setUser(authUser);
-          return authUser;
-        }
+      detectedRole = detectedRole
+        ? String(detectedRole).toUpperCase()
+        : "CLIENTE";
+
+      // Por si vienen cosas raras, normalizamos a 3 tipos
+      if (!["ADMIN", "VENDEDOR", "CLIENTE"].includes(detectedRole)) {
+        // si tuvieras tipo numérico podrías mapear acá
+        detectedRole = "CLIENTE";
       }
 
-      throw new Error("Correo o contraseña incorrectos.");
+      const authUser = {
+        id: match.id,
+        nombre: match.nombre,
+        correo: match.correo,
+        rol: detectedRole,
+        tipo: detectedRole,
+      };
+
+      setUser(authUser);
+      return authUser;
     } finally {
       setLoading(false);
     }
