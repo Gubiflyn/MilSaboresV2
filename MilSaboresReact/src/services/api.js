@@ -484,3 +484,40 @@ export function deleteAdministrador(id) {
     method: "DELETE",
   });
 }
+
+/* =============================
+   ADMINISTRADORES
+   (para UserNew.jsx)
+============================= */
+
+// POST /administradores
+export function addAdministrador(data) {
+  return apiFetch("/administradores", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/* =============================
+   VENDEDORES
+============================= */
+
+// POST /api/vendedores/saveVendedor
+export function addVendedor(data) {
+  return apiFetch("/api/vendedores/saveVendedor", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/* =============================
+   CLIENTES
+============================= */
+
+// POST /clientes
+export function addCliente(data) {
+  return apiFetch("/clientes", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}

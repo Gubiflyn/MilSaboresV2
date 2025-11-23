@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getPastelByCodigo, getPasteles, updatePastel, deletePastel } from "../../services/api";
+import {
+  getPastelByCodigo,
+  getPasteles,
+  updatePastel,
+  deletePastel,
+  getCategorias,
+} from "../../services/api";
 
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
@@ -18,23 +24,42 @@ export default function ProductEdit() {
     imagen: "",
     descripcion: "",
   });
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({
+      ...f,
+      [name]:
+        name === "precio" || name === "stock" ? Number(value || 0) : value,
+    }));
+  };
+
+  // Cargar producto
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      setError("");
       try {
         let p = null;
+
+        // 1) Intentar por código
         if (code) {
           try {
             p = await getPastelByCodigo(code);
           } catch {
-            const all = await getPasteles();
+            p = null;
+          }
+        }
+
+        // 2) Si no se encuentra, buscar en la lista
+        if (!p) {
+          const lista = await getPasteles();
+          if (Array.isArray(lista)) {
             p =
-              (all || []).find(
+              lista.find(
                 (x) =>
                   String(x.codigo ?? "").toLowerCase() ===
                     String(code).toLowerCase() ||
@@ -78,14 +103,17 @@ export default function ProductEdit() {
     load();
   }, [code]);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((f) => ({
-      ...f,
-      [name]:
-        name === "precio" || name === "stock" ? Number(value || 0) : value,
-    }));
-  };
+  // Cargar categorías
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategorias();
+        setCategorias(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Error cargando categorías:", e);
+      }
+    })();
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -94,11 +122,30 @@ export default function ProductEdit() {
       return;
     }
 
+    const categoriaObj = categorias.find(
+      (c) =>
+        (c.nombre || "").toLowerCase() === form.categoria.toLowerCase().trim()
+    );
+
+    if (!categoriaObj) {
+      alert(
+        "La categoría seleccionada no existe. Asegúrate de elegir una categoría válida."
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
         ...initial,
         ...form,
+        precio: Number(form.precio),
+        stock: Number(form.stock),
+        categoria: {
+          id: categoriaObj.id,
+          nombre: categoriaObj.nombre,
+          descripcion: categoriaObj.descripcion || "",
+        },
       };
       await updatePastel(payload);
       alert("Producto actualizado correctamente.");
@@ -151,7 +198,10 @@ export default function ProductEdit() {
           <h1>Editar producto</h1>
         </div>
         <div className="alert alert-danger">{error || "Sin datos"}</div>
-        <button className="btn btn-secondary" onClick={() => navigate("/admin/products")}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigate("/admin/products")}
+        >
           Volver al listado
         </button>
       </div>
@@ -189,13 +239,21 @@ export default function ProductEdit() {
 
               <div className="col-md-4">
                 <label className="form-label">Categoría</label>
-                <input
+                <select
                   name="categoria"
-                  className="form-control"
+                  className="form-select"
                   value={form.categoria}
                   onChange={onChange}
-                />
+                >
+                  <option value="">Seleccione...</option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.nombre}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="col-md-4">
                 <label className="form-label">
                   Precio ({CLP(form.precio)})

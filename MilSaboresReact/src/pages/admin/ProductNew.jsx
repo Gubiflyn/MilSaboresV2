@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createPastel } from "../../services/api";
+import { createPastel, getCategorias } from "../../services/api";
 
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function ProductNew() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+
+  const [categorias, setCategorias] = useState([]);
+
   const [form, setForm] = useState({
     codigo: "",
     nombre: "",
@@ -17,6 +20,21 @@ export default function ProductNew() {
     descripcion: "",
   });
 
+  // ===============================
+  // Cargar categorías desde backend
+  // ===============================
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getCategorias();
+        setCategorias(data);
+      } catch (e) {
+        console.error("Error cargando categorías", e);
+        alert("No se pudieron cargar las categorías.");
+      }
+    })();
+  }, []);
+
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({
@@ -26,6 +44,9 @@ export default function ProductNew() {
     }));
   };
 
+  // ===============================
+  // Guardar pastel
+  // ===============================
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!form.codigo || !form.nombre || !form.categoria) {
@@ -33,12 +54,36 @@ export default function ProductNew() {
       return;
     }
 
+    // Buscar categoría seleccionada
+    const categoriaObj = categorias.find(
+      (c) => c.nombre.toLowerCase() === form.categoria.toLowerCase()
+    );
+
+    if (!categoriaObj) {
+      alert("La categoría seleccionada no existe.");
+      return;
+    }
+
+    // 🔹 NO mandamos id (Spring genera el ID nuevo)
+    const payload = {
+      codigo: form.codigo,
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      precio: Number(form.precio),
+      stock: Number(form.stock),
+      imagen: form.imagen,
+      categoria: {
+        id: categoriaObj.id,
+        nombre: categoriaObj.nombre,
+        descripcion: categoriaObj.descripcion || "",
+      },
+    };
+
     setSaving(true);
     try {
-      const saved = await createPastel(form);
+      await createPastel(payload);
       alert("Producto creado correctamente.");
-      const code = saved.codigo || saved.id || form.codigo;
-      navigate(`/admin/products/${code}`);
+      navigate("/admin/products");
     } catch (err) {
       console.error(err);
       alert("No se pudo crear el producto.");
@@ -57,6 +102,7 @@ export default function ProductNew() {
         <div className="card">
           <div className="card-body">
             <form onSubmit={onSubmit} className="row g-3">
+              
               <div className="col-md-3">
                 <label className="form-label">Código</label>
                 <input
@@ -66,6 +112,7 @@ export default function ProductNew() {
                   onChange={onChange}
                 />
               </div>
+
               <div className="col-md-9">
                 <label className="form-label">Nombre</label>
                 <input
@@ -76,15 +123,24 @@ export default function ProductNew() {
                 />
               </div>
 
+              {/* Categoría desde SELECT */}
               <div className="col-md-4">
                 <label className="form-label">Categoría</label>
-                <input
+                <select
                   name="categoria"
                   className="form-control"
                   value={form.categoria}
                   onChange={onChange}
-                />
+                >
+                  <option value="">Seleccione...</option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.nombre}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div className="col-md-4">
                 <label className="form-label">
                   Precio ({CLP(form.precio)})
@@ -97,6 +153,7 @@ export default function ProductNew() {
                   onChange={onChange}
                 />
               </div>
+
               <div className="col-md-4">
                 <label className="form-label">Stock</label>
                 <input
@@ -137,6 +194,7 @@ export default function ProductNew() {
                   {saving ? "Creando..." : "Crear producto"}
                 </button>
               </div>
+
             </form>
           </div>
         </div>

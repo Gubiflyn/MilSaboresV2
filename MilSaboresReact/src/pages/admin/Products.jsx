@@ -26,7 +26,7 @@ export default function Products() {
     imagen: "",
     descripcion: "",
   });
-  const [categoriasApi, setCategoriasApi] = useState([]);
+  const [categoriasApi, setCategoriasApi] = useState([]); // ahora guarda objetos completos
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,9 @@ export default function Products() {
   const { isAdmin } = useAuth();
 
   const showPermissionError = () => {
-    alert("Acción no disponible: sólo los administradores pueden gestionar productos.");
+    alert(
+      "Acción no disponible: sólo los administradores pueden gestionar productos."
+    );
   };
 
   // ====================
@@ -49,6 +51,7 @@ export default function Products() {
           (Array.isArray(data) ? data : []).map((p) => ({
             ...p,
             stock: p?.stock ?? 0,
+            // Para mostrar en la tabla dejamos sólo el nombre de la categoría
             categoria:
               typeof p.categoria === "string"
                 ? p.categoria
@@ -73,14 +76,7 @@ export default function Products() {
     const cargarCategorias = async () => {
       try {
         const data = await getCategorias();
-        const names = Array.from(
-          new Set(
-            (data || [])
-              .map((c) => (c.nombre || "").trim())
-              .filter(Boolean)
-          )
-        ).sort((a, b) => a.localeCompare(b, "es"));
-        setCategoriasApi(names);
+        setCategoriasApi(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error al cargar categorías:", err);
       }
@@ -111,7 +107,12 @@ export default function Products() {
 
   const categorias = useMemo(() => {
     const set = new Set(
-      [...(categoriasApi || []), ...(categoriasDerivadas || [])].filter(Boolean)
+      [
+        ...(categoriasApi || [])
+          .map((c) => (c.nombre || "").trim())
+          .filter(Boolean),
+        ...(categoriasDerivadas || []),
+      ].filter(Boolean)
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
   }, [categoriasApi, categoriasDerivadas]);
@@ -142,17 +143,63 @@ export default function Products() {
       return;
     }
 
+    // Buscar la categoría completa (con id, nombre, descripcion) por nombre
+    const categoriaObj = categoriasApi.find(
+      (c) =>
+        (c.nombre || "").toLowerCase() === form.categoria.toLowerCase().trim()
+    );
+
+    if (!categoriaObj) {
+      alert(
+        "La categoría seleccionada no existe en la base de datos. Refresca la página o revisa las categorías."
+      );
+      return;
+    }
+
+    const payload = {
+      id: form.id || 0,
+      codigo: form.codigo,
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      precio: Number(form.precio),
+      stock: Number(form.stock),
+      imagen: form.imagen,
+      categoria: {
+        id: categoriaObj.id,
+        nombre: categoriaObj.nombre,
+        descripcion: categoriaObj.descripcion || "",
+      },
+    };
+
     setSaving(true);
     try {
       let saved;
       if (form.id) {
         // EDITAR
-        saved = await updatePastel(form);
-        setList((prev) => prev.map((p, i) => (i === editIdx ? saved : p)));
+        saved = await updatePastel(payload);
+        const normalizado = {
+          ...saved,
+          stock: saved?.stock ?? 0,
+          categoria:
+            typeof saved.categoria === "string"
+              ? saved.categoria
+              : saved.categoria?.nombre || "",
+        };
+        setList((prev) =>
+          prev.map((p, i) => (i === editIdx ? normalizado : p))
+        );
       } else {
         // NUEVO
-        saved = await createPastel(form);
-        setList((prev) => [...prev, saved]);
+        saved = await createPastel(payload);
+        const normalizado = {
+          ...saved,
+          stock: saved?.stock ?? 0,
+          categoria:
+            typeof saved.categoria === "string"
+              ? saved.categoria
+              : saved.categoria?.nombre || "",
+        };
+        setList((prev) => [...prev, normalizado]);
       }
 
       setShowForm(false);
