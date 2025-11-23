@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { applyPromotions } from "../utils/promotions";
 import PayPalCheckout from "../components/PayPalCheckout";
+import { createBoleta, createDetallesBoletaList } from "../services/api";
 
 const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
@@ -71,8 +72,8 @@ export default function Pago() {
     if (isAuthenticated && user) {
       setForm((prev) => ({
         ...prev,
-        correo: prev.correo?.trim() ? prev.correo : (user.email || ""),
-        nombre: prev.nombre?.trim() ? prev.nombre : (user.nombre || ""),
+        correo: prev.correo?.trim() ? prev.correo : user.email || "",
+        nombre: prev.nombre?.trim() ? prev.nombre : user.nombre || "",
       }));
     }
   }, [isAuthenticated, user]);
@@ -93,7 +94,11 @@ export default function Pago() {
     const exp = (form.expiracion || "").trim();
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp)) e.expiracion = "Formato MM/AA (ej: 08/27).";
     if (!/^\d{3,4}$/.test(form.cvv)) e.cvv = "CVV de 3 o 4 dígitos.";
-    if (!form.fechaEntrega || form.fechaEntrega < dateLimits.min || form.fechaEntrega > dateLimits.max)
+    if (
+      !form.fechaEntrega ||
+      form.fechaEntrega < dateLimits.min ||
+      form.fechaEntrega > dateLimits.max
+    )
       e.fechaEntrega = "Selecciona una fecha válida.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((form.correo || "").trim()))
       e.correo = "Correo electrónico inválido.";
@@ -101,7 +106,63 @@ export default function Pago() {
     return Object.keys(e).length === 0;
   };
 
-  const finalizarOrden = ({ orderId, receptorNombre, receptorEmail }) => {
+  /**
+   * Sincroniza la compra con el backend:
+   * - Crea la BOLETA (si hay usuario logeado)
+   * - Crea los DETALLES de la boleta
+   */
+  const syncBoletaBackend = async (receipt) => {
+    try {
+      // Solo guardamos en la BD si hay usuario autenticado con id
+      if (!isAuthenticated || !user?.id) {
+        console.info("Compra de invitado: no se guarda boleta en BD.");
+        return;
+      }
+
+      // 1) Crear la boleta
+      const boletaPayload = {
+        fechaEmision: receipt.fechaEmision,
+        total: Math.round(receipt.total || 0),
+        usuario: { id: user.id },
+      };
+
+      const boletaCreada = await createBoleta(boletaPayload);
+
+      // 2) Crear los detalles asociados a esa boleta
+      const detallesPayload = (receipt.items || [])
+        .map((it) => {
+          const productoId = it.productoId ?? it.idProducto ?? it.id ?? null;
+          if (!productoId) return null;
+
+          return {
+            cantidad: it.qty,
+            precioUnitario: it.precioUnit,
+            subtotal: it.total,
+            boleta: { id: boletaCreada.id },
+            pastel: { id: productoId }, // mapeado a la entidad Pastel/Producto
+          };
+        })
+        .filter(Boolean);
+
+      if (detallesPayload.length > 0) {
+        await createDetallesBoletaList(detallesPayload);
+      }
+    } catch (err) {
+      console.error("Error al sincronizar boleta/detalles con el backend:", err);
+      // No lanzamos el error para no romper el flujo de compra
+    }
+  };
+
+  /**
+   * Finaliza la orden:
+   * - Calcula promociones
+   * - Genera el "receipt" (boleta para el front)
+   * - Guarda en localStorage
+   * - Guarda en historial
+   * - Sincroniza con backend
+   * - Limpia carrito y navega a la boleta
+   */
+  const finalizarOrden = async ({ orderId, receptorNombre, receptorEmail }) => {
     const promo = applyPromotions({
       items: carrito,
       customerEmail: (receptorEmail || "").trim(),
@@ -118,7 +179,8 @@ export default function Pago() {
         userId: isAuthenticated ? user?.id : null,
         guest: !isAuthenticated,
       },
-      items: carrito.map((t) => ({
+      items: carrito.map((t, i) => ({
+        productoId: t.id ?? t.codigo ?? null,
         nombre: t.nombre,
         qty: t.cantidad || 1,
         precioUnit: t.precio || 0,
@@ -132,10 +194,12 @@ export default function Pago() {
       notasPromo: promo.breakdown || {},
     };
 
+    // Guardar boleta en localStorage (para Boleta.jsx)
     const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
     map[orderId] = receipt;
     localStorage.setItem("receipts_v1", JSON.stringify(map));
 
+    // Guardar también en historial simplificado
     saveOrderToHistory({
       id: orderId,
       userEmail: (receptorEmail || "").toLowerCase(),
@@ -150,12 +214,16 @@ export default function Pago() {
       estado: "pagado",
     });
 
+    // Sincronizar con backend (boleta + detalles)
+    await syncBoletaBackend(receipt);
+
+    // Limpiar carrito y navegar a la boleta
     clear();
     localStorage.removeItem("totalCompra");
     navigate(`/boleta/${orderId}`);
   };
 
-  const onSubmitTarjeta = (e) => {
+  const onSubmitTarjeta = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -172,10 +240,10 @@ export default function Pago() {
       return;
     }
 
-
     const orderId =
       "ORD-" + new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-    finalizarOrden({
+
+    await finalizarOrden({
       orderId,
       receptorNombre: form.nombre.trim(),
       receptorEmail: (form.correo || "").trim(),
@@ -276,7 +344,7 @@ export default function Pago() {
       {metodo === "card" && (
         <form onSubmit={onSubmitTarjeta} noValidate>
           <h5 className="mb-3">Pago con Tarjeta</h5>
-          {/* Campos del formulario */}
+
           <div className="mb-3">
             <label className="form-label">Nombre en la tarjeta</label>
             <input
@@ -371,7 +439,7 @@ export default function Pago() {
             {errors.correo && <div className="invalid-feedback">{errors.correo}</div>}
           </div>
 
-          <button className="btn btn-success mb-4" type="submit">
+          <button className="btn btn.success mb-4" type="submit">
             Pagar con Tarjeta
           </button>
         </form>
@@ -386,10 +454,11 @@ export default function Pago() {
                 customerEmail={(form.correo || user?.email || "").trim()}
                 onPaid={(details) => {
                   const orderId = details?.id || `PP-${Date.now()}`;
-                  const payerName =
-                    details?.payer?.name?.given_name
-                      ? `${details.payer.name.given_name} ${details.payer.name?.surname || ""}`.trim()
-                      : (user?.nombre || "Cliente PayPal");
+                  const payerName = details?.payer?.name?.given_name
+                    ? `${details.payer.name.given_name} ${
+                        details.payer.name?.surname || ""
+                      }`.trim()
+                    : user?.nombre || "Cliente PayPal";
                   const payerEmail =
                     details?.payer?.email_address ||
                     form.correo ||
