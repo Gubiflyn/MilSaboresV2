@@ -121,10 +121,11 @@ export default function Pago() {
 
       // 1) Crear la boleta
       const boletaPayload = {
-        fechaEmision: receipt.fechaEmision,
-        total: Math.round(receipt.total || 0),
-        usuario: { id: user.id },
-      };
+  fechaEmision: receipt.fechaEmision,
+  total: Math.round(receipt.total || 0),
+  usuarioId: user.id,
+};
+
 
       const boletaCreada = await createBoleta(boletaPayload);
 
