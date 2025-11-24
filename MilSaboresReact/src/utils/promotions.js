@@ -10,22 +10,40 @@ const safeJSON = (raw, fallback) => {
   try { return JSON.parse(raw); } catch { return fallback; }
 };
 
-const readLS = (key) => safeJSON(localStorage.getItem(key), null);
+const readLSRaw = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const readLS = (key) => safeJSON(readLSRaw(key), null);
 
 const normalizeUser = (u = {}) => {
   const email = String(u.email || u.correo || "").trim();
   const beneficio = String(u.beneficio || "").trim();
-  const codigoRegistro = String(u.codigoRegistro || u.codigo || u.cupon || "").trim();
+  const codigoRegistro = String(
+    u.codigoRegistro || u.codigo || u.cupon || ""
+  ).trim();
   const fechaNacimiento = u.fechaNacimiento || null;
-  return { email, correo: email, beneficio, codigoRegistro, fechaNacimiento };
+
+  return {
+    email,
+    correo: email,
+    beneficio,
+    codigoRegistro,
+    fechaNacimiento,
+  };
 };
 
+// ahora el último visto por email sobreescribe (queremos que ms_user gane)
 const dedupeByEmail = (arr) => {
   const m = new Map();
   for (const it of arr) {
     const e = String(it.email || it.correo || "").toLowerCase();
     if (!e) continue;
-    if (!m.has(e)) m.set(e, it);
+    m.set(e, it);
   }
   return [...m.values()];
 };
@@ -33,13 +51,19 @@ const dedupeByEmail = (arr) => {
 const loadProfiles = () => {
   const sources = [];
 
-  // Colecciones tipo lista
+  // 1) Sesión actual de Mil Sabores
+  const msUser = readLS("ms_user");
+  if (msUser && typeof msUser === "object") {
+    sources.push(normalizeUser(msUser));
+  }
+
+  // 2) Colecciones tipo lista
   for (const key of ["perfiles", "usuarios", "users"]) {
     const arr = readLS(key);
     if (Array.isArray(arr)) sources.push(...arr.map(normalizeUser));
   }
 
-  // Usuario logeado (llaves habituales)
+  // 3) Posibles usuarios sueltos
   for (const key of ["authUser", "user", "usuario", "currentUser"]) {
     const u = readLS(key);
     if (u && typeof u === "object") sources.push(normalizeUser(u));
@@ -52,7 +76,11 @@ const findProfileByEmail = (email) => {
   if (!email) return null;
   const perfiles = loadProfiles();
   const e = String(email).toLowerCase();
-  return perfiles.find((p) => (p.correo || p.email || "").toLowerCase() === e) || null;
+  return (
+    perfiles.find(
+      (p) => (p.correo || p.email || "").toLowerCase() === e
+    ) || null
+  );
 };
 
 const calcAge = (isoDate) => {
@@ -83,7 +111,12 @@ const isBirthdayToday = (isoDate) => {
 const getQueryCoupon = () => {
   try {
     const qs = new URLSearchParams(window.location.search);
-    return (qs.get("code") || qs.get("cupon") || qs.get("coupon") || "").trim();
+    return (
+      qs.get("code") ||
+      qs.get("cupon") ||
+      qs.get("coupon") ||
+      ""
+    ).trim();
   } catch {
     return "";
   }
@@ -112,70 +145,83 @@ const normCode = (s) => String(s || "").toUpperCase().trim();
 /* =========================
    Lógica principal
    ========================= */
-/**
- * applyPromotions({ items, customerEmail, couponCode })
- *  - items: array de ítems del carrito
- *  - customerEmail: correo del usuario actual
- *  - couponCode: (opcional) código ingresado (ej: "felices50")
- */
-export function applyPromotions({ items = [], customerEmail = "", couponCode = "" } = {}) {
+export function applyPromotions({
+  items = [],
+  customerEmail = "",
+  couponCode = "",
+} = {}) {
   const safeItems = Array.isArray(items) ? items : [];
-  const subtotal = CLP(safeItems.reduce((acc, it) => acc + lineTotal(it), 0));
+  const subtotal = CLP(
+    safeItems.reduce((acc, it) => acc + lineTotal(it), 0)
+  );
 
-  // Perfil por email, si existe
+  // Perfil por email
   const profile = findProfileByEmail(customerEmail);
   const age = calcAge(profile?.fechaNacimiento);
   const beneficio = normCode(profile?.beneficio);
-  const storedCode =
-    normCode(profile?.codigoRegistro) ||
-    normCode(readLS("codigoRegistro")) ||
-    normCode(readLS("cupon")) ||
-    normCode(readLS("coupon")) ||
-    normCode(getQueryCoupon());
 
-  // Código recibido directamente por parámetro (prioridad alta)
+  // código asociado SOLO al perfil + query param + parámetro directo
+  const profileCode = normCode(profile?.codigoRegistro);
+  const queryCode = normCode(getQueryCoupon());
   const paramCode = normCode(couponCode);
 
-  // === Flags
-  const isOver50 = (Number.isFinite(age) && age >= 50) || beneficio === "50%";
-  const hasFelices50 =
-    paramCode === "FELICES50" ||
-    storedCode === "FELICES50" ||
-    beneficio === "FELICES50";
+  const effectiveCoupon = paramCode || profileCode || queryCode;
 
-  // Torta gratis SOLO si: correo DUOC y hoy es su cumpleaños
-  const isDuocBday = isDuocEmail(customerEmail) && isBirthdayToday(profile?.fechaNacimiento);
+  // Flags de reglas
+  const isOver50Flag =
+    beneficio === "50%" ||
+    beneficio === "MAYOR50" ||
+    beneficio === "MAYOR_50";
 
-  // 1) Torta gratis por DUOC en cumpleaños: 1 unidad (torta más barata) gratis
+  const isOver50 =
+    (Number.isFinite(age) && age >= 50) || isOver50Flag;
+
+  const hasFelices50 = effectiveCoupon === "FELICES50";
+
+  const isDuocBday =
+    isDuocEmail(customerEmail) &&
+    isBirthdayToday(profile?.fechaNacimiento);
+
+  // 1) Torta gratis (DUOC + cumpleaños)
   let cakeDiscount = 0;
   if (isDuocBday) {
     const tortas = safeItems
-      .filter((it) => isCake(it) && Number(it.precio) > 0 && Number(it.cantidad) > 0)
+      .filter(
+        (it) =>
+          isCake(it) &&
+          Number(it.precio) > 0 &&
+          Number(it.cantidad) > 0
+      )
       .map((it) => ({ ...it, precioU: Number(it.precio) }));
     if (tortas.length > 0) {
-      const cheapest = tortas.reduce((min, it) => (it.precioU < min.precioU ? it : min), tortas[0]);
+      const cheapest = tortas.reduce((min, it) =>
+        it.precioU < min.precioU ? it : min
+      , tortas[0]);
       cakeDiscount = CLP(cheapest.precioU);
     }
   }
 
-  // Base luego de la torta gratis
   const baseAfterCake = CLP(subtotal - cakeDiscount);
 
-  // 2) Porcentajes: 50% si ≥50, sino 10% si FELICES50
+  // 2) Porcentaje: 50% si mayor de 50, si no 10% si FELICES50
   let perc = 0;
   if (isOver50) perc = 0.5;
   else if (hasFelices50) perc = 0.1;
 
   const percDiscount = CLP(baseAfterCake * perc);
 
-  // Totales
   const descuento = CLP(cakeDiscount + percDiscount);
   const total = CLP(subtotal - descuento);
 
   const detalles = [];
-  if (isDuocBday) detalles.push("Torta gratis por cumpleaños con correo DUOC (1 unidad).");
-  if (isOver50) detalles.push("Descuento 50% por ser mayor de 50 años.");
-  else if (hasFelices50) detalles.push("Descuento 10% por código FELICES50.");
+  if (isDuocBday)
+    detalles.push(
+      "Torta gratis por cumpleaños con correo DUOC (1 unidad)."
+    );
+  if (isOver50)
+    detalles.push("Descuento 50% por ser mayor de 50 años.");
+  else if (hasFelices50)
+    detalles.push("Descuento 10% por código FELICES50.");
 
   return {
     subtotal,
@@ -186,7 +232,7 @@ export function applyPromotions({ items = [], customerEmail = "", couponCode = "
       percDiscount,
       cakeDiscount,
       detalles,
-      applied: { isOver50, hasFelices50, isDuocBday }
-    }
+      applied: { isOver50, hasFelices50, isDuocBday },
+    },
   };
 }

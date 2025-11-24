@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { applyPromotions } from "../utils/promotions";
 import PayPalCheckout from "../components/PayPalCheckout";
-import { createBoleta } from "../services/api"; // ← quitado createDetallesBoletaList
+import { createBoleta } from "../services/api";
 
 const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
@@ -68,23 +68,25 @@ export default function Pago() {
   });
   const [errors, setErrors] = useState({});
 
+  // 🔹 AQUÍ: usamos user.correo en lugar de user.email
   useEffect(() => {
     if (isAuthenticated && user) {
       setForm((prev) => ({
         ...prev,
-        correo: prev.correo?.trim() ? prev.correo : user.email || "",
+        correo: prev.correo?.trim() ? prev.correo : user.correo || "",
         nombre: prev.nombre?.trim() ? prev.nombre : user.nombre || "",
       }));
     }
   }, [isAuthenticated, user]);
 
+  // 🔹 AQUÍ: pasamos el correo correcto a promociones
   const promoPreview = useMemo(
     () =>
       applyPromotions({
         items: carrito,
-        customerEmail: (form.correo || user?.email || "").trim(),
+        customerEmail: (form.correo || user?.correo || "").trim(),
       }),
-    [carrito, form.correo, user?.email]
+    [carrito, form.correo, user?.correo]
   );
 
   const validate = () => {
@@ -107,26 +109,20 @@ export default function Pago() {
     return Object.keys(e).length === 0;
   };
 
-  /**
-   * Sincroniza la compra con el backend:
-   * - Crea la BOLETA junto con sus DETALLES (en un solo endpoint)
-   */
   const syncBoletaBackend = async (receipt) => {
     try {
-      // Solo guardamos en la BD si hay usuario autenticado con id
       if (!isAuthenticated || !user?.id) {
         console.info("Compra de invitado: no se guarda boleta en BD.");
         return;
       }
 
-      // Construimos el payload que espera el backend (BoletaRequestDTO)
       const detallesDto = (receipt.items || [])
         .map((it) => {
           const pastelId = it.productoId ?? it.idProducto ?? it.id ?? null;
           if (!pastelId) return null;
 
           return {
-            pastelId,                // mapea al ID del producto/pastel
+            pastelId,
             cantidad: it.qty,
             precioUnitario: it.precioUnit,
           };
@@ -134,34 +130,23 @@ export default function Pago() {
         .filter(Boolean);
 
       const boletaPayload = {
-        fechaEmision: receipt.fechaEmision,          // el backend ya lo está recibiendo así
+        fechaEmision: receipt.fechaEmision,
         total: Math.round(receipt.total || 0),
         usuarioId: user.id,
-        detalles: detallesDto,                       // ← aquí van los detalles
+        detalles: detallesDto,
       };
 
-      // Una sola llamada: el backend guarda BOLETA + DETALLE_BOLETA por cascade
       const boletaCreada = await createBoleta(boletaPayload);
       console.log("Boleta creada en backend con detalles:", boletaCreada);
     } catch (err) {
       console.error("Error al sincronizar boleta/detalles con el backend:", err);
-      // No lanzamos el error para no romper el flujo de compra
     }
   };
 
-  /**
-   * Finaliza la orden:
-   * - Calcula promociones
-   * - Genera el "receipt" (boleta para el front)
-   * - Guarda en localStorage
-   * - Guarda en historial
-   * - Sincroniza con backend
-   * - Limpia carrito y navega a la boleta
-   */
   const finalizarOrden = async ({ orderId, receptorNombre, receptorEmail }) => {
     const promo = applyPromotions({
       items: carrito,
-      customerEmail: (receptorEmail || "").trim(),
+      customerEmail: (receptorEmail || form.correo || user?.correo || "").trim(),
     });
 
     const receipt = {
@@ -190,15 +175,13 @@ export default function Pago() {
       notasPromo: promo.breakdown || {},
     };
 
-    // Guardar boleta en localStorage (para Boleta.jsx)
     const map = JSON.parse(localStorage.getItem("receipts_v1") || "{}");
     map[orderId] = receipt;
     localStorage.setItem("receipts_v1", JSON.stringify(map));
 
-    // Guardar también en historial simplificado
     saveOrderToHistory({
       id: orderId,
-      userEmail: (receptorEmail || "").toLowerCase(),
+      userEmail: (receptorEmail || form.correo || user?.correo || "").toLowerCase(),
       items: carrito.map((t, i) => ({
         codigo: t.codigo ?? t.id ?? t.sku ?? `SKU-${i + 1}`,
         nombre: t.nombre || "Producto",
@@ -210,10 +193,8 @@ export default function Pago() {
       estado: "pagado",
     });
 
-    // Sincronizar con backend (boleta + detalles)
     await syncBoletaBackend(receipt);
 
-    // Limpiar carrito y navegar a la boleta
     clear();
     localStorage.removeItem("totalCompra");
     navigate(`/boleta/${orderId}`);
@@ -223,7 +204,6 @@ export default function Pago() {
     e.preventDefault();
     if (!validate()) return;
 
-    // Simulación de error: si la tarjeta comienza con 0000 → redirige a PagoError
     if (form.numero.startsWith("0000")) {
       navigate("/pago/error", {
         state: {
@@ -300,7 +280,6 @@ export default function Pago() {
         </div>
       </div>
 
-      {/* Métodos de pago */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title mb-3">Selecciona tu método de pago</h5>
@@ -467,7 +446,8 @@ export default function Pago() {
           <div className="d-flex justify-content-start">
             <div style={{ width: "320px" }}>
               <PayPalCheckout
-                customerEmail={(form.correo || user?.email || "").trim()}
+                // 🔹 también aquí usamos user.correo como fallback
+                customerEmail={(form.correo || user?.correo || "").trim()}
                 onPaid={(details) => {
                   const orderId = details?.id || `PP-${Date.now()}`;
                   const payerName = details?.payer?.name?.given_name
@@ -478,7 +458,7 @@ export default function Pago() {
                   const payerEmail =
                     details?.payer?.email_address ||
                     form.correo ||
-                    user?.email ||
+                    user?.correo ||
                     "";
                   finalizarOrden({
                     orderId,

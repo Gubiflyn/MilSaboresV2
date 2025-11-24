@@ -72,18 +72,20 @@ export function AuthProvider({ children }) {
         ? String(detectedRole).toUpperCase()
         : "CLIENTE";
 
-      // Por si vienen cosas raras, normalizamos a 3 tipos
       if (!["ADMIN", "VENDEDOR", "CLIENTE"].includes(detectedRole)) {
-        // si tuvieras tipo numérico podrías mapear acá
         detectedRole = "CLIENTE";
       }
 
+      // ⬇️ IMPORTANTE: incluir datos de beneficios/descuentos
       const authUser = {
         id: match.id,
         nombre: match.nombre,
         correo: match.correo,
         rol: detectedRole,
         tipo: detectedRole,
+        beneficio: match.beneficio || null,
+        fechaNacimiento: match.fechaNacimiento || null,
+        codigoRegistro: match.codigoRegistro || null,
       };
 
       setUser(authUser);
