@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { applyPromotions } from "../utils/promotions";
 import PayPalCheckout from "../components/PayPalCheckout";
-import { createBoleta, createDetallesBoletaList } from "../services/api";
+import { createBoleta } from "../services/api"; // ← quitado createDetallesBoletaList
 
 const CLP = (n) => (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
@@ -92,7 +92,8 @@ export default function Pago() {
     if (!form.nombre.trim()) e.nombre = "Ingresa el nombre en la tarjeta.";
     if (!/^\d{16}$/.test(form.numero)) e.numero = "Número de 16 dígitos.";
     const exp = (form.expiracion || "").trim();
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp)) e.expiracion = "Formato MM/AA (ej: 08/27).";
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp))
+      e.expiracion = "Formato MM/AA (ej: 08/27).";
     if (!/^\d{3,4}$/.test(form.cvv)) e.cvv = "CVV de 3 o 4 dígitos.";
     if (
       !form.fechaEntrega ||
@@ -108,8 +109,7 @@ export default function Pago() {
 
   /**
    * Sincroniza la compra con el backend:
-   * - Crea la BOLETA (si hay usuario logeado)
-   * - Crea los DETALLES de la boleta
+   * - Crea la BOLETA junto con sus DETALLES (en un solo endpoint)
    */
   const syncBoletaBackend = async (receipt) => {
     try {
@@ -119,35 +119,30 @@ export default function Pago() {
         return;
       }
 
-      // 1) Crear la boleta
-      const boletaPayload = {
-  fechaEmision: receipt.fechaEmision,
-  total: Math.round(receipt.total || 0),
-  usuarioId: user.id,
-};
-
-
-      const boletaCreada = await createBoleta(boletaPayload);
-
-      // 2) Crear los detalles asociados a esa boleta
-      const detallesPayload = (receipt.items || [])
+      // Construimos el payload que espera el backend (BoletaRequestDTO)
+      const detallesDto = (receipt.items || [])
         .map((it) => {
-          const productoId = it.productoId ?? it.idProducto ?? it.id ?? null;
-          if (!productoId) return null;
+          const pastelId = it.productoId ?? it.idProducto ?? it.id ?? null;
+          if (!pastelId) return null;
 
           return {
+            pastelId,                // mapea al ID del producto/pastel
             cantidad: it.qty,
             precioUnitario: it.precioUnit,
-            subtotal: it.total,
-            boleta: { id: boletaCreada.id },
-            pastel: { id: productoId }, // mapeado a la entidad Pastel/Producto
           };
         })
         .filter(Boolean);
 
-      if (detallesPayload.length > 0) {
-        await createDetallesBoletaList(detallesPayload);
-      }
+      const boletaPayload = {
+        fechaEmision: receipt.fechaEmision,          // el backend ya lo está recibiendo así
+        total: Math.round(receipt.total || 0),
+        usuarioId: user.id,
+        detalles: detallesDto,                       // ← aquí van los detalles
+      };
+
+      // Una sola llamada: el backend guarda BOLETA + DETALLE_BOLETA por cascade
+      const boletaCreada = await createBoleta(boletaPayload);
+      console.log("Boleta creada en backend con detalles:", boletaCreada);
     } catch (err) {
       console.error("Error al sincronizar boleta/detalles con el backend:", err);
       // No lanzamos el error para no romper el flujo de compra
@@ -273,7 +268,7 @@ export default function Pago() {
             <span>${CLP(subtotalNormalEstimado)}</span>
           </div>
 
-          <div className="d-flex justify-content-between text-success">
+          <div className="d-flex justify-content-between text.success">
             <span>Ahorro por ofertas de producto</span>
             <span>-${CLP(ahorroOfertas)}</span>
           </div>
@@ -354,7 +349,9 @@ export default function Pago() {
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               required
             />
-            {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
+            {errors.nombre && (
+              <div className="invalid-feedback">{errors.nombre}</div>
+            )}
           </div>
 
           <div className="mb-3">
@@ -373,21 +370,29 @@ export default function Pago() {
               maxLength={16}
               required
             />
-            {errors.numero && <div className="invalid-feedback">{errors.numero}</div>}
+            {errors.numero && (
+              <div className="invalid-feedback">{errors.numero}</div>
+            )}
           </div>
 
           <div className="mb-3 d-flex gap-2">
             <div className="flex-fill">
               <label className="form-label">Expiración (MM/AA)</label>
               <input
-                className={`form-control ${errors.expiracion ? "is-invalid" : ""}`}
+                className={`form-control ${
+                  errors.expiracion ? "is-invalid" : ""
+                }`}
                 value={form.expiracion}
-                onChange={(e) => setForm({ ...form, expiracion: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, expiracion: e.target.value })
+                }
                 placeholder="MM/AA"
                 required
               />
               {errors.expiracion && (
-                <div className="invalid-feedback d-block">{errors.expiracion}</div>
+                <div className="invalid-feedback d-block">
+                  {errors.expiracion}
+                </div>
               )}
             </div>
             <div className="flex-fill">
@@ -407,7 +412,9 @@ export default function Pago() {
                 required
               />
               {errors.cvv && (
-                <div className="invalid-feedback d-block">{errors.cvv}</div>
+                <div className="invalid-feedback d-block">
+                  {errors.cvv}
+                </div>
               )}
             </div>
           </div>
@@ -416,9 +423,13 @@ export default function Pago() {
             <label className="form-label">Fecha de entrega</label>
             <input
               type="date"
-              className={`form-control ${errors.fechaEntrega ? "is-invalid" : ""}`}
+              className={`form-control ${
+                errors.fechaEntrega ? "is-invalid" : ""
+              }`}
               value={form.fechaEntrega}
-              onChange={(e) => setForm({ ...form, fechaEntrega: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, fechaEntrega: e.target.value })
+              }
               min={dateLimits.min}
               max={dateLimits.max}
               required
@@ -434,13 +445,17 @@ export default function Pago() {
               type="email"
               className={`form-control ${errors.correo ? "is-invalid" : ""}`}
               value={form.correo}
-              onChange={(e) => setForm({ ...form, correo: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, correo: e.target.value })
+              }
               required
             />
-            {errors.correo && <div className="invalid-feedback">{errors.correo}</div>}
+            {errors.correo && (
+              <div className="invalid-feedback">{errors.correo}</div>
+            )}
           </div>
 
-          <button className="btn btn.success mb-4" type="submit">
+          <button className="btn btn-success mb-4" type="submit">
             Pagar con Tarjeta
           </button>
         </form>
