@@ -3,6 +3,32 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import regionesComunas from "../data/chile-regiones-comunas.json";
 
+// === Helpers para hashear contraseña con scrypt ===
+import { scrypt } from "scrypt-js";
+
+const N = 16384; // costo (2^14)
+const r = 8;
+const p = 1;
+const KEY_LENGTH = 32; // 32 bytes = 256 bits
+
+function toHex(bytes) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function hashPassword(plainPassword) {
+  const encoder = new TextEncoder();
+  const passwordBytes = encoder.encode(plainPassword);
+
+  // Para algo simple en el ramo usamos un salt fijo.
+  // Idealmente esto debería ser único por usuario y guardarse junto al hash.
+  const saltBytes = encoder.encode("milsabores_salt_demo");
+
+  const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
+  return toHex(hashBytes); // lo convertimos a string hexadecimal para guardar en BD
+}
+
 export default function Register() {
   const navigate = useNavigate();
   const { login, register } = useAuth();
@@ -92,29 +118,34 @@ export default function Register() {
     else if (codigoRegistro === "FELICES50") beneficio = "FELICES50";
     else if (isDuoc) beneficio = "TORTA GRATIS";
 
-    const clientePayload = {
-      nombre: `${form.nombres} ${form.apellidos}`.trim(),
-      correo: form.correo,
-      contrasena: form.contrasena,
-      telefono: form.telefono,
-      direccion: form.direccion,
-      region: form.region,
-      comuna: form.comuna,
-      beneficio,
-      fechaNacimiento: form.fechaNacimiento,
-      codigoRegistro,
-      puntos: 0,
-      activo: true,
-    };
-
     try {
-      // 1) Registrar en BD
+      // 1) Hashear la contraseña ANTES de enviarla al backend
+      const hashedPassword = await hashPassword(form.contrasena);
+
+      const clientePayload = {
+        nombre: `${form.nombres} ${form.apellidos}`.trim(),
+        correo: form.correo,
+        // IMPORTANTE: aquí ya va la contraseña hasheada
+        contrasena: hashedPassword,
+        telefono: form.telefono,
+        direccion: form.direccion,
+        region: form.region,
+        comuna: form.comuna,
+        beneficio,
+        fechaNacimiento: form.fechaNacimiento,
+        codigoRegistro,
+        puntos: 0,
+        activo: true,
+      };
+
+      // 2) Registrar en BD (ya queda guardado el hash)
       await register(clientePayload);
 
-      // 2) Iniciar sesión real
-      await login(form.correo, form.contrasena);
+      // 3) Iniciar sesión real usando también la contraseña hasheada
+      //    (porque el backend ahora espera ese mismo valor)
+      await login(form.correo, hashedPassword);
 
-      // 3) Mensaje de beneficio
+      // 4) Mensaje de beneficio
       let msg = "Sin beneficio";
       if (beneficio === "50%") msg = "50% de descuento en todos los productos";
       else if (beneficio === "FELICES50") msg = "10% de descuento de por vida";
@@ -123,7 +154,6 @@ export default function Register() {
 
       alert(`Registro exitoso.\nBeneficio asignado: ${msg}`);
       navigate("/");
-
     } catch (e) {
       console.error(e);
       setErr(e.message || "No se pudo registrar el usuario.");
@@ -203,7 +233,9 @@ export default function Register() {
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Código de descuento (opcional)</label>
+                <label className="form-label">
+                  Código de descuento (opcional)
+                </label>
                 <input
                   className="form-control"
                   value={form.codigoDescuento}
@@ -232,7 +264,10 @@ export default function Register() {
                   className="form-control"
                   value={form.telefono}
                   onChange={(e) =>
-                    setForm({ ...form, telefono: enforcePhone(e.target.value) })
+                    setForm({
+                      ...form,
+                      telefono: enforcePhone(e.target.value),
+                    })
                   }
                   placeholder="+569XXXXXXXX"
                   inputMode="tel"
@@ -250,9 +285,13 @@ export default function Register() {
                   }
                   required
                 >
-                  <option value="" disabled>Selecciona una región</option>
+                  <option value="" disabled>
+                    Selecciona una región
+                  </option>
                   {regiones.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -269,16 +308,22 @@ export default function Register() {
                   required
                 >
                   <option value="" disabled>
-                    {form.region ? "Selecciona una comuna" : "Primero elige una región"}
+                    {form.region
+                      ? "Selecciona una comuna"
+                      : "Primero elige una región"}
                   </option>
                   {comunasDeRegion.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {err && <div className="alert alert-danger mt-3 py-2">{err}</div>}
+            {err && (
+              <div className="alert alert-danger mt-3 py-2">{err}</div>
+            )}
 
             <div className="d-grid gap-2 mt-3">
               <button className="btn btn-primary" type="submit">

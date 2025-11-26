@@ -3,6 +3,31 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// === Helpers para hashear contraseña con scrypt ===
+import { scrypt } from "scrypt-js";
+
+const N = 16384; // costo (2^14)
+const r = 8;
+const p = 1;
+const KEY_LENGTH = 32; // 32 bytes = 256 bits
+
+function toHex(bytes) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function hashPassword(plainPassword) {
+  const encoder = new TextEncoder();
+  const passwordBytes = encoder.encode(plainPassword);
+
+  // Debe ser el MISMO salt que uses en Register.jsx
+  const saltBytes = encoder.encode("milsabores_salt_demo");
+
+  const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
+  return toHex(hashBytes); // string hexadecimal
+}
+
 export default function Login() {
   const { login, loading } = useAuth();
   const [correo, setCorreo] = useState("");
@@ -15,10 +40,15 @@ export default function Login() {
     setError("");
 
     try {
-      const user = await login(correo, contrasena);
+      // 1) Hashear la contraseña ingresada
+      const hashedPassword = await hashPassword(contrasena);
 
+      // 2) Pasar el HASH al contexto (NO la contraseña en texto plano)
+      const user = await login(correo, hashedPassword);
+
+      // 3) Redirección según rol
       if (user.rol === "ADMIN") {
-        navigate("/admin"); // o /admin/dashboard, según tu router
+        navigate("/admin"); // o /admin/dashboard según tu router
       } else {
         navigate("/"); // cliente normal a la home
       }

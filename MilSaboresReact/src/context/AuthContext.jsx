@@ -31,12 +31,17 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem(LS_USER_KEY);
   }, [user]);
 
-  // LOGIN contra /usuarios
+  /**
+   * LOGIN
+   * IMPORTANTE: el parámetro `contrasena` debe venir YA HASHEAD0 con scrypt
+   * desde el componente (Login.jsx, Register.jsx, etc.).
+   */
   const login = async (correo, contrasena) => {
     setLoading(true);
     try {
       const emailNorm = String(correo).toLowerCase().trim();
-      const passNorm = String(contrasena);
+      // Aquí asumimos que `contrasena` ya es el hash (hexadecimal)
+      const hashedPass = String(contrasena);
 
       let usuarios = [];
       try {
@@ -52,7 +57,8 @@ export function AuthProvider({ children }) {
       const match = usuarios.find(
         (u) =>
           String(u.correo).toLowerCase() === emailNorm &&
-          String(u.contrasena) === passNorm &&
+          // La BD también guarda el hash en `u.contrasena`
+          String(u.contrasena) === hashedPass &&
           (u.activo === undefined || u.activo === true)
       );
 
@@ -76,7 +82,7 @@ export function AuthProvider({ children }) {
         detectedRole = "CLIENTE";
       }
 
-      // ⬇️ IMPORTANTE: incluir datos de beneficios/descuentos
+      // Datos que queremos guardar en sesión
       const authUser = {
         id: match.id,
         nombre: match.nombre,
@@ -99,7 +105,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  // REGISTRO en BD
+  // REGISTRO en BD (aquí ya debe venir la contraseña hasheada en clienteData.contrasena)
   const register = async (clienteData) => {
     const nuevo = await createCliente({
       ...clienteData,
