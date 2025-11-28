@@ -31,10 +31,28 @@ export default function ProductEdit() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "precio" || name === "stock") {
+      if (value === "") {
+        setForm((f) => ({ ...f, [name]: "" }));
+        return;
+      }
+
+      let num = Number(value);
+      if (Number.isNaN(num) || num < 0) {
+        num = 0;
+      }
+
+      setForm((f) => ({
+        ...f,
+        [name]: num,
+      }));
+      return;
+    }
+
     setForm((f) => ({
       ...f,
-      [name]:
-        name === "precio" || name === "stock" ? Number(value || 0) : value,
+      [name]: value,
     }));
   };
 
@@ -122,6 +140,14 @@ export default function ProductEdit() {
       return;
     }
 
+    const precioNum = Number(form.precio || 0);
+    const stockNum = Number(form.stock || 0);
+
+    if (precioNum < 0 || stockNum < 0) {
+      alert("El precio y el stock no pueden ser negativos.");
+      return;
+    }
+
     const categoriaObj = categorias.find(
       (c) =>
         (c.nombre || "").toLowerCase() === form.categoria.toLowerCase().trim()
@@ -139,8 +165,8 @@ export default function ProductEdit() {
       const payload = {
         ...initial,
         ...form,
-        precio: Number(form.precio),
-        stock: Number(form.stock),
+        precio: precioNum,
+        stock: stockNum,
         categoria: {
           id: categoriaObj.id,
           nombre: categoriaObj.nombre,
@@ -149,7 +175,7 @@ export default function ProductEdit() {
       };
       await updatePastel(payload);
       alert("Producto actualizado correctamente.");
-      navigate(`/admin/products/${form.codigo || form.id}`);
+      navigate(`/admin/productos/${form.codigo || form.id}`);
     } catch (err) {
       console.error(err);
       alert("No se pudo guardar el producto.");
@@ -173,7 +199,7 @@ export default function ProductEdit() {
     try {
       await deletePastel(initial.id);
       alert("Producto eliminado.");
-      navigate("/admin/products");
+      navigate("/admin/productos");
     } catch (err) {
       console.error(err);
       alert("No se pudo eliminar el producto.");
@@ -200,7 +226,7 @@ export default function ProductEdit() {
         <div className="alert alert-danger">{error || "Sin datos"}</div>
         <button
           className="btn btn-secondary"
-          onClick={() => navigate("/admin/products")}
+          onClick={() => navigate("/admin/productos")}
         >
           Volver al listado
         </button>
@@ -256,11 +282,12 @@ export default function ProductEdit() {
 
               <div className="col-md-4">
                 <label className="form-label">
-                  Precio ({CLP(form.precio)})
+                  Precio ({CLP(form.precio || 0)})
                 </label>
                 <input
                   type="number"
                   name="precio"
+                  min="0"
                   className="form-control"
                   value={form.precio}
                   onChange={onChange}
@@ -271,6 +298,7 @@ export default function ProductEdit() {
                 <input
                   type="number"
                   name="stock"
+                  min="0"
                   className="form-control"
                   value={form.stock}
                   onChange={onChange}
@@ -309,7 +337,7 @@ export default function ProductEdit() {
                   </button>
                 </div>
                 <div className="d-flex gap-2">
-                  <Link className="btn btn-secondary" to="/admin/products">
+                  <Link className="btn btn-secondary" to="/admin/productos">
                     Cancelar
                   </Link>
                   <button
@@ -328,11 +356,11 @@ export default function ProductEdit() {
         <div className="mt-3 d-flex gap-2">
           <Link
             className="btn btn-outline-secondary"
-            to={`/admin/products/${initial.codigo ?? initial.id}`}
+            to={`/admin/productos/${initial.codigo ?? initial.id}`}
           >
             Ver detalle
           </Link>
-          <Link className="btn btn-outline-secondary" to="/admin/products">
+          <Link className="btn btn-outline-secondary" to="/admin/productos">
             Volver al listado
           </Link>
         </div>

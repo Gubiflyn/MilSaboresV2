@@ -28,80 +28,63 @@ export default function Products() {
   });
   const [categoriasApi, setCategoriasApi] = useState([]); // ahora guarda objetos completos
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = user?.rol === "ADMIN";
 
   const showPermissionError = () => {
     alert(
-      "Acción no disponible: sólo los administradores pueden gestionar productos."
+      "No tienes permisos para realizar esta acción. Solo los administradores pueden gestionar productos."
     );
   };
 
   // ====================
-  //  CARGA INICIAL (API)
+  //  CARGA INICIAL
   // ====================
   useEffect(() => {
-    const cargar = async () => {
-      setLoading(true);
+    const fetchData = async () => {
       try {
-        const data = await getPasteles();
+        const [pasteles, categorias] = await Promise.all([
+          getPasteles(),
+          getCategorias(),
+        ]);
+
         setList(
-          (Array.isArray(data) ? data : []).map((p) => ({
+          (pasteles || []).map((p) => ({
             ...p,
             stock: p?.stock ?? 0,
-            // Para mostrar en la tabla dejamos sólo el nombre de la categoría
             categoria:
               typeof p.categoria === "string"
                 ? p.categoria
                 : p.categoria?.nombre || "",
           }))
         );
+
+        setCategoriasApi(Array.isArray(categorias) ? categorias : []);
       } catch (err) {
-        console.error("Error al cargar productos en Admin/Products:", err);
-        alert("No se pudieron cargar los productos desde la API.");
-      } finally {
-        setLoading(false);
+        console.error("Error al cargar productos:", err);
+        alert(
+          "Ocurrió un error al cargar los productos. Revisa la consola para más detalles."
+        );
       }
     };
 
-    cargar();
+    fetchData();
   }, []);
 
   // ====================
-  //  CARGA CATEGORÍAS (API)
+  //  DERIVADOS
   // ====================
-  useEffect(() => {
-    const cargarCategorias = async () => {
-      try {
-        const data = await getCategorias();
-        setCategoriasApi(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Error al cargar categorías:", err);
-      }
-    };
-    cargarCategorias();
-  }, []);
-
-  // ====================
-  //  FILTRO / SEARCH
-  // ====================
-  const filtered = useMemo(() => {
-    const term = q.toLowerCase().trim();
-    if (!term) return list;
-    return list.filter((p) =>
-      [p.codigo, p.nombre, p.categoria].some((v) =>
-        String(v ?? "").toLowerCase().includes(term)
-      )
-    );
-  }, [q, list]);
-
   const categoriasDerivadas = useMemo(
     () =>
-      Array.from(new Set(list.map((p) => p.categoria)))
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, "es")),
+      Array.from(
+        new Set(
+          (list || [])
+            .map((p) => (p.categoria || "").trim())
+            .filter((c) => !!c)
+        )
+      ).sort((a, b) => a.localeCompare(b, "es")),
     [list]
   );
 
@@ -116,6 +99,22 @@ export default function Products() {
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
   }, [categoriasApi, categoriasDerivadas]);
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query) return list;
+
+    return (list || []).filter((p) => {
+      const codigo = (p?.codigo || "").toLowerCase();
+      const nombre = (p?.nombre || "").toLowerCase();
+      const categoria = (p?.categoria || "").toLowerCase();
+      return (
+        codigo.includes(query) ||
+        nombre.includes(query) ||
+        categoria.includes(query)
+      );
+    });
+  }, [q, list]);
 
   // ====================
   //  FORM / CRUD
@@ -140,6 +139,12 @@ export default function Products() {
 
     if (!form.codigo || !form.nombre || !form.categoria) {
       alert("Código, nombre y categoría son obligatorios.");
+      return;
+    }
+
+    // ❗ Nueva validación fuerte contra negativos
+    if (Number(form.precio) < 0 || Number(form.stock) < 0) {
+      alert("El precio y el stock no pueden ser negativos.");
       return;
     }
 
@@ -189,7 +194,7 @@ export default function Products() {
           prev.map((p, i) => (i === editIdx ? normalizado : p))
         );
       } else {
-        // NUEVO
+        // CREAR NUEVO
         saved = await createPastel(payload);
         const normalizado = {
           ...saved,
@@ -203,6 +208,7 @@ export default function Products() {
       }
 
       setShowForm(false);
+      setEditIdx(-1);
       resetForm();
     } catch (err) {
       console.error("Error al guardar producto:", err);
@@ -227,7 +233,20 @@ export default function Products() {
       showPermissionError();
       return;
     }
-    setForm(list[idx]);
+
+    const p = filtered[idx];
+    if (!p) return;
+
+    setForm({
+      id: p.id ?? null,
+      codigo: p.codigo ?? "",
+      nombre: p.nombre ?? "",
+      categoria: p.categoria ?? "",
+      precio: p.precio ?? 0,
+      stock: p.stock ?? 0,
+      imagen: p.imagen ?? "",
+      descripcion: p.descripcion ?? "",
+    });
     setEditIdx(idx);
     setShowForm(true);
   };
@@ -238,10 +257,12 @@ export default function Products() {
       return;
     }
 
-    const p = list[idx];
+    const p = filtered[idx];
+    if (!p) return;
+
     if (
       !window.confirm(
-        `¿Eliminar el producto "${p.nombre}"?\nEsta acción no se puede deshacer.`
+        `¿Eliminar el producto "${p.nombre}"? Esta acción no se puede deshacer.`
       )
     )
       return;
@@ -274,174 +295,200 @@ export default function Products() {
         <h1>Productos</h1>
         <div className="d-flex gap-2">
           <input
-            type="search"
+            type="text"
             className="form-control"
             placeholder="Buscar por código, nombre o categoría..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button className="btn btn-primary" onClick={handleNewClick}>
+          <button className="btn btn-success" onClick={handleNewClick}>
             Nuevo producto
           </button>
         </div>
       </div>
 
       <div className="admin-body">
-        {loading && (
-          <div className="alert alert-info my-2">
-            Cargando productos desde la API...
+        <div className="card">
+          <div className="card-body p-0">
+            <table className="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th className="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p, idx) => (
+                  <tr key={p.id ?? p.codigo ?? idx}>
+                    <td>{p.codigo}</td>
+                    <td>{p.nombre}</td>
+                    <td>{p.categoria}</td>
+                    <td>{CLP(p.precio)}</td>
+                    <td>{p.stock}</td>
+                    <td className="text-end">
+                      <div className="btn-group btn-group-sm">
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => handleView(p)}
+                        >
+                          Ver
+                        </button>
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={() => handleEdit(idx)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-outline-danger"
+                          onClick={() => handleDelete(idx)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4 text-muted">
+                      No hay productos que coincidan con la búsqueda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
 
-        <table className="table table-striped table-hover align-middle">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th className="text-end">Precio</th>
-              <th className="text-end">Stock</th>
-              <th className="text-end">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && !loading && (
-              <tr>
-                <td colSpan={6} className="text-center text-muted">
-                  No hay productos que coincidan.
-                </td>
-              </tr>
-            )}
-            {filtered.map((p, idx) => (
-              <tr key={p.id ?? p.codigo ?? idx}>
-                <td>{p.codigo}</td>
-                <td>{p.nombre}</td>
-                <td>{p.categoria}</td>
-                <td className="text-end">{CLP(p.precio)}</td>
-                <td className="text-end">{p.stock}</td>
-                <td className="text-end">
-                  <button
-                    className="btn btn-sm btn-outline-secondary me-2"
-                    onClick={() => handleView(p)}
-                  >
-                    Ver
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-primary me-2"
-                    onClick={() => handleEdit(idx)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleDelete(idx)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
+        {/* Modal de Crear/Editar */}
         {showForm && (
-          <div className="admin-modal-backdrop">
-            <div className="admin-modal">
-              <h2>{form.id ? "Editar producto" : "Nuevo producto"}</h2>
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label className="form-label">Código</label>
-                  <input
-                    className="form-control"
-                    value={form.codigo}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, codigo: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="col-md-8">
-                  <label className="form-label">Nombre</label>
-                  <input
-                    className="form-control"
-                    value={form.nombre}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, nombre: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Categoría</label>
-                  <select
-                    className="form-select"
-                    value={form.categoria}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, categoria: e.target.value }))
-                    }
-                  >
-                    <option value="">Seleccione...</option>
-                    {categorias.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-3">
-                  <label className="form-label">Precio</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={form.precio}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        precio: Number(e.target.value || 0),
-                      }))
-                    }
-                  />
-                </div>
-                <div className="col-md-3">
-                  <label className="form-label">Stock</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={form.stock}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        stock: Number(e.target.value || 0),
-                      }))
-                    }
-                  />
-                </div>
-                <div className="col-12">
-                  <label className="form-label">Imagen (URL)</label>
-                  <input
-                    className="form-control"
-                    value={form.imagen}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, imagen: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="col-12">
-                  <label className="form-label">Descripción</label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    value={form.descripcion}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, descripcion: e.target.value }))
-                    }
-                  />
+          <div className="modal-backdrop-custom">
+            <div className="modal-custom card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">
+                  {form.id ? "Editar producto" : "Nuevo producto"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditIdx(-1);
+                    resetForm();
+                  }}
+                  disabled={saving}
+                />
+              </div>
+              <div className="card-body">
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <label className="form-label">Código</label>
+                    <input
+                      className="form-control"
+                      value={form.codigo}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, codigo: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="col-md-8">
+                    <label className="form-label">Nombre</label>
+                    <input
+                      className="form-control"
+                      value={form.nombre}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, nombre: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Categoría</label>
+                    <select
+                      className="form-select"
+                      value={form.categoria}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, categoria: e.target.value }))
+                      }
+                    >
+                      <option value="">Seleccione...</option>
+                      {categorias.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label">Precio</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={form.precio}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          precio: Math.max(
+                            0,
+                            Number(e.target.value || 0)
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label">Stock</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={form.stock}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          stock: Math.max(
+                            0,
+                            Number(e.target.value || 0)
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label">Imagen (URL)</label>
+                    <input
+                      className="form-control"
+                      value={form.imagen}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, imagen: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label">Descripción</label>
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      value={form.descripcion}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          descripcion: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="mt-3 d-flex justify-content-end gap-2">
+              <div className="card-footer d-flex justify-content-end gap-2">
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
                     setShowForm(false);
+                    setEditIdx(-1);
                     resetForm();
                   }}
                   disabled={saving}
