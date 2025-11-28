@@ -62,16 +62,16 @@ export default function UserEdit() {
 
         const nombre = found.nombre || "";
         const correo = found.correo || "";
-
-        // si ROL viene nulo, asumimos CLIENTE por defecto
         const rol = (found.rol || "CLIENTE").toUpperCase();
+        const beneficio = found.beneficio || "";
+        const fechaNacimiento = found.fechaNacimiento || "";
 
         setForm({
           nombre,
           email: correo,
           rol,
-          beneficio: "", // sigue siendo sólo visual
-          fechaNacimiento: "",
+          beneficio,
+          fechaNacimiento,
         });
       } catch (e) {
         console.error("Error al cargar usuario desde API:", e);
@@ -111,13 +111,14 @@ export default function UserEdit() {
 
     setSaving(true);
     try {
-      // DTO que espera el backend
+      // DTO que espera el backend (ahora sí con beneficio y fecha)
       const payload = {
         id: original.id,
         nombre: form.nombre,
         correo: form.email,
         rol: (form.rol || "CLIENTE").toUpperCase(),
-        // fechaNacimiento sigue siendo solo visual (no se envía)
+        beneficio: form.beneficio || "",
+        fechaNacimiento: form.fechaNacimiento || null,
       };
 
       await updateUsuario(payload);
@@ -236,14 +237,16 @@ export default function UserEdit() {
                 </div>
 
                 <div className="col-md-4">
-                  <label className="form-label">Beneficio (solo visual)</label>
+                  <label className="form-label">
+                    Beneficio (afecta descuentos)
+                  </label>
                   <input
                     type="text"
                     name="beneficio"
                     className="form-control"
                     value={form.beneficio}
                     onChange={handleChange}
-                    placeholder="Ej: Cliente Duoc, Cliente frecuente..."
+                    placeholder='Ej: "MAYOR50", "50%", "CLIENTE_DUOC"...'
                   />
                 </div>
 

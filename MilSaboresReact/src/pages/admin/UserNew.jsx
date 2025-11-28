@@ -41,6 +41,7 @@ export default function UserNew() {
     contrasena: "",
     rol: "cliente",
     fechaNacimiento: "",
+    beneficio: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -104,7 +105,8 @@ export default function UserNew() {
           activo: true,
           fechaContratacion: "2025-01-01",
           rol: "ADMIN",
-          // fechaNacimiento podría agregarse al backend en el futuro
+          beneficio: form.beneficio || "",
+          fechaNacimiento: form.fechaNacimiento || null,
         };
         creado = await addAdministrador(payload);
       }
@@ -120,7 +122,8 @@ export default function UserNew() {
           telefono: "",
           activo: true,
           fechaContratacion: "2025-01-01",
-          // fechaNacimiento también podría ir aquí si el backend lo soporta
+          beneficio: form.beneficio || "",
+          fechaNacimiento: form.fechaNacimiento || null,
         };
         creado = await addVendedor(payload);
       }
@@ -135,7 +138,8 @@ export default function UserNew() {
           region: "",
           telefono: "",
           direccion: "",
-          // fechaNacimiento solo visual por ahora
+          beneficio: form.beneficio || "",
+          fechaNacimiento: form.fechaNacimiento || null,
         };
         creado = await addCliente(payload);
       }
@@ -218,6 +222,24 @@ export default function UserNew() {
                       onChange={onChange}
                       className="form-control"
                     />
+                  </div>
+
+                  {/* Beneficio */}
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Beneficio (afecta promociones)
+                    </label>
+                    <input
+                      name="beneficio"
+                      value={form.beneficio}
+                      onChange={onChange}
+                      className="form-control"
+                      placeholder='Ej: "MAYOR50", "50%", "CLIENTE_DUOC"...'
+                    />
+                    <small className="text-muted">
+                      Para 50% permanente puedes usar por ejemplo{" "}
+                      <strong>MAYOR50</strong> o <strong>50%</strong>.
+                    </small>
                   </div>
 
                   {/* Email */}
