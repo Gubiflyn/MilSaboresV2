@@ -176,7 +176,8 @@ const App = () => {
 
             {/* Productos: ADMIN y VENDEDOR (lista + detalle) */}
             <Route path="productos" element={<ProductsAdmin />} />
-            <Route path="productos/:id" element={<ProductDetail />} />
+            {/* 👇 aquí el cambio importante */}
+            <Route path="productos/:codigo" element={<ProductDetail />} />
 
             {/* Crear / editar producto: SOLO ADMIN */}
             <Route
@@ -188,7 +189,7 @@ const App = () => {
               }
             />
             <Route
-              path="productos/:id/editar"
+              path="productos/:codigo/editar"
               element={
                 <AdminOnlyRoute>
                   <ProductEdit />

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getPastelByCodigo, getPasteles } from "../../services/api";
 
 const CLP = (n) => "$ " + (parseInt(n, 10) || 0).toLocaleString("es-CL");
 
 export default function ProductDetail() {
-  const { code } = useParams(); // espera ruta tipo /admin/products/:code
+  const { codigo } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,22 +15,22 @@ export default function ProductDetail() {
     const load = async () => {
       setLoading(true);
       setError("");
+
       try {
         let p = null;
 
-        if (code) {
+        if (codigo) {
           try {
-            p = await getPastelByCodigo(code);
+            p = await getPastelByCodigo(codigo);
           } catch {
-            // si falla por código, intento buscar en toda la lista
             const all = await getPasteles();
             p =
               (all || []).find(
                 (x) =>
                   String(x.codigo ?? "").toLowerCase() ===
-                    String(code).toLowerCase() ||
+                    String(codigo).toLowerCase() ||
                   String(x.id ?? "").toLowerCase() ===
-                    String(code).toLowerCase()
+                    String(codigo).toLowerCase()
               ) || null;
           }
         }
@@ -55,7 +55,7 @@ export default function ProductDetail() {
     };
 
     load();
-  }, [code]);
+  }, [codigo]);
 
   if (loading) {
     return (
@@ -74,30 +74,29 @@ export default function ProductDetail() {
         <div className="admin-header">
           <h1>Detalle de producto</h1>
         </div>
-        <div className="alert alert-danger mb-3">{error || "Sin datos"}</div>
-        <button className="btn btn-secondary" onClick={() => navigate("/admin/products")}>
+        <div className="alert alert-danger mb-3">
+          {error || "Sin datos"}
+        </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigate("/admin/productos")}
+        >
           Volver al listado
         </button>
       </div>
     );
   }
 
-  const idForEdit = product.codigo || product.id;
-
   return (
     <div className="admin-page">
       <div className="admin-header">
         <h1>Detalle de producto</h1>
+
+        {/* SOLO botón volver */}
         <div className="d-flex gap-2">
-          <Link
-            className="btn btn-outline-primary"
-            to={`/admin/products/${idForEdit}/edit`}
-          >
-            Editar
-          </Link>
           <button
             className="btn btn-secondary"
-            onClick={() => navigate("/admin/products")}
+            onClick={() => navigate("/admin/productos")}
           >
             Volver al listado
           </button>

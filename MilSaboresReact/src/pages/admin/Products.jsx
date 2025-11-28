@@ -262,7 +262,7 @@ export default function Products() {
       alert("Este producto no tiene identificador para ver el detalle.");
       return;
     }
-    navigate(`/admin/products/${code}`);
+    navigate(`/admin/productos/${code}`);
   };
 
   // ====================
