@@ -25,6 +25,20 @@ export const CartProvider = ({ children }) => {
         const prevItem = copy[idx];
         copy[idx] = {
           ...prevItem,
+          // si viene un precio nuevo (por oferta), lo usamos
+          precio: producto.precio !== undefined ? producto.precio : prevItem.precio,
+          precioOriginal:
+            producto.precioOriginal !== undefined
+              ? producto.precioOriginal
+              : prevItem.precioOriginal,
+          descuentoPct:
+            producto.descuentoPct !== undefined
+              ? producto.descuentoPct
+              : prevItem.descuentoPct,
+          esOferta:
+            producto.esOferta !== undefined
+              ? producto.esOferta
+              : prevItem.esOferta,
           cantidad: (prevItem.cantidad || 1) + (producto.cantidad || 1),
           mensaje:
             producto.mensaje !== undefined ? producto.mensaje : prevItem.mensaje

@@ -76,9 +76,23 @@ const Detalle = () => {
     Math.round(precioBase * (1 - (Number(pct) || 0)))
   );
 
+  // 👉 ESTE será el precio que se enviará al carrito
+  const precioFinal = pct > 0 ? precioOferta : precioBase;
+
   const handleAgregar = () => {
     if (!torta || !torta.codigo) return;
-    add({ ...torta, cantidad, mensaje });
+
+    // Enviamos al carrito el precio ya calculado (con descuento si aplica)
+    add({
+      ...torta,
+      cantidad,
+      mensaje,
+      precio: precioFinal,
+      precioOriginal: precioBase,
+      descuentoPct: pct,
+      esOferta: pct > 0,
+    });
+
     setMensaje("");
     setCantidad(1);
   };
@@ -135,7 +149,7 @@ const Detalle = () => {
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
                 maxLength={80}
-                placeholder="Ej: ¡Feliz cumpleaños, Dani!"
+                placeholder="Ej: ¡Feliz cumpleeeeeeeeee!"
               />
             </div>
           )}
