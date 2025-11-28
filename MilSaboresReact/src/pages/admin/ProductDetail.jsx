@@ -21,8 +21,10 @@ export default function ProductDetail() {
 
         if (codigo) {
           try {
+            // intento directo por código
             p = await getPastelByCodigo(codigo);
           } catch {
+            // fallback: buscar en toda la lista
             const all = await getPasteles();
             p =
               (all || []).find(
@@ -87,26 +89,49 @@ export default function ProductDetail() {
     );
   }
 
+  // === Datos derivados para la vista ===
+  const stockNumber = Number(product.stock ?? 0);
+  const isCritical = !Number.isNaN(stockNumber) && stockNumber <= 5;
+
+  const estado = product.activo === false ? "Inactivo" : "Activo";
+  const creado =
+    product.createdAt ||
+    product.fechaCreacion ||
+    product.creado ||
+    null;
+  const actualizado =
+    product.updatedAt ||
+    product.fechaActualizacion ||
+    product.actualizado ||
+    null;
+
+  const creadoLabel = creado || "—";
+  const actualizadoLabel = actualizado || "—";
+
   return (
     <div className="admin-page">
-      <div className="admin-header">
-        <h1>Detalle de producto</h1>
-
-        {/* SOLO botón volver */}
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("/admin/productos")}
-          >
-            Volver al listado
-          </button>
+      {/* Header como en el diseño: título a la izquierda, volver a la derecha */}
+      <div className="admin-header d-flex justify-content-between align-items-center">
+        <div>
+          <h1 className="mb-1">{product.nombre}</h1>
+          <div className="text-muted small">
+            ID: {product.codigo || "—"}
+          </div>
         </div>
+
+        <button
+          className="btn btn-outline-secondary"
+          onClick={() => navigate("/admin/productos")}
+        >
+          ← Volver
+        </button>
       </div>
 
       <div className="admin-body">
-        <div className="row g-3">
-          <div className="col-md-4">
-            <div className="card">
+        <div className="row g-4">
+          {/* Columna izquierda: imagen + badges */}
+          <div className="col-lg-6">
+            <div className="card h-100">
               {product.imagen && (
                 <img
                   src={product.imagen}
@@ -114,29 +139,91 @@ export default function ProductDetail() {
                   className="card-img-top"
                 />
               )}
-              <div className="card-body">
-                <h5 className="card-title mb-1">{product.nombre}</h5>
-                <div className="text-muted small mb-2">
-                  Código: {product.codigo || "—"}
-                </div>
-                <div className="fw-bold">{CLP(product.precio)}</div>
-                <div className="text-muted">
-                  Stock: {product.stock ?? 0} unidades
-                </div>
-                <div className="text-muted">
-                  Categoría: {product.categoria || "Sin categoría"}
+
+              <div className="card-body d-flex justify-content-between align-items-center">
+                <div className="d-flex gap-2 flex-wrap">
+                  {product.categoria && (
+                    <span className="badge rounded-pill bg-light text-dark border">
+                      {product.categoria}
+                    </span>
+                  )}
+
+                  <span
+                    className={
+                      "badge rounded-pill " +
+                      (isCritical ? "bg-danger" : "bg-success")
+                    }
+                  >
+                    {isCritical ? "Stock crítico" : "Stock OK"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="col-md-8">
-            <div className="card">
+          {/* Columna derecha: tarjeta de información */}
+          <div className="col-lg-6">
+            <div className="card h-100">
               <div className="card-header">
-                <strong>Descripción</strong>
+                <strong>Información</strong>
               </div>
               <div className="card-body">
-                {product.descripcion || "Sin descripción registrada."}
+                {/* Precio / Stock */}
+                <div className="row mb-3">
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Precio
+                    </div>
+                    <div>{CLP(product.precio)}</div>
+                  </div>
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Stock
+                    </div>
+                    <div>{product.stock ?? 0}</div>
+                  </div>
+                </div>
+
+                {/* Estado / Categoría */}
+                <div className="row mb-3">
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Estado
+                    </div>
+                    <div>{estado}</div>
+                  </div>
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Categoría
+                    </div>
+                    <div>{product.categoria || "—"}</div>
+                  </div>
+                </div>
+
+                {/* Creado / Actualizado */}
+                <div className="row mb-3">
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Creado
+                    </div>
+                    <div>{creadoLabel}</div>
+                  </div>
+                  <div className="col-6">
+                    <div className="fw-semibold small text-muted">
+                      Actualizado
+                    </div>
+                    <div>{actualizadoLabel}</div>
+                  </div>
+                </div>
+
+                {/* Descripción */}
+                <div className="mb-1 fw-semibold small text-muted">
+                  Descripción
+                </div>
+                <div>
+                  {product.descripcion ||
+                    "Sin descripción registrada."}
+                </div>
               </div>
             </div>
           </div>

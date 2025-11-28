@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   addAdministrador,
   addCliente,
@@ -7,15 +7,39 @@ import {
   getUsuarios,
 } from "../../services/api";
 
+// ====== Helpers para hashear contraseña con scrypt (mismos que en Register.jsx) ======
+import { scrypt } from "scrypt-js";
+
+const N = 16384; // 2^14
+const r = 8;
+const p = 1;
+const KEY_LENGTH = 32; // 32 bytes
+
+function toHex(bytes) {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function hashPassword(plainPassword) {
+  const encoder = new TextEncoder();
+  const passwordBytes = encoder.encode(plainPassword);
+
+  // Igual que en Register.jsx: salt fijo de demo
+  const saltBytes = encoder.encode("milsabores_salt_demo");
+
+  const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
+  return toHex(hashBytes);
+}
+
 export default function UserNew() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     nombre: "",
     apellidos: "",
     email: "",
+    contrasena: "",
     rol: "cliente",
-    beneficio: "",
-    fechaNacimiento: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -26,13 +50,20 @@ export default function UserNew() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.nombre) {
-      alert("Nombre y correo son obligatorios.");
+
+    if (!form.email || !form.nombre || !form.contrasena) {
+      alert("Nombre, correo y contraseña son obligatorios.");
+      return;
+    }
+
+    if (form.contrasena.length < 4 || form.contrasena.length > 15) {
+      alert("La contraseña debe tener entre 4 y 15 caracteres.");
       return;
     }
 
     setSaving(true);
     try {
+      // 1) Evitar correos duplicados
       const usuarios = await getUsuarios();
       const existe = usuarios.some(
         (u) =>
@@ -45,18 +76,19 @@ export default function UserNew() {
         return;
       }
 
+      // 2) Hashear la contraseña
+      const hashedPassword = await hashPassword(form.contrasena);
+
       let payload;
       let creado;
 
-      // ===============================
-      //  RUTEO SEGÚN ROL ✔✔✔
-      // ===============================
+      // 3) Crear según rol, siempre enviando la contraseña hasheada
       if (form.rol === "admin") {
         payload = {
           nombre: form.nombre,
           apellido: form.apellidos,
           correo: form.email,
-          contrasena: "123", // o lo que quieras
+          contrasena: hashedPassword,
           comuna: "",
           region: "",
           activo: true,
@@ -71,7 +103,7 @@ export default function UserNew() {
           nombre: form.nombre,
           apellido: form.apellidos,
           correo: form.email,
-          contrasena: "123",
+          contrasena: hashedPassword,
           comuna: "",
           region: "",
           telefono: "",
@@ -86,7 +118,7 @@ export default function UserNew() {
           nombre: form.nombre,
           apellido: form.apellidos,
           correo: form.email,
-          contrasena: "123",
+          contrasena: hashedPassword,
           comuna: "",
           region: "",
           telefono: "",
@@ -106,42 +138,136 @@ export default function UserNew() {
   };
 
   return (
-    <div>
-      <h2>Nuevo usuario</h2>
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 480 }}>
-        <label>
-          Nombre
-          <input name="nombre" value={form.nombre} onChange={onChange} required />
-        </label>
-
-        <label>
-          Apellidos
-          <input name="apellidos" value={form.apellidos} onChange={onChange} />
-        </label>
-
-        <label>
-          Email
-          <input name="email" type="email" value={form.email} onChange={onChange} />
-        </label>
-
-        <label>
-          Rol
-          <select name="rol" value={form.rol} onChange={onChange}>
-            <option value="cliente">Cliente</option>
-            <option value="vendedor">Vendedor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={saving}>
-            {saving ? "Creando..." : "Crear"}
-          </button>
-          <Link to="/admin/usuarios">
-            <button type="button">Cancelar</button>
-          </Link>
+    <div className="admin-page">
+      {/* Header */}
+      <div className="admin-header d-flex justify-content-between align-items-center">
+        <div>
+          <h1 className="mb-1">Nuevo usuario</h1>
+          <div className="text-muted small">
+            Crea un nuevo cliente, vendedor o administrador.
+          </div>
         </div>
-      </form>
+
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          onClick={() => navigate("/admin/usuarios")}
+        >
+          ← Volver
+        </button>
+      </div>
+
+      <div className="admin-body">
+        <div className="row justify-content-start">
+          <div className="col-lg-5 col-md-7">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h5 className="card-title mb-3">Datos del usuario</h5>
+
+                <form onSubmit={onSubmit}>
+                  {/* Nombre */}
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Nombre <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      name="nombre"
+                      value={form.nombre}
+                      onChange={onChange}
+                      className="form-control"
+                      placeholder="Ej: Ana"
+                      required
+                    />
+                  </div>
+
+                  {/* Apellidos */}
+                  <div className="mb-3">
+                    <label className="form-label">Apellidos</label>
+                    <input
+                      name="apellidos"
+                      value={form.apellidos}
+                      onChange={onChange}
+                      className="form-control"
+                      placeholder="Ej: Pérez González"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Email <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={onChange}
+                      className="form-control"
+                      placeholder="usuario@correo.com"
+                      required
+                    />
+                  </div>
+
+                  {/* Contraseña */}
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Contraseña <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      name="contrasena"
+                      type="password"
+                      value={form.contrasena}
+                      onChange={onChange}
+                      className="form-control"
+                      placeholder="Entre 4 y 15 caracteres"
+                      required
+                    />
+                  </div>
+
+                  {/* Rol */}
+                  <div className="mb-4">
+                    <label className="form-label">Rol</label>
+                    <select
+                      name="rol"
+                      value={form.rol}
+                      onChange={onChange}
+                      className="form-select"
+                    >
+                      <option value="cliente">Cliente</option>
+                      <option value="vendedor">Vendedor</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+
+                  {/* Botones */}
+                  <div className="d-flex gap-2">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={saving}
+                    >
+                      {saving ? "Creando..." : "Crear usuario"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={() => navigate("/admin/usuarios")}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <p className="text-muted small mt-3">
+              Los campos marcados con{" "}
+              <span className="text-danger">*</span> son obligatorios.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
