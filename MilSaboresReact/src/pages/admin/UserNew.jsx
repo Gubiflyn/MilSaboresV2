@@ -40,6 +40,7 @@ export default function UserNew() {
     email: "",
     contrasena: "",
     rol: "cliente",
+    fechaNacimiento: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -59,6 +60,15 @@ export default function UserNew() {
     if (form.contrasena.length < 4 || form.contrasena.length > 15) {
       alert("La contraseña debe tener entre 4 y 15 caracteres.");
       return;
+    }
+
+    // ✅ Regla: fecha de nacimiento no puede ser futura
+    if (form.fechaNacimiento) {
+      const hoy = new Date().toISOString().split("T")[0];
+      if (form.fechaNacimiento > hoy) {
+        alert("La fecha de nacimiento no puede ser una fecha futura.");
+        return;
+      }
     }
 
     setSaving(true);
@@ -94,6 +104,7 @@ export default function UserNew() {
           activo: true,
           fechaContratacion: "2025-01-01",
           rol: "ADMIN",
+          // fechaNacimiento podría agregarse al backend en el futuro
         };
         creado = await addAdministrador(payload);
       }
@@ -109,6 +120,7 @@ export default function UserNew() {
           telefono: "",
           activo: true,
           fechaContratacion: "2025-01-01",
+          // fechaNacimiento también podría ir aquí si el backend lo soporta
         };
         creado = await addVendedor(payload);
       }
@@ -123,10 +135,12 @@ export default function UserNew() {
           region: "",
           telefono: "",
           direccion: "",
+          // fechaNacimiento solo visual por ahora
         };
         creado = await addCliente(payload);
       }
 
+      console.log("Usuario creado:", creado);
       alert("Usuario creado correctamente.");
       navigate("/admin/usuarios");
     } catch (e) {
@@ -157,6 +171,7 @@ export default function UserNew() {
         </button>
       </div>
 
+      {/* Body */}
       <div className="admin-body">
         <div className="row justify-content-start">
           <div className="col-lg-5 col-md-7">
@@ -189,6 +204,19 @@ export default function UserNew() {
                       onChange={onChange}
                       className="form-control"
                       placeholder="Ej: Pérez González"
+                    />
+                  </div>
+
+                  {/* Fecha de nacimiento */}
+                  <div className="mb-3">
+                    <label className="form-label">Fecha de nacimiento</label>
+                    <input
+                      type="date"
+                      name="fechaNacimiento"
+                      value={form.fechaNacimiento}
+                      max={new Date().toISOString().split("T")[0]}
+                      onChange={onChange}
+                      className="form-control"
                     />
                   </div>
 

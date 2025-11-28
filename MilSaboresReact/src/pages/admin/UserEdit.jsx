@@ -37,11 +37,14 @@ export default function UserEdit() {
       setLoading(true);
       setNotFound(false);
       try {
-        const data = await getUsuarios();
-        const list = Array.isArray(data) ? data : [];
+        const usuarios = await getUsuarios();
+        if (!Array.isArray(usuarios)) {
+          setNotFound(true);
+          return;
+        }
 
-        const found = list.find((u) => {
-          const correoApi = u.correo || u.email || "";
+        const found = usuarios.find((u) => {
+          const correoApi = u.correo || u.email;
           const encoded = encodeURIComponent(String(correoApi || ""));
           return (
             encoded === String(id) ||
@@ -97,6 +100,15 @@ export default function UserEdit() {
       return;
     }
 
+    // ✅ Regla: la fecha de nacimiento no puede ser futura
+    if (form.fechaNacimiento) {
+      const hoy = new Date().toISOString().split("T")[0];
+      if (form.fechaNacimiento > hoy) {
+        alert("La fecha de nacimiento no puede ser una fecha futura.");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // DTO que espera el backend
@@ -105,6 +117,7 @@ export default function UserEdit() {
         nombre: form.nombre,
         correo: form.email,
         rol: (form.rol || "CLIENTE").toUpperCase(),
+        // fechaNacimiento sigue siendo solo visual (no se envía)
       };
 
       await updateUsuario(payload);
@@ -123,7 +136,11 @@ export default function UserEdit() {
       alert("No se encontró el usuario a eliminar.");
       return;
     }
-    if (!window.confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) {
+    if (
+      !window.confirm(
+        "¿Eliminar este usuario? Esta acción no se puede deshacer."
+      )
+    ) {
       return;
     }
 
@@ -139,135 +156,141 @@ export default function UserEdit() {
 
   if (loading) {
     return (
-      <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Editar usuario</h5>
-          <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
-            ← Volver
-          </Link>
-        </div>
-        <div className="card-body text-muted">Cargando usuario…</div>
+      <div className="admin-page">
+        <h1>Editar usuario</h1>
+        <p className="text-muted">Cargando datos...</p>
       </div>
     );
   }
 
-  if (notFound) {
+  if (notFound || !original) {
     return (
-      <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Editar usuario</h5>
-          <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
-            ← Volver
-          </Link>
+      <div className="admin-page">
+        <div className="alert alert-warning">
+          No se encontró el usuario solicitado.
         </div>
-        <div className="card-body">
-          <div className="alert alert-warning mb-0">
-            No se encontró el usuario con identificador <code>{id}</code>.
-          </div>
-        </div>
+        <Link to="/admin/usuarios" className="btn btn-secondary btn-sm">
+          ← Volver al listado
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">Editar usuario</h5>
-        <Link to="/admin/usuarios" className="btn btn-outline-secondary btn-sm">
-          ← Volver
-        </Link>
+    <div className="admin-page">
+      <div className="admin-header">
+        <h1>Usuarios</h1>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label">Nombre</label>
-              <input
-                type="text"
-                name="nombre"
-                className="form-control"
-                value={form.nombre}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="col-md-6">
-              <label className="form-label">Correo</label>
-              <input
-                type="email"
-                name="email"
-                className="form-control"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Rol</label>
-              <select
-                name="rol"
-                className="form-select"
-                value={form.rol}
-                onChange={handleChange}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Beneficio (solo visual)</label>
-              <input
-                type="text"
-                name="beneficio"
-                className="form-control"
-                value={form.beneficio}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="col-md-4">
-              <label className="form-label">Fecha de nacimiento (solo visual)</label>
-              <input
-                type="date"
-                name="fechaNacimiento"
-                className="form-control"
-                value={form.fechaNacimiento || ""}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="card-footer d-flex justify-content-between gap-2">
-          <button
-            type="button"
-            className="btn btn-outline-danger btn-sm"
-            onClick={handleDelete}
-          >
-            Eliminar usuario
-          </button>
-
-          <div className="d-flex gap-2">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => navigate("/admin/usuarios")}
+      <div className="admin-body">
+        <div className="card shadow-sm">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Editar usuario</h5>
+            <Link
+              to="/admin/usuarios"
+              className="btn btn-outline-secondary btn-sm"
             >
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </button>
+              ← Volver
+            </Link>
           </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label">Nombre</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    className="form-control"
+                    value={form.nombre}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label">Correo</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="form-control"
+                    value={form.email}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Rol</label>
+                  <select
+                    name="rol"
+                    className="form-select"
+                    value={form.rol}
+                    onChange={handleChange}
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Beneficio (solo visual)</label>
+                  <input
+                    type="text"
+                    name="beneficio"
+                    className="form-control"
+                    value={form.beneficio}
+                    onChange={handleChange}
+                    placeholder="Ej: Cliente Duoc, Cliente frecuente..."
+                  />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Fecha de nacimiento</label>
+                  <input
+                    type="date"
+                    name="fechaNacimiento"
+                    className="form-control"
+                    max={new Date().toISOString().split("T")[0]}
+                    value={form.fechaNacimiento || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="card-footer d-flex justify-content-between gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={handleDelete}
+                disabled={saving}
+              >
+                Eliminar usuario
+              </button>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => navigate("/admin/usuarios")}
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
