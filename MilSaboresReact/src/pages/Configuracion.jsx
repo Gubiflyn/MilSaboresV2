@@ -1,27 +1,44 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+// src/pages/Configuracion.jsx
+import { useRef, useState, useMemo } from "react";
 import regionesComunas from "../data/chile-regiones-comunas.json";
+import { useAuth } from "../context/AuthContext";
 
 const DEFAULT_AVATAR = "/img/default-profile.png";
 
 export default function Configuracion() {
   const formRef = useRef(null);
+  const { user: authUser } = useAuth() || {};
 
-  const getUsuarioLS = () => {
+  // ---- Obtener datos del usuario en sesión ----
+  const getUsuarioSesion = () => {
     try {
-      const auth = JSON.parse(localStorage.getItem("usuario")) || {};
-      const perfiles = JSON.parse(localStorage.getItem("perfiles")) || [];
+      // 1) Lo que haya en localStorage (distintas posibles claves)
+      const usuarioLS =
+        JSON.parse(localStorage.getItem("usuario")) ||
+        JSON.parse(localStorage.getItem("authUser")) ||
+        JSON.parse(localStorage.getItem("user")) ||
+        {};
+
+      // 2) Mezclamos con lo que venga del AuthContext (si existe)
+      const auth = { ...usuarioLS, ...(authUser || {}) };
+
+      // 3) Buscamos un perfil extendido en "perfiles" (si existe)
+      const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
+      const correoAuth = (auth.correo || auth.email || "").toLowerCase();
+
       const perfil = perfiles.find(
         (p) =>
-          (p.email || p.correo || "").toLowerCase() ===
-          (auth.email || auth.correo || "").toLowerCase()
+          (p.email || p.correo || "").toLowerCase() === correoAuth
       );
-      return { ...perfil, ...auth };
+
+      // Perfil (si existe) + datos de sesión
+      return { ...(perfil || {}), ...auth };
     } catch {
-      return {};
+      return authUser || {};
     }
   };
 
-  const inicio = getUsuarioLS();
+  const inicio = getUsuarioSesion();
   const regiones = useMemo(() => regionesComunas.map((r) => r.region), []);
 
   const separarNombre = (nombreCompleto = "") => {
@@ -31,7 +48,9 @@ export default function Configuracion() {
     return { nombre, apellido };
   };
 
-  const { nombre, apellido } = separarNombre(inicio.nombre || inicio.nombres || "");
+  const { nombre, apellido } = separarNombre(
+    inicio.nombre || inicio.nombres || ""
+  );
 
   const [foto, setFoto] = useState(inicio.fotoPerfil || DEFAULT_AVATAR);
   const [form, setForm] = useState({
@@ -71,7 +90,9 @@ export default function Configuracion() {
     try {
       const b64 = await toBase64(file);
       setFoto(b64);
-    } catch {}
+    } catch {
+      // ignoramos error de lectura
+    }
   };
 
   const entrarEdicion = () => {
@@ -82,7 +103,7 @@ export default function Configuracion() {
   };
 
   const cancelar = () => {
-    const u = getUsuarioLS();
+    const u = getUsuarioSesion();
     const { nombre, apellido } = separarNombre(u.nombre || u.nombres || "");
     setForm({
       nombre,
@@ -106,8 +127,10 @@ export default function Configuracion() {
       return;
     }
 
+    const usuarioSesionActual = getUsuarioSesion();
+
     const usuarioActualizado = {
-      ...getUsuarioLS(),
+      ...usuarioSesionActual,
       nombre: `${form.nombre.trim()} ${form.apellidos.trim()}`.trim(),
       nombres: form.nombre.trim(),
       apellidos: form.apellidos.trim(),
@@ -119,16 +142,22 @@ export default function Configuracion() {
       fotoPerfil: foto,
     };
 
+    // Guardamos en localStorage para mantenerlo en sesión
     localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
 
+    // Actualizamos "perfiles" si existe
     const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
     const idx = perfiles.findIndex(
       (p) =>
         (p.email || p.correo || "").toLowerCase() ===
-        (form.correo || "").toLowerCase()
+        (usuarioSesionActual.correo ||
+          usuarioSesionActual.email ||
+          "").toLowerCase()
     );
-    if (idx >= 0) perfiles[idx] = { ...perfiles[idx], ...usuarioActualizado };
-    localStorage.setItem("perfiles", JSON.stringify(perfiles));
+    if (idx >= 0) {
+      perfiles[idx] = { ...perfiles[idx], ...usuarioActualizado };
+      localStorage.setItem("perfiles", JSON.stringify(perfiles));
+    }
 
     setOk("¡Información actualizada correctamente!");
     setEditando(false);
@@ -145,7 +174,12 @@ export default function Configuracion() {
                   <h3 className="mb-0">Mi Perfil</h3>
                 </div>
 
-                <form ref={formRef} className="needs-validation" noValidate onSubmit={guardar}>
+                <form
+                  ref={formRef}
+                  className="needs-validation"
+                  noValidate
+                  onSubmit={guardar}
+                >
                   <div className="d-flex flex-column align-items-center mb-3">
                     <img
                       src={foto || DEFAULT_AVATAR}
@@ -227,7 +261,11 @@ export default function Configuracion() {
                       className="form-select"
                       value={form.region}
                       onChange={(e) =>
-                        setForm({ ...form, region: e.target.value, comuna: "" })
+                        setForm({
+                          ...form,
+                          region: e.target.value,
+                          comuna: "",
+                        })
                       }
                       disabled={!editando}
                       required
