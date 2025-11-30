@@ -1,3 +1,4 @@
+// src/App.jsx
 import React from "react";
 import {
   Routes,
@@ -41,6 +42,9 @@ import UserHistory from "./pages/admin/UserHistory";
 import UserView from "./pages/admin/UserView";
 import UserEdit from "./pages/admin/UserEdit";
 import UserNew from "./pages/admin/UserNew";
+
+// 👉 NUEVA PAGE
+import AdminBoletas from "./pages/admin/AdminBoletas";
 
 import { useCart } from "./context/CartContext";
 import { useAuth } from "./context/AuthContext";
@@ -86,7 +90,7 @@ const App = () => {
   const { carrito, add, clear, remove } = useCart();
   const { isAuthenticated } = useAuth();
 
-  const agregarAlCarrito = (torta) => add({ ...torta, cantidad: 1 });
+  const agregarAlCarrito = (torta) => add({ ...torta, cantidad: 1 }); // 👈 bug corregido
   const vaciarCarrito = () => clear();
   const eliminarProducto = (codigo) => remove(codigo);
   const irAlPago = () => navigate("/pago");
@@ -176,7 +180,6 @@ const App = () => {
 
             {/* Productos: ADMIN y VENDEDOR (lista + detalle) */}
             <Route path="productos" element={<ProductsAdmin />} />
-            {/* 👇 aquí el cambio importante */}
             <Route path="productos/:codigo" element={<ProductDetail />} />
 
             {/* Crear / editar producto: SOLO ADMIN */}
@@ -207,11 +210,21 @@ const App = () => {
               }
             />
 
-            {/* Pedidos / Órdenes: ADMIN y VENDEDOR (lista + boleta) */}
+            {/* Pedidos / Órdenes: ADMIN y VENDEDOR */}
             <Route path="pedidos" element={<OrdersAdmin />} />
             <Route
               path="pedidos/:orderId/boleta"
               element={<OrderReceipt />}
+            />
+
+            {/* 👉 NUEVA RUTA: Boletas, SOLO ADMIN */}
+            <Route
+              path="boletas"
+              element={
+                <AdminOnlyRoute>
+                  <AdminBoletas />
+                </AdminOnlyRoute>
+              }
             />
 
             {/* Usuarios: SOLO ADMIN */}

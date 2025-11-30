@@ -1,7 +1,8 @@
-import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import './admin.css';
+// src/pages/admin/AdminLayout.jsx
+import React from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; // 👈 ruta corregida
+import "./admin.css";
 
 export default function AdminLayout() {
   const { user, logout, isAdmin, isSeller } = useAuth();
@@ -9,27 +10,38 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <img src="/img/icono.png" alt="Logo Mil Sabores" className="admin-logo" />
+          <img
+            src="/img/icono.png"
+            alt="Logo Mil Sabores"
+            className="admin-logo"
+          />
           Mil Sabores
         </div>
 
         <nav className="admin-nav">
-          {/* 🔹 ADMIN: ve todo el menú */}
+          
           {isAdmin && (
             <>
               <NavLink end to="/admin" className="admin-link">
                 Dashboard
               </NavLink>
+
               <NavLink to="/admin/pedidos" className="admin-link">
                 Órdenes
               </NavLink>
+
+             
+              <NavLink to="/admin/boletas" className="admin-link">
+                Boletas
+              </NavLink>
+
               <NavLink to="/admin/productos" className="admin-link">
                 Productos
               </NavLink>
@@ -45,7 +57,7 @@ export default function AdminLayout() {
             </>
           )}
 
-          {/* 🔹 VENDEDOR: solo Órdenes y Productos */}
+          {/* VENDEDOR: solo Órdenes y Productos */}
           {isSeller && (
             <>
               <NavLink to="/admin/pedidos" className="admin-link">
@@ -81,17 +93,17 @@ export default function AdminLayout() {
         <header className="admin-topbar">
           <div>
             <h1 className="admin-title">
-              {isAdmin ? 'Dashboard' : 'Panel vendedor'}
+              {isAdmin ? "Dashboard" : "Panel vendedor"}
             </h1>
             <div className="admin-subtitle">
               {isAdmin
-                ? 'Resumen de las actividades diarias'
-                : 'Consulta de productos y órdenes'}
+                ? "Resumen de las actividades diarias"
+                : "Consulta de productos y órdenes"}
             </div>
           </div>
           <div className="admin-user">
             <span className="admin-user-email">
-              {user?.correo || user?.email || 'admin@mail'}
+              {user?.correo || user?.email || "admin@mail"}
             </span>
           </div>
         </header>
