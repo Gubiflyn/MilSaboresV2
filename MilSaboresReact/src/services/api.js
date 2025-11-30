@@ -63,6 +63,11 @@ export function getUsuarioById(id) {
   return apiFetch(`/usuarioById/${id}`);
 }
 
+// GET /usuarioByCorreo/{correo}
+export function getUsuarioByCorreo(correo) {
+  return apiFetch(`/usuarioByCorreo/${encodeURIComponent(correo)}`);
+}
+
 // POST /addUsuario
 export function addUsuario(data) {
   return apiFetch("/addUsuario", {
