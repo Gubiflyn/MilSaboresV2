@@ -9,7 +9,7 @@ const ROLES = [
 ];
 
 export default function UserEdit() {
-  const { id } = useParams(); // viene como correo encodeURIComponent
+  const { id } = useParams(); 
   const navigate = useNavigate();
 
   const [original, setOriginal] = useState(null);
@@ -100,7 +100,7 @@ export default function UserEdit() {
       return;
     }
 
-    // ✅ Regla: la fecha de nacimiento no puede ser futura
+    
     if (form.fechaNacimiento) {
       const hoy = new Date().toISOString().split("T")[0];
       if (form.fechaNacimiento > hoy) {
@@ -111,7 +111,7 @@ export default function UserEdit() {
 
     setSaving(true);
     try {
-      // DTO que espera el backend (ahora sí con beneficio y fecha)
+     
       const payload = {
         id: original.id,
         nombre: form.nombre,

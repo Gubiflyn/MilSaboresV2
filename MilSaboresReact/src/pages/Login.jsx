@@ -21,11 +21,11 @@ async function hashPassword(plainPassword) {
   const encoder = new TextEncoder();
   const passwordBytes = encoder.encode(plainPassword);
 
-  // Debe ser el MISMO salt que uses en Register.jsx
+
   const saltBytes = encoder.encode("milsabores_salt_demo");
 
   const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
-  return toHex(hashBytes); // string hexadecimal
+  return toHex(hashBytes); 
 }
 
 export default function Login() {
@@ -40,13 +40,13 @@ export default function Login() {
     setError("");
 
     try {
-      // 1) Hashear la contraseña ingresada
+      // Hashear la contraseña ingresada
       const hashedPassword = await hashPassword(contrasena);
 
-      // 2) Pasar el HASH al contexto (NO la contraseña en texto plano)
+      // Pasar el HASH al contexto (NO la contraseña en texto plano)
       const user = await login(correo, hashedPassword);
 
-      // 3) Redirección según rol
+      // Redirección según rol
       if (user.rol === "ADMIN") {
         navigate("/admin"); // o /admin/dashboard según tu router
       } else {

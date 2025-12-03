@@ -7,13 +7,13 @@ import {
   getUsuarios,
 } from "../../services/api";
 
-// ====== Helpers para hashear contraseña con scrypt (mismos que en Register.jsx) ======
+// ====== Helpers para hashear contraseña con scrypt ======
 import { scrypt } from "scrypt-js";
 
-const N = 16384; // 2^14
+const N = 16384; 
 const r = 8;
 const p = 1;
-const KEY_LENGTH = 32; // 32 bytes
+const KEY_LENGTH = 32;
 
 function toHex(bytes) {
   return Array.from(bytes)
@@ -25,7 +25,7 @@ async function hashPassword(plainPassword) {
   const encoder = new TextEncoder();
   const passwordBytes = encoder.encode(plainPassword);
 
-  // Igual que en Register.jsx: salt fijo de demo
+
   const saltBytes = encoder.encode("milsabores_salt_demo");
 
   const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
@@ -63,7 +63,7 @@ export default function UserNew() {
       return;
     }
 
-    // ✅ Regla: fecha de nacimiento no puede ser futura
+    
     if (form.fechaNacimiento) {
       const hoy = new Date().toISOString().split("T")[0];
       if (form.fechaNacimiento > hoy) {
@@ -74,7 +74,7 @@ export default function UserNew() {
 
     setSaving(true);
     try {
-      // 1) Evitar correos duplicados
+      
       const usuarios = await getUsuarios();
       const existe = usuarios.some(
         (u) =>
@@ -87,13 +87,13 @@ export default function UserNew() {
         return;
       }
 
-      // 2) Hashear la contraseña
+      // Hashear la contraseña
       const hashedPassword = await hashPassword(form.contrasena);
 
       let payload;
       let creado;
 
-      // 3) Crear según rol, siempre enviando la contraseña hasheada
+      
       if (form.rol === "admin") {
         payload = {
           nombre: form.nombre,

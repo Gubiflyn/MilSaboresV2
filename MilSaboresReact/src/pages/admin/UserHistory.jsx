@@ -26,7 +26,7 @@ export default function UserHistory() {
         setLoading(true);
         setError("");
 
-        // 1) Obtener usuario por correo
+        
         const usuario = await getUsuarioByCorreo(correo);
         if (!usuario || !usuario.id) {
           setError("Usuario no encontrado");
@@ -36,7 +36,7 @@ export default function UserHistory() {
         }
         setUser(usuario);
 
-        // 2) Obtener boletas de ese usuario por ID
+       
         const boletas = await getBoletasByUsuarioId(usuario.id);
         setOrders(Array.isArray(boletas) ? boletas : []);
       } catch (err) {

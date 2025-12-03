@@ -12,17 +12,17 @@ export default function Configuracion() {
   // ---- Obtener datos del usuario en sesión ----
   const getUsuarioSesion = () => {
     try {
-      // 1) Lo que haya en localStorage (distintas posibles claves)
+      
       const usuarioLS =
         JSON.parse(localStorage.getItem("usuario")) ||
         JSON.parse(localStorage.getItem("authUser")) ||
         JSON.parse(localStorage.getItem("user")) ||
         {};
 
-      // 2) Mezclamos con lo que venga del AuthContext (si existe)
+      
       const auth = { ...usuarioLS, ...(authUser || {}) };
 
-      // 3) Buscamos un perfil extendido en "perfiles" (si existe)
+      
       const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
       const correoAuth = (auth.correo || auth.email || "").toLowerCase();
 
@@ -31,7 +31,7 @@ export default function Configuracion() {
           (p.email || p.correo || "").toLowerCase() === correoAuth
       );
 
-      // Perfil (si existe) + datos de sesión
+     
       return { ...(perfil || {}), ...auth };
     } catch {
       return authUser || {};
@@ -91,7 +91,7 @@ export default function Configuracion() {
       const b64 = await toBase64(file);
       setFoto(b64);
     } catch {
-      // ignoramos error de lectura
+     
     }
   };
 
@@ -142,10 +142,10 @@ export default function Configuracion() {
       fotoPerfil: foto,
     };
 
-    // Guardamos en localStorage para mantenerlo en sesión
+  
     localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
 
-    // Actualizamos "perfiles" si existe
+    
     const perfiles = JSON.parse(localStorage.getItem("perfiles") || "[]");
     const idx = perfiles.findIndex(
       (p) =>

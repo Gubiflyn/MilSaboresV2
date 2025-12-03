@@ -73,7 +73,7 @@ export default function AdminBoletas() {
                     $
                     {(b.total ?? 0).toLocaleString("es-CL")}
                   </td>
-                  {/* nombre del cliente desde el DTO */}
+                  {}
                   <td>{b.nombreUsuario || "Sin nombre"}</td>
                 </tr>
               ))}

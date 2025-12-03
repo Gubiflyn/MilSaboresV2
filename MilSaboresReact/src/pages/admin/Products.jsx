@@ -142,13 +142,13 @@ export default function Products() {
       return;
     }
 
-    // ❗ Nueva validación fuerte contra negativos
+    
     if (Number(form.precio) < 0 || Number(form.stock) < 0) {
       alert("El precio y el stock no pueden ser negativos.");
       return;
     }
 
-    // Buscar la categoría completa (con id, nombre, descripcion) por nombre
+   
     const categoriaObj = categoriasApi.find(
       (c) =>
         (c.nombre || "").toLowerCase() === form.categoria.toLowerCase().trim()

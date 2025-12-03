@@ -1,9 +1,7 @@
 // src/services/api.js
 const API_BASE = "http://localhost:8094";
 
-/**
- * Wrapper genérico para fetch contra el backend
- */
+
 export async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -17,16 +15,16 @@ export async function apiFetch(path, options = {}) {
     let mensaje = `Error ${res.status}`;
     let cuerpo = "";
     try {
-      // Intentamos leer SIEMPRE como texto (aunque sea JSON)
+    
       cuerpo = await res.text();
       if (cuerpo) {
         mensaje = cuerpo;
       }
     } catch {
-      // ignoramos error al leer el cuerpo
+      
     }
 
-    // Log detallado en consola para depurar
+    
     console.error(
       "Error en apiFetch:",
       {
@@ -41,7 +39,7 @@ export async function apiFetch(path, options = {}) {
     throw new Error(mensaje);
   }
 
-  // Si no hay contenido, devolvemos null
+
   if (res.status === 204) return null;
 
   const contentType = res.headers.get("Content-Type") || "";

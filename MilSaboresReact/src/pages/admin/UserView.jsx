@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { getUsuarioByCorreo } from "../../services/api";
 
 export default function UserView() {
-  // En la URL viene el correo URL-encoded: /admin/usuarios/registro%40gmail.com
+  
   const { id } = useParams();
   const correo = decodeURIComponent(id || "");
 

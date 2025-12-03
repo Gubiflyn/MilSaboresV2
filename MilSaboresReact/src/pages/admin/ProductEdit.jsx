@@ -63,7 +63,7 @@ export default function ProductEdit() {
       try {
         let p = null;
 
-        // 1) Intentar por código
+        // Intentar por código
         if (code) {
           try {
             p = await getPastelByCodigo(code);
@@ -72,7 +72,7 @@ export default function ProductEdit() {
           }
         }
 
-        // 2) Si no se encuentra, buscar en la lista
+        // Si no se encuentra, buscar en la lista
         if (!p) {
           const lista = await getPasteles();
           if (Array.isArray(lista)) {

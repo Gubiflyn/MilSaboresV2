@@ -5,9 +5,9 @@ import { getUsuarios } from "../../services/api";
 function mapUsuario(u) {
   const nombre = u.nombre || u.nombreCompleto || "";
   const email = u.correo || u.email || "";
-  const rol = u.rol || "—"; // si viene null, mostramos guión
+  const rol = u.rol || "—"; 
 
-  // Si más adelante agregas beneficio/fecha desde la API, se pueden mapear acá
+
   return {
     ...u,
     nombre,
@@ -33,7 +33,7 @@ export default function Users() {
         setList(arr.map(mapUsuario));
       } catch (e) {
         console.error("Error al cargar usuarios desde la API:", e);
-        // No lanzamos error para que los tests no revienten
+        
         setList([]);
       } finally {
         setLoading(false);

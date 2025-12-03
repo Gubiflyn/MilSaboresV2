@@ -68,7 +68,7 @@ export default function Pago() {
   });
   const [errors, setErrors] = useState({});
 
-  // 🔹 AQUÍ: usamos user.correo en lugar de user.email
+
   useEffect(() => {
     if (isAuthenticated && user) {
       setForm((prev) => ({
@@ -79,7 +79,7 @@ export default function Pago() {
     }
   }, [isAuthenticated, user]);
 
-  // 🔹 AQUÍ: pasamos el correo correcto a promociones
+
   const promoPreview = useMemo(
     () =>
       applyPromotions({
@@ -446,7 +446,7 @@ export default function Pago() {
           <div className="d-flex justify-content-start">
             <div style={{ width: "320px" }}>
               <PayPalCheckout
-                // 🔹 también aquí usamos user.correo como fallback
+               
                 customerEmail={(form.correo || user?.correo || "").trim()}
                 onPaid={(details) => {
                   const orderId = details?.id || `PP-${Date.now()}`;

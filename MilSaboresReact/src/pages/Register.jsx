@@ -21,12 +21,11 @@ async function hashPassword(plainPassword) {
   const encoder = new TextEncoder();
   const passwordBytes = encoder.encode(plainPassword);
 
-  // Para algo simple en el ramo usamos un salt fijo.
-  // Idealmente esto debería ser único por usuario y guardarse junto al hash.
+
   const saltBytes = encoder.encode("milsabores_salt_demo");
 
   const hashBytes = await scrypt(passwordBytes, saltBytes, N, r, p, KEY_LENGTH);
-  return toHex(hashBytes); // lo convertimos a string hexadecimal para guardar en BD
+  return toHex(hashBytes);
 }
 
 export default function Register() {
@@ -119,13 +118,13 @@ export default function Register() {
     else if (isDuoc) beneficio = "TORTA GRATIS";
 
     try {
-      // 1) Hashear la contraseña ANTES de enviarla al backend
+      // Hashear la contraseña ANTES de enviarla al backend
       const hashedPassword = await hashPassword(form.contrasena);
 
       const clientePayload = {
         nombre: `${form.nombres} ${form.apellidos}`.trim(),
         correo: form.correo,
-        // IMPORTANTE: aquí ya va la contraseña hasheada
+        
         contrasena: hashedPassword,
         telefono: form.telefono,
         direccion: form.direccion,
@@ -138,14 +137,13 @@ export default function Register() {
         activo: true,
       };
 
-      // 2) Registrar en BD (ya queda guardado el hash)
+     
       await register(clientePayload);
 
-      // 3) Iniciar sesión real usando también la contraseña hasheada
-      //    (porque el backend ahora espera ese mismo valor)
+      
       await login(form.correo, hashedPassword);
 
-      // 4) Mensaje de beneficio
+     
       let msg = "Sin beneficio";
       if (beneficio === "50%") msg = "50% de descuento en todos los productos";
       else if (beneficio === "FELICES50") msg = "10% de descuento de por vida";

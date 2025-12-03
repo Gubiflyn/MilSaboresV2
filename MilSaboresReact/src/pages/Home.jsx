@@ -10,7 +10,7 @@ const DESCUENTOS = {
   sinAzucar: 0.10,
 };
 
-// ------- NORMALIZADOR DE CATEGORIA ---------
+
 const normalizeList = (arr) =>
   Array.isArray(arr)
     ? arr.map((p) => ({

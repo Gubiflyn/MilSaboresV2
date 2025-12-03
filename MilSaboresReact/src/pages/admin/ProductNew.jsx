@@ -38,9 +38,9 @@ export default function ProductNew() {
   const onChange = (e) => {
     const { name, value } = e.target;
 
-    // Precio y stock: no permitir negativos
+   
     if (name === "precio" || name === "stock") {
-      // permitimos string vacío mientras escribe
+ 
       if (value === "") {
         setForm((f) => ({ ...f, [name]: "" }));
         return;
@@ -77,13 +77,13 @@ export default function ProductNew() {
     const precioNum = Number(form.precio || 0);
     const stockNum = Number(form.stock || 0);
 
-    // Seguridad extra por si algo raro se colara
+    
     if (precioNum < 0 || stockNum < 0) {
       alert("El precio y el stock no pueden ser negativos.");
       return;
     }
 
-    // Buscar categoría seleccionada
+    
     const categoriaObj = categorias.find(
       (c) => (c.nombre || "").toLowerCase() === form.categoria.toLowerCase()
     );
@@ -93,7 +93,7 @@ export default function ProductNew() {
       return;
     }
 
-    // 🔹 NO mandamos id (Spring genera el ID nuevo)
+   
     const payload = {
       codigo: form.codigo,
       nombre: form.nombre,

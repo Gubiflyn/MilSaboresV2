@@ -33,15 +33,13 @@ const Productos = () => {
       setLoading(true);
       setError(null);
       try {
-        // 1) Intentar siempre API primero
+        // Intentar siempre API primero
         const data = await getPasteles();
         const normalizadas = Array.isArray(data)
           ? data.map((t) => ({
               ...t,
               stock: t?.stock ?? 0,
-              // ⚠️ IMPORTANTE:
-              // si viene categoria como objeto {id, nombre, descripcion},
-              // la convertimos a string con el nombre
+             
               categoria:
                 typeof t.categoria === "string"
                   ? t.categoria
@@ -55,7 +53,7 @@ const Productos = () => {
         console.error("Error al cargar pasteles desde la API:", err);
         setError("No se pudieron cargar los productos desde el servidor.");
 
-        // 2) Fallback: lo que haya en localStorage
+        // Fallback: lo que haya en localStorage
         const guardadas = loadFromLocalstorage(LS_KEY);
         if (Array.isArray(guardadas) && guardadas.length) {
           setTortas(guardadas);

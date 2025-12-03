@@ -32,7 +32,7 @@ const Detalle = () => {
 
   useEffect(() => {
     const cargarDetalle = async () => {
-      // 1) Intentar buscar en la API por código
+      
       try {
         const data = await getPastelByCodigo(codigo);
         if (data) {
@@ -46,7 +46,7 @@ const Detalle = () => {
         console.error("Error al obtener pastel por código desde la API:", err);
       }
 
-      // 2) Fallback: buscar en localStorage (por si ya se cargó antes)
+      
       const tortasLS =
         loadFromLocalstorage("tortas_v3") ||
         loadFromLocalstorage("tortas_v2") ||
@@ -76,13 +76,13 @@ const Detalle = () => {
     Math.round(precioBase * (1 - (Number(pct) || 0)))
   );
 
-  // 👉 ESTE será el precio que se enviará al carrito
+  
   const precioFinal = pct > 0 ? precioOferta : precioBase;
 
   const handleAgregar = () => {
     if (!torta || !torta.codigo) return;
 
-    // Enviamos al carrito el precio ya calculado (con descuento si aplica)
+    
     add({
       ...torta,
       cantidad,

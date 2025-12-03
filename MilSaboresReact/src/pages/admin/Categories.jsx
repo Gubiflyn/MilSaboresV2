@@ -37,7 +37,7 @@ export default function Categories() {
     cargar();
   }, []);
 
-  // Cargar productos para conteo por categoría
+  // Cargar productos 
   useEffect(() => {
     const cargarProductos = async () => {
       try {
