@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe("Admin - Orders", () => {
-  it("TAO-Admin 23: Muestra la lista de órdenes o el mensaje 'Sin registros.'", async () => {
+  it("TAO-Admin : Muestra la lista de órdenes o el mensaje 'Sin registros.'", async () => {
     const { container } = render(
       <MemoryRouter>
         <Orders />

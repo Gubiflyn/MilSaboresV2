@@ -28,7 +28,7 @@ describe("OrderReceipt", () => {
     vi.restoreAllMocks();
   });
 
-  it("TAOR-Admin 22: Muestra título y mensaje cuando no hay orden", async () => {
+  it("TAOR-Admin : Muestra título y mensaje cuando no hay orden", async () => {
     render(
       <MemoryRouter initialEntries={["/admin/pedidos/O-123"]}>
         <Routes>

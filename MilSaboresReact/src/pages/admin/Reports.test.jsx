@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import Reports from "./Reports.jsx";
 
 describe("Reports", () => {
-  it("TARS-Admin 36: muestra el título y al menos una tabla (y el botón de exportar)", () => {
+  it("TARS-Admin : muestra el título y al menos una tabla (y el botón de exportar)", () => {
     render(
       <MemoryRouter>
         <Reports />
