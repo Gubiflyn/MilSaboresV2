@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import Profile from "./Profile.jsx";
 
 describe("Perfil", () => {
-  it("TAPL-Admin 35: muestra el título y el botón de actualizar contraseña", () => {
+  it("TAPL-Admin : muestra el título y el botón de actualizar contraseña", () => {
     render(
       <MemoryRouter>
         <Profile />

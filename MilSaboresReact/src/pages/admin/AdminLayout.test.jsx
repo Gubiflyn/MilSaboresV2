@@ -22,7 +22,7 @@ function renderAdminLayout() {
 }
 
 describe("AdminLayout", () => {
-  it("TAL-Admin 7: Renderiza el layout administrativo", () => {
+  it("TAL-Admin : Renderiza el layout administrativo", () => {
     const { container } = renderAdminLayout();
     expect(container.getElementsByClassName("admin-layout")[0]).toBeInTheDocument();
   });
